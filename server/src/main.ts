@@ -10,7 +10,7 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
   app.useGlobalPipes(new ValidationPipe());
   app.enableCors({
-    origin: 'http://localhost:3000', // Your Next.js frontend URL
+    origin: 'http://localhost:3000', // frontend URL
     credentials: true,
   });
 

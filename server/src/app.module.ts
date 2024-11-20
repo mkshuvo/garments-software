@@ -25,6 +25,9 @@ import { InventoryModule } from './inventory/inventory.module';
         database: configService.get('DB_NAME', 'garments_db'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: configService.get('NODE_ENV') !== 'production',
+        ssl: {
+          rejectUnauthorized: false, // This is often used for self-signed certificates in development
+        },
       }),
       inject: [ConfigService],
     }),

@@ -14,13 +14,19 @@ export class InventoryService {
     private readonly productsService: ProductsService,
   ) {}
 
-  async create(createInventoryItemDto: CreateInventoryItemDto): Promise<InventoryItem> {
-    const product = await this.productsService.findOne(createInventoryItemDto.productId);
-    
+  async create(
+    createInventoryItemDto: CreateInventoryItemDto,
+  ): Promise<InventoryItem> {
+    const product = await this.productsService.findOne(
+      createInventoryItemDto.productId,
+    );
+
     const inventoryItem = this.inventoryRepository.create({
       ...createInventoryItemDto,
       product,
-      isLowStock: createInventoryItemDto.quantity <= createInventoryItemDto.lowStockThreshold,
+      isLowStock:
+        createInventoryItemDto.quantity <=
+        createInventoryItemDto.lowStockThreshold,
     });
 
     return this.inventoryRepository.save(inventoryItem);
@@ -45,19 +51,28 @@ export class InventoryService {
     return inventoryItem;
   }
 
-  async update(id: string, updateInventoryItemDto: UpdateInventoryItemDto): Promise<InventoryItem> {
+  async update(
+    id: string,
+    updateInventoryItemDto: UpdateInventoryItemDto,
+  ): Promise<InventoryItem> {
     const inventoryItem = await this.findOne(id);
 
     if (updateInventoryItemDto.productId) {
-      const product = await this.productsService.findOne(updateInventoryItemDto.productId);
+      const product = await this.productsService.findOne(
+        updateInventoryItemDto.productId,
+      );
       inventoryItem.product = product;
     }
 
     Object.assign(inventoryItem, updateInventoryItemDto);
-    
+
     // Update low stock status
-    if (updateInventoryItemDto.quantity !== undefined || updateInventoryItemDto.lowStockThreshold !== undefined) {
-      inventoryItem.isLowStock = inventoryItem.quantity <= inventoryItem.lowStockThreshold;
+    if (
+      updateInventoryItemDto.quantity !== undefined ||
+      updateInventoryItemDto.lowStockThreshold !== undefined
+    ) {
+      inventoryItem.isLowStock =
+        inventoryItem.quantity <= inventoryItem.lowStockThreshold;
     }
 
     return this.inventoryRepository.save(inventoryItem);
@@ -75,15 +90,19 @@ export class InventoryService {
     });
   }
 
-  async updateQuantity(id: string, quantityChange: number): Promise<InventoryItem> {
+  async updateQuantity(
+    id: string,
+    quantityChange: number,
+  ): Promise<InventoryItem> {
     const inventoryItem = await this.findOne(id);
     inventoryItem.quantity += quantityChange;
-    
+
     if (inventoryItem.quantity < 0) {
       throw new Error('Insufficient stock');
     }
 
-    inventoryItem.isLowStock = inventoryItem.quantity <= inventoryItem.lowStockThreshold;
+    inventoryItem.isLowStock =
+      inventoryItem.quantity <= inventoryItem.lowStockThreshold;
     return this.inventoryRepository.save(inventoryItem);
   }
 }

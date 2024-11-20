@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+} from 'typeorm';
 import { InventoryItem } from '../../inventory/entities/inventory-item.entity';
 
 @Entity('products')
@@ -30,7 +37,7 @@ export class Product {
   @Column({ nullable: true })
   imageUrl: string;
 
-  @OneToMany(() => InventoryItem, inventoryItem => inventoryItem.product)
+  @OneToMany(() => InventoryItem, (inventoryItem) => inventoryItem.product)
   inventoryItems: InventoryItem[];
 
   @CreateDateColumn()

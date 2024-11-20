@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -21,7 +25,7 @@ export class OrdersService {
 
   async create(createOrderDto: CreateOrderDto): Promise<Order> {
     const user = await this.usersService.findOne(createOrderDto.userId);
-    
+
     // Create new order
     const order = this.ordersRepository.create({
       user,
@@ -34,15 +38,22 @@ export class OrdersService {
     const orderItems: OrderItem[] = [];
 
     for (const item of createOrderDto.items) {
-      const inventoryItem = await this.inventoryService.findOne(item.inventoryItemId);
-      
+      const inventoryItem = await this.inventoryService.findOne(
+        item.inventoryItemId,
+      );
+
       // Check stock availability
       if (inventoryItem.quantity < item.quantity) {
-        throw new BadRequestException(`Insufficient stock for product ${inventoryItem.product.name}`);
+        throw new BadRequestException(
+          `Insufficient stock for product ${inventoryItem.product.name}`,
+        );
       }
 
       // Update inventory
-      await this.inventoryService.updateQuantity(item.inventoryItemId, -item.quantity);
+      await this.inventoryService.updateQuantity(
+        item.inventoryItemId,
+        -item.quantity,
+      );
 
       // Create order item
       const orderItem = this.orderItemsRepository.create({
@@ -65,14 +76,24 @@ export class OrdersService {
 
   async findAll(): Promise<Order[]> {
     return this.ordersRepository.find({
-      relations: ['user', 'items', 'items.inventoryItem', 'items.inventoryItem.product'],
+      relations: [
+        'user',
+        'items',
+        'items.inventoryItem',
+        'items.inventoryItem.product',
+      ],
     });
   }
 
   async findOne(id: string): Promise<Order> {
     const order = await this.ordersRepository.findOne({
       where: { id },
-      relations: ['user', 'items', 'items.inventoryItem', 'items.inventoryItem.product'],
+      relations: [
+        'user',
+        'items',
+        'items.inventoryItem',
+        'items.inventoryItem.product',
+      ],
     });
 
     if (!order) {
@@ -96,7 +117,11 @@ export class OrdersService {
   async findByUser(userId: string): Promise<Order[]> {
     return this.ordersRepository.find({
       where: { user: { id: userId } },
-      relations: ['items', 'items.inventoryItem', 'items.inventoryItem.product'],
+      relations: [
+        'items',
+        'items.inventoryItem',
+        'items.inventoryItem.product',
+      ],
     });
   }
 }
