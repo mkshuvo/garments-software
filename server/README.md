@@ -68,6 +68,36 @@ If you are looking for a cloud-based platform to deploy your NestJS application,
 $ npm install -g mau
 $ mau deploy
 ```
+## Debugging
+Create a `.vscode/launch.json` file in the root directory of your NestJS project and add the following configuration:
+```json
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug NestJS",
+            "runtimeExecutable": "npm",
+            "runtimeArgs": [
+                "run",
+                "start:debug"
+            ],
+            "sourceMaps": true,
+            "envFile": "${workspaceFolder}/server/.env",
+            "cwd": "${workspaceFolder}/server",
+            "console": "integratedTerminal",
+            "protocol": "inspector",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/server/dist/**/*.js"
+            ]
+        }
+    ]
+}
+```
 
 With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
 
