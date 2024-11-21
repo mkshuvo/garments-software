@@ -26,13 +26,13 @@ export class UsersService {
       throw new ConflictException('Email already exists');
     }
 
-    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
-    const user = this.usersRepository.create({
-      ...createUserDto,
-      password: hashedPassword,
-    });
+    console.log('Creating new user with password:', createUserDto.password);
+    // Remove the double hashing - password should already be hashed from auth.service
+    const user = this.usersRepository.create(createUserDto);
 
-    return this.usersRepository.save(user);
+    const savedUser = await this.usersRepository.save(user);
+    console.log('Saved user with password:', savedUser.password);
+    return savedUser;
   }
 
   async findAll(): Promise<User[]> {
@@ -51,7 +51,10 @@ export class UsersService {
   }
 
   async findByEmail(email: string): Promise<User> {
-    return this.usersRepository.findOne({ where: { email } });
+    const user = await this.usersRepository.findOne({ where: { email } });
+    console.log('Found user by email:', email);
+    console.log('User password from DB:', user?.password);
+    return user;
   }
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
