@@ -1,0 +1,20 @@
+# Ignore patterns for Docker build context
+node_modules
+npm-debug.log
+Dockerfile*
+docker-compose*
+.dockerignore
+.git
+.gitignore
+README.md
+.env
+.nyc_output
+coverage
+.mocha.tmp
+.vscode
+bin/
+obj/
+out/
+*.log
+**/appsettings.Development.json
+**/appsettings.Local.json
