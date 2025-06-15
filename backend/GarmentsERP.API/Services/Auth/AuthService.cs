@@ -2,21 +2,11 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using GarmentsERP.API.DTOs;
 using GarmentsERP.API.Models;
-using GarmentsERP.API.Services;
+using GarmentsERP.API.Services.Interfaces;
 using System.Security.Claims;
 
 namespace GarmentsERP.API.Services.Auth
 {
-    public interface IAuthService
-    {
-        Task<AuthResult> RegisterAsync(RegisterDto registerDto);
-        Task<AuthResult> LoginAsync(LoginDto loginDto);
-        Task<UserInfoDto?> GetProfileAsync(string userId);
-        Task<AuthResult> UpdateProfileAsync(string userId, UpdateProfileDto updateDto);
-        Task<AuthResult> ChangePasswordAsync(string userId, ChangePasswordDto changePasswordDto);
-        Task<List<RoleInfoDto>> GetRolesAsync();
-    }
-
     public class AuthService : IAuthService
     {
         private readonly UserManager<ApplicationUser> _userManager;

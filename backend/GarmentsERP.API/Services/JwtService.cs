@@ -3,15 +3,10 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using GarmentsERP.API.Models;
+using GarmentsERP.API.Services.Interfaces;
 
 namespace GarmentsERP.API.Services
 {
-    public interface IJwtService
-    {
-        string GenerateToken(ApplicationUser user, IList<string> roles);
-        ClaimsPrincipal? GetPrincipalFromExpiredToken(string token);
-    }
-
     public class JwtService : IJwtService
     {
         private readonly IConfiguration _configuration;

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using GarmentsERP.API.DTOs;
 using GarmentsERP.API.Services.Auth;
+using GarmentsERP.API.Services.Interfaces;
 using System.Security.Claims;
 
 namespace GarmentsERP.API.Controllers
