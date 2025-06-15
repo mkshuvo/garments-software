@@ -5,8 +5,11 @@ using Microsoft.IdentityModel.Tokens;
 using GarmentsERP.API.Models;
 using GarmentsERP.API.Services.Interfaces;
 
-namespace GarmentsERP.API.Services
+namespace GarmentsERP.API.Services.Implementations
 {
+    /// <summary>
+    /// Implementation of JWT token services
+    /// </summary>
     public class JwtService : IJwtService
     {
         private readonly IConfiguration _configuration;

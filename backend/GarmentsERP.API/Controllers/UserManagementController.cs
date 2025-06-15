@@ -4,6 +4,7 @@ using System.Security.Claims;
 using GarmentsERP.API.DTOs.Users;
 using GarmentsERP.API.Models.Users;
 using GarmentsERP.API.Services.Users;
+using GarmentsERP.API.Services.Interfaces;
 
 namespace GarmentsERP.API.Controllers
 {

@@ -9,6 +9,7 @@ using GarmentsERP.API.Models;
 using GarmentsERP.API.Services;
 using GarmentsERP.API.Services.Users;
 using GarmentsERP.API.Services.Auth;
+using GarmentsERP.API.Services.Interfaces;
 using GarmentsERP.API.Middleware;
 using StackExchange.Redis;
 

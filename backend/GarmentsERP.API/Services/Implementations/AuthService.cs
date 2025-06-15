@@ -3,10 +3,13 @@ using Microsoft.EntityFrameworkCore;
 using GarmentsERP.API.DTOs;
 using GarmentsERP.API.Models;
 using GarmentsERP.API.Services.Interfaces;
-using System.Security.Claims;
+using GarmentsERP.API.Services.Models;
 
-namespace GarmentsERP.API.Services.Auth
+namespace GarmentsERP.API.Services.Implementations
 {
+    /// <summary>
+    /// Implementation of authentication services
+    /// </summary>
     public class AuthService : IAuthService
     {
         private readonly UserManager<ApplicationUser> _userManager;
@@ -250,27 +253,5 @@ namespace GarmentsERP.API.Services.Auth
                 return new List<RoleInfoDto>();
             }
         }
-    }    public class AuthResult
-    {
-        public bool IsSuccess { get; set; }
-        public string Message { get; set; } = string.Empty;
-        public object? Data { get; set; }
-
-        public static AuthResult Success(string message, object? data = null)
-        {
-            return new AuthResult { IsSuccess = true, Message = message, Data = data };
-        }
-
-        public static AuthResult Failed(string message)
-        {
-            return new AuthResult { IsSuccess = false, Message = message };
-        }
-    }
-
-    public class RoleInfoDto
-    {
-        public Guid Id { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public string? Description { get; set; }
     }
 }
