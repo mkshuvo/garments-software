@@ -85,7 +85,6 @@ services:  # PostgreSQL Database - Latest stable LTS (17.5, supported until Nov 
     networks:
       - garments-dev-network
     restart: unless-stopped
-
   # Backend API - Development
   backend:
     build:
@@ -95,6 +94,7 @@ services:  # PostgreSQL Database - Latest stable LTS (17.5, supported until Nov 
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=GarmentsERP_Dev;Username=postgres;Password=postgres123
+      - ConnectionStrings__Redis=redis:6379
       - JwtSettings__Secret=YourSuperSecretKeyThatIsAtLeast32CharactersLong!@#$$%
       - JwtSettings__Issuer=GarmentsERP.API
       - JwtSettings__Audience=GarmentsERP.Client
