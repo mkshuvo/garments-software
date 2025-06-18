@@ -69,9 +69,8 @@ namespace GarmentsERP.API.Models
 
         [ForeignKey("PurchaseOrderId")]
         public virtual PurchaseOrder PurchaseOrder { get; set; } = null!;
-
         [Required]
-        public int ProductId { get; set; }
+        public Guid ProductId { get; set; }
 
         [ForeignKey("ProductId")]
         public virtual Product Product { get; set; } = null!;
@@ -197,12 +196,11 @@ namespace GarmentsERP.API.Models
         public decimal UnitPrice { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
-        public decimal TotalPrice { get; set; }
-
-        [MaxLength(50)]
+        public decimal TotalPrice { get; set; }        [MaxLength(50)]
         public string? Unit { get; set; } = "Pieces";
 
-        public int? ProductId { get; set; }
+        // Foreign key to Product entity - must be Guid to match Product.ProductId
+        public Guid? ProductId { get; set; }
 
         [ForeignKey("ProductId")]
         public virtual Product? Product { get; set; }

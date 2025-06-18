@@ -1,4 +1,4 @@
-namespace GarmentsERP.API.Services.Models
+namespace GarmentsERP.API.DTOs
 {
     /// <summary>
     /// DTO for role information
