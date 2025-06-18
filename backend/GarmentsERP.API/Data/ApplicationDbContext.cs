@@ -237,13 +237,24 @@ namespace GarmentsERP.API.Data
                 .HasOne(bi => bi.Bill)
                 .WithMany(b => b.Items)
                 .HasForeignKey(bi => bi.BillId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<BillPayment>()
+                .OnDelete(DeleteBehavior.Cascade);            modelBuilder.Entity<BillPayment>()
                 .HasOne(bp => bp.Bill)
                 .WithMany(b => b.Payments)
                 .HasForeignKey(bp => bp.BillId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure Product relationships explicitly
+            modelBuilder.Entity<BillItem>()
+                .HasOne(bi => bi.Product)
+                .WithMany()
+                .HasForeignKey(bi => bi.ProductId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<PurchaseOrderItem>()
+                .HasOne(poi => poi.Product)
+                .WithMany()
+                .HasForeignKey(poi => poi.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // Configure unique constraints for purchasing
             modelBuilder.Entity<PurchaseOrder>()

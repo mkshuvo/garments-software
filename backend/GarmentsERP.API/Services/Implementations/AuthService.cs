@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using GarmentsERP.API.DTOs;
 using GarmentsERP.API.Models;
 using GarmentsERP.API.Services.Interfaces;
-using GarmentsERP.API.Services.Models;
 
 namespace GarmentsERP.API.Services.Implementations
 {
