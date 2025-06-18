@@ -7,14 +7,12 @@ namespace GarmentsERP.API.Models
     public class PurchaseOrder
     {
         [Key]
-        public int Id { get; set; }
-
-        [Required]
+        public int Id { get; set; }        [Required]
         [MaxLength(20)]
         public string PurchaseOrderNumber { get; set; } = string.Empty;
 
         [Required]
-        public string VendorId { get; set; } = string.Empty;
+        public Guid VendorId { get; set; }
 
         [ForeignKey("VendorId")]
         public virtual VendorProfile Vendor { get; set; } = null!;
@@ -109,14 +107,12 @@ namespace GarmentsERP.API.Models
     public class Bill
     {
         [Key]
-        public int Id { get; set; }
-
-        [Required]
+        public int Id { get; set; }        [Required]
         [MaxLength(20)]
         public string BillNumber { get; set; } = string.Empty;
 
         [Required]
-        public string VendorId { get; set; } = string.Empty;
+        public Guid VendorId { get; set; }
 
         [ForeignKey("VendorId")]
         public virtual VendorProfile Vendor { get; set; } = null!;

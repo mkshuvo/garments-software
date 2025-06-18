@@ -108,8 +108,14 @@ Building a comprehensive Garments ERP system with ASP.NET Core Web API backend a
 ## 🚧 In Progress
 
 ### Phase 5: User Management System
+- [x] **User Authentication**: Login/logout functionality 
+  - [x] Frontend login form implementation with form validation
+  - [x] Register page for account creation with validation
+  - [x] User authentication state management using Zustand
+  - [x] JWT token handling and storage
+  - [x] Protected routes based on authentication status
+  - [x] Logout functionality
 - [ ] **User Registration**: Admin-only user creation with role assignment
-- [ ] **User Authentication**: Login/logout functionality
 - [ ] **Role Management**: Admin, Manager, Employee, Customer roles
 - [ ] **User Profile**: User information management
 
@@ -171,13 +177,14 @@ Building a comprehensive Garments ERP system with ASP.NET Core Web API backend a
 
 ## 📊 Statistics
 - **Backend Controllers**: 2 (Auth, Health)
-- **Frontend Components**: 2 (AuthProvider, Layout)
+- **Frontend Components**: 4 (AuthProvider, Layout, LoginPage, RegisterPage)
 - **Database Models**: 12 entities
 - **Docker Services**: 6 (postgres, redis, backend, frontend, nginx, dev tools)
 - **API Endpoints**: 4 (register, login, health, health/detailed)
+- **Frontend Pages**: 3 (Home, Login, Register)
 
 ---
 
-**Last Updated**: June 15, 2025  
+**Last Updated**: June 19, 2025  
 **Current Phase**: User Management System Development  
-**Next Milestone**: Complete user registration and authentication system
+**Next Milestone**: Complete user profile management and role-based access control
