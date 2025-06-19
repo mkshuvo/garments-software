@@ -1,15 +1,17 @@
 import type { Metadata } from "next";
-import { Inter } from 'next/font/google'
+import { Inter } from "next/font/google";
 import "./globals.css";
-import { AppRouterCacheProvider } from '@mui/material-nextjs/v14-appRouter';
-import { ThemeProvider } from '@/components/providers/ThemeProvider';
-import { AuthProvider } from '@/components/providers/AuthProvider';
+import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import AuthInitializer from "@/components/auth/AuthInitializer";
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+});
 
 export const metadata: Metadata = {
-  title: "Garments ERP System",
-  description: "Comprehensive ERP system for garments manufacturing businesses",
+  title: "GarmentsERP - Garment Management System",
+  description: "Complete ERP solution for garment manufacturing and retail business",
 };
 
 export default function RootLayout({
@@ -19,14 +21,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <AppRouterCacheProvider options={{ enableCssLayer: true }}>
-          <ThemeProvider>
-            <AuthProvider>
-              {children}
-            </AuthProvider>
-          </ThemeProvider>
-        </AppRouterCacheProvider>
+      <body className={inter.variable}>
+        <ThemeProvider>
+          <AuthInitializer>
+            {children}
+          </AuthInitializer>
+        </ThemeProvider>
       </body>
     </html>
   );

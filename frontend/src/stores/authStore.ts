@@ -1,162 +1,113 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-
-export interface User {
-  id: string
-  username: string
-  email: string
-  fullName: string
-  contactNumber?: string
-  roles: string[]
-  isActive: boolean
-  createdAt: string
-}
-
-export interface LoginCredentials {
-  emailOrUsername: string
-  password: string
-}
-
-export interface RegisterData {
-  username: string
-  email: string
-  password: string
-  confirmPassword: string
-  fullName: string
-  contactNumber?: string
-  role: string
-}
+import { authService, LoginDto, UserInfoDto, LoginResponseDto } from '@/services/authService'
 
 interface AuthState {
-  user: User | null
-  token: string | null
   isAuthenticated: boolean
+  user: UserInfoDto | null
+  token: string | null
   isLoading: boolean
   error: string | null
-}
-
-interface AuthActions {
-  setUser: (user: User | null) => void
-  setToken: (token: string | null) => void
-  setLoading: (loading: boolean) => void
-  setError: (error: string | null) => void
-  login: (credentials: LoginCredentials) => Promise<void>
-  register: (data: RegisterData) => Promise<void>
+  
+  // Actions
+  login: (loginData: LoginDto) => Promise<void>
   logout: () => void
+  setUser: (user: UserInfoDto) => void
   clearError: () => void
-  checkAuth: () => void
+  checkAuth: () => Promise<void>
+  setLoading: (loading: boolean) => void
 }
 
-export interface AuthStore extends AuthState, AuthActions {}
-
-export const useAuthStore = create<AuthStore>()(
+export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
-      // State
+      isAuthenticated: false,
       user: null,
       token: null,
-      isAuthenticated: false,
       isLoading: false,
       error: null,
 
-      // Actions
-      setUser: (user) => set({ user, isAuthenticated: !!user }),
-      setToken: (token) => set({ token }),
-      setLoading: (isLoading) => set({ isLoading }),
-      setError: (error) => set({ error }),
-
-      login: async (credentials) => {
+      login: async (loginData: LoginDto) => {
         set({ isLoading: true, error: null })
+        
         try {
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(credentials),
-          })
-
-          if (!response.ok) {
-            const errorData = await response.json()
-            throw new Error(errorData.message || 'Login failed')
-          }
-
-          const data = await response.json()
+          const response: LoginResponseDto = await authService.login(loginData)
+          
           set({
-            user: data.user,
-            token: data.token,
             isAuthenticated: true,
+            user: response.user,
+            token: response.token,
             isLoading: false,
             error: null,
           })
-        } catch (error) {
+        } catch (error: any) {
           set({
-            error: error instanceof Error ? error.message : 'Login failed',
+            isAuthenticated: false,
+            user: null,
+            token: null,
             isLoading: false,
-          })
-          throw error
-        }
-      },
-
-      register: async (registerData) => {
-        set({ isLoading: true, error: null })
-        try {
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/register`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(registerData),
-          })
-
-          if (!response.ok) {
-            const errorData = await response.json()
-            throw new Error(errorData.message || 'Registration failed')
-          }
-
-          set({ isLoading: false, error: null })
-        } catch (error) {
-          set({
-            error: error instanceof Error ? error.message : 'Registration failed',
-            isLoading: false,
+            error: error.message || 'Login failed',
           })
           throw error
         }
       },
 
       logout: () => {
+        authService.logout()
         set({
+          isAuthenticated: false,
           user: null,
           token: null,
-          isAuthenticated: false,
           error: null,
         })
       },
 
-      clearError: () => set({ error: null }),
+      setUser: (user: UserInfoDto) => {
+        set({ user, isAuthenticated: true })
+      },
 
-      checkAuth: () => {
-        const { token } = get()
-        if (token) {
-          // Verify token is still valid by making a request to the API
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/profile`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+      clearError: () => {
+        set({ error: null })
+      },
+
+      setLoading: (loading: boolean) => {
+        set({ isLoading: loading })
+      },
+
+      checkAuth: async () => {
+        if (!authService.isAuthenticated()) {
+          set({ isAuthenticated: false, user: null, token: null })
+          return
+        }
+
+        set({ isLoading: true })
+        
+        try {
+          const user = await authService.getProfile()
+          const token = authService.getToken()
+          
+          set({
+            isAuthenticated: true,
+            user,
+            token,
+            isLoading: false,
+            error: null,
           })
-            .then((response) => {
-              if (!response.ok) {
-                get().logout()
-              }
-            })
-            .catch(() => {
-              get().logout()
-            })
+        } catch (error: any) {
+          // Token might be expired or invalid
+          authService.logout()
+          set({
+            isAuthenticated: false,
+            user: null,
+            token: null,
+            isLoading: false,
+            error: null,
+          })
         }
       },
     }),
     {
-      name: 'auth-storage',
+      name: 'garments-auth', // localStorage key
       partialize: (state) => ({
         user: state.user,
         token: state.token,
