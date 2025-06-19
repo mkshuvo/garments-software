@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using GarmentsERP.API.Models;
 using GarmentsERP.API.Models.Users;
+using GarmentsERP.API.Data.Seed;
 
 namespace GarmentsERP.API.Data
 {
@@ -32,7 +33,8 @@ namespace GarmentsERP.API.Data
         public DbSet<Invoice> Invoices { get; set; }
         public DbSet<InvoiceItem> InvoiceItems { get; set; }
         public DbSet<Employee> Employees { get; set; }
-        public DbSet<Payroll> Payrolls { get; set; }        public DbSet<ChartOfAccount> ChartOfAccounts { get; set; }
+        public DbSet<Payroll> Payrolls { get; set; }
+        public DbSet<ChartOfAccount> ChartOfAccounts { get; set; }
         public DbSet<GLEntry> GLEntries { get; set; }
         public DbSet<GLEntryLine> GLEntryLines { get; set; }
 
@@ -267,6 +269,9 @@ namespace GarmentsERP.API.Data
 
             // Seed default roles
             SeedRoles(modelBuilder);
+            // Seed admin user
+            modelBuilder.ApplyConfiguration(new AdminUserSeeder());
+            modelBuilder.ApplyConfiguration(new AdminUserRoleSeeder());
         }
 
         private void SeedRoles(ModelBuilder modelBuilder)
