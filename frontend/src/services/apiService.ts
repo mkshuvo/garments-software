@@ -1,5 +1,5 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
-import { API_CONFIG, ApiResponse, ApiError } from '@/config/api'
+import { API_CONFIG, ApiError } from '@/config/api'
 
 class ApiService {
   private instance: AxiosInstance
@@ -45,24 +45,26 @@ class ApiService {
     )
   }
 
-  private formatError(error: any): ApiError {
-    if (error.response) {
-      // Server responded with error status
+  private formatError(error: unknown): ApiError {
+    if (typeof error === 'object' && error !== null && 'response' in error && (error as { response: unknown }).response) {
+      const err = error as { response: { data?: { message?: string; errors?: string[] }, status: number } }
       return {
-        message: error.response.data?.message || 'An error occurred',
-        errors: error.response.data?.errors,
-        status: error.response.status,
+        message: err.response.data?.message || 'An error occurred',
+        errors: err.response.data?.errors,
+        status: err.response.status,
       }
-    } else if (error.request) {
-      // Request was made but no response received
+    } else if (typeof error === 'object' && error !== null && 'request' in error && (error as { request: unknown }).request) {
       return {
         message: 'Network error - please check your connection',
         status: 0,
       }
-    } else {
-      // Something else happened
+    } else if (typeof error === 'object' && error !== null && 'message' in error) {
       return {
-        message: error.message || 'An unexpected error occurred',
+        message: (error as { message: string }).message || 'An unexpected error occurred',
+      }
+    } else {
+      return {
+        message: 'An unexpected error occurred',
       }
     }
   }
@@ -78,22 +80,22 @@ class ApiService {
   }
 
   // HTTP Methods
-  async get<T = any>(url: string, config?: AxiosRequestConfig): Promise<T> {
+  async get<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.instance.get<T>(url, config)
     return response.data
   }
 
-  async post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+  async post<T = unknown, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.instance.post<T>(url, data, config)
     return response.data
   }
 
-  async put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+  async put<T = unknown, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.instance.put<T>(url, data, config)
     return response.data
   }
 
-  async delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<T> {
+  async delete<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.instance.delete<T>(url, config)
     return response.data
   }
