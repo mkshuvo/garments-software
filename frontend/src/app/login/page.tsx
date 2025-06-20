@@ -47,7 +47,7 @@ type LoginFormData = yup.InferType<typeof loginSchema>
 
 export default function LoginPage() {
   const router = useRouter()
-  const { login, isAuthenticated, isLoading, error, clearError } = useAuthStore()
+  const { login, isAuthenticated, isLoading, error: authError, clearError } = useAuthStore()
   const [showPassword, setShowPassword] = useState(false)
 
   // Form setup
@@ -81,9 +81,10 @@ export default function LoginPage() {
       clearError()
       await login(data as LoginDto)
       // Redirect will happen via useEffect above
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as { message?: string }
       // Error is already handled in the store, but we can show additional form validation if needed
-      if (error.message?.includes('credentials')) {
+      if (err.message?.includes('credentials')) {
         setFormError('emailOrUsername', { message: 'Invalid email/username or password' })
         setFormError('password', { message: 'Invalid email/username or password' })
       }
@@ -158,13 +159,13 @@ export default function LoginPage() {
           <Divider sx={{ mb: 4 }} />
 
           {/* Error Alert */}
-          {error && (
+          {authError && (
             <Alert
               severity="error"
               sx={{ mb: 3 }}
               onClose={clearError}
             >
-              {error}
+              {authError}
             </Alert>
           )}
 
@@ -266,7 +267,7 @@ export default function LoginPage() {
           {/* Footer */}
           <Box sx={{ mt: 4, textAlign: 'center' }}>
             <Typography variant="body2" color="text.secondary">
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <Link href="/register" style={{ textDecoration: 'none' }}>
                 <Typography
                   component="span"
@@ -286,4 +287,11 @@ export default function LoginPage() {
       </Container>
     </Box>
   )
+}
+
+export type AuthState = {
+  isAuthenticated: boolean
+  isLoading: boolean
+  error?: string | null
+  // ...other state properties
 }

@@ -20,7 +20,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       isAuthenticated: false,
       user: null,
       token: null,
@@ -29,10 +29,8 @@ export const useAuthStore = create<AuthState>()(
 
       login: async (loginData: LoginDto) => {
         set({ isLoading: true, error: null })
-        
         try {
           const response: LoginResponseDto = await authService.login(loginData)
-          
           set({
             isAuthenticated: true,
             user: response.user,
@@ -40,13 +38,13 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
             error: null,
           })
-        } catch (error: any) {
+        } catch (error) {
           set({
             isAuthenticated: false,
             user: null,
             token: null,
             isLoading: false,
-            error: error.message || 'Login failed',
+            error: (error as { message?: string }).message || 'Login failed',
           })
           throw error
         }
@@ -58,7 +56,6 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: false,
           user: null,
           token: null,
-          error: null,
         })
       },
 
@@ -67,7 +64,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       clearError: () => {
-        set({ error: null })
+        set((state) => ({ ...state }))
       },
 
       setLoading: (loading: boolean) => {
@@ -76,16 +73,13 @@ export const useAuthStore = create<AuthState>()(
 
       checkAuth: async () => {
         if (!authService.isAuthenticated()) {
-          set({ isAuthenticated: false, user: null, token: null })
+          set({ isAuthenticated: false, user: null, token: null, error: null })
           return
         }
-
         set({ isLoading: true })
-        
         try {
           const user = await authService.getProfile()
           const token = authService.getToken()
-          
           set({
             isAuthenticated: true,
             user,
@@ -93,7 +87,7 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
             error: null,
           })
-        } catch (error: any) {
+        } catch {
           // Token might be expired or invalid
           authService.logout()
           set({

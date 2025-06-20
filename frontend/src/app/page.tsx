@@ -8,21 +8,10 @@ import {
   Button,
   Card,
   CardContent,
-  Grid,
   Stack,
   Avatar,
   Chip,
 } from '@mui/material'
-import {
-  Factory,
-  Inventory,
-  People,
-  Analytics,
-  ShoppingCart,
-  AccountBalance,
-  Login as LoginIcon,
-  PersonAdd,
-} from '@mui/icons-material'
 import Link from 'next/link'
 import { useAuthStore } from '@/stores/authStore'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
@@ -36,6 +25,9 @@ import WorkHistoryIcon from '@mui/icons-material/WorkHistory';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import AssessmentIcon from '@mui/icons-material/Assessment';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import LoginIcon from '@mui/icons-material/Login';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 
 const menuItems = [
   {
@@ -77,7 +69,7 @@ const menuItems = [
   {
     title: 'Purchasing',
     description: 'Purchase orders and vendor management',
-    icon: <ShoppingCart sx={{ fontSize: 40 }} color="primary" />, 
+    icon: <ShoppingCartIcon sx={{ fontSize: 40 }} color="primary" />, 
     href: '/purchasing',
   },
   {
@@ -195,7 +187,7 @@ export default function HomePage() {
                   <Link href="/register" passHref>
                     <Button
                       variant="contained"
-                      startIcon={<PersonAdd />}
+                      startIcon={<PersonAddIcon />}
                       sx={{
                         backgroundColor: 'white',
                         color: 'primary.main',
