@@ -82,24 +82,48 @@ namespace GarmentsERP.API.Services.Auth
                 _logger.LogError(ex, "Error occurred during user registration");
                 return DTOs.AuthResult.Failed("An error occurred during registration.");
             }
-        }
-
-        public async Task<DTOs.AuthResult> LoginAsync(LoginDto loginDto)
+        }        public async Task<DTOs.AuthResult> LoginAsync(LoginDto loginDto)
         {
             try
             {
+                _logger.LogInformation($"Login attempt for: {loginDto.EmailOrUsername}");
+
                 // Find user by email or username
-                var user = await _userManager.FindByEmailAsync(loginDto.EmailOrUsername) ??
-                          await _userManager.FindByNameAsync(loginDto.EmailOrUsername);                if (user == null)
+                var userByEmail = await _userManager.FindByEmailAsync(loginDto.EmailOrUsername);
+                _logger.LogInformation($"User found by email: {userByEmail != null}");
+                if (userByEmail != null)
                 {
+                    _logger.LogInformation($"Found user by email - Username: {userByEmail.UserName}, Email: {userByEmail.Email}");
+                }
+
+                var userByUsername = await _userManager.FindByNameAsync(loginDto.EmailOrUsername);
+                _logger.LogInformation($"User found by username: {userByUsername != null}");
+                if (userByUsername != null)
+                {
+                    _logger.LogInformation($"Found user by username - Username: {userByUsername.UserName}, Email: {userByUsername.Email}");
+                }
+
+                var user = userByEmail ?? userByUsername;
+
+                if (user == null)
+                {
+                    _logger.LogWarning($"No user found for: {loginDto.EmailOrUsername}");
+                    // Let's also try a direct database query to see if the user exists
+                    var allUsers = await _userManager.Users.ToListAsync();
+                    _logger.LogInformation($"Total users in database: {allUsers.Count}");
+                    foreach (var u in allUsers)
+                    {
+                        _logger.LogInformation($"User: {u.UserName}, Email: {u.Email}, NormalizedEmail: {u.NormalizedEmail}");
+                    }
                     return DTOs.AuthResult.Failed("Invalid credentials.");
-                }                if (!user.IsActive)
+                }
+                if (!user.IsActive)
                 {
                     return DTOs.AuthResult.Failed("Account is deactivated.");
                 }
 
                 // Check password
-                var result = await _signInManager.CheckPasswordSignInAsync(user, loginDto.Password, false);                if (!result.Succeeded)
+                var result = await _signInManager.CheckPasswordSignInAsync(user, loginDto.Password, false); if (!result.Succeeded)
                 {
                     return DTOs.AuthResult.Failed("Invalid credentials.");
                 }
@@ -167,7 +191,8 @@ namespace GarmentsERP.API.Services.Auth
                 _logger.LogError(ex, "Error occurred while fetching user profile");
                 return null;
             }
-        }        public async Task<DTOs.AuthResult> UpdateProfileAsync(string userId, UpdateProfileDto updateDto)
+        }
+        public async Task<DTOs.AuthResult> UpdateProfileAsync(string userId, UpdateProfileDto updateDto)
         {
             try
             {
@@ -195,7 +220,8 @@ namespace GarmentsERP.API.Services.Auth
                 _logger.LogError(ex, "Error occurred while updating user profile");
                 return DTOs.AuthResult.Failed("An error occurred while updating profile.");
             }
-        }        public async Task<DTOs.AuthResult> ChangePasswordAsync(string userId, ChangePasswordDto changePasswordDto)
+        }
+        public async Task<DTOs.AuthResult> ChangePasswordAsync(string userId, ChangePasswordDto changePasswordDto)
         {
             try
             {
@@ -205,8 +231,8 @@ namespace GarmentsERP.API.Services.Auth
                     return DTOs.AuthResult.Failed("User not found.");
                 }
 
-                var result = await _userManager.ChangePasswordAsync(user, 
-                    changePasswordDto.CurrentPassword, 
+                var result = await _userManager.ChangePasswordAsync(user,
+                    changePasswordDto.CurrentPassword,
                     changePasswordDto.NewPassword);
 
                 if (!result.Succeeded)
@@ -236,7 +262,7 @@ namespace GarmentsERP.API.Services.Auth
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while fetching roles");                return new List<RoleInfoDto>();
+                _logger.LogError(ex, "Error occurred while fetching roles"); return new List<RoleInfoDto>();
             }
         }
     }
