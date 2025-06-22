@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Container,
@@ -64,7 +64,15 @@ export default function CreateUserPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  // Wait for auth to load
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsAuthLoading(false);
+    }, 100); // Small delay to allow auth store to initialize
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const {
     control,
@@ -107,16 +115,38 @@ export default function CreateUserPage() {
       setLoading(false);
     }
   };
-
   const handleTogglePassword = () => setShowPassword(!showPassword);
   const handleToggleConfirmPassword = () => setShowConfirmPassword(!showConfirmPassword);
+  // Show loading spinner while authentication is being determined
+  if (isAuthLoading) {
+    return (
+      <Box 
+        sx={{ 
+          minHeight: "calc(100vh - 64px)", // Account for navbar height
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "center",
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" 
+        }}
+      >
+        <Card elevation={24} sx={{ borderRadius: 4, overflow: "hidden" }}>
+          <CardContent sx={{ p: 6, textAlign: "center" }}>
+            <CircularProgress size={60} sx={{ color: "primary.main", mb: 3 }} />
+            <Typography variant="h6" color="text.secondary">
+              Verifying access permissions...
+            </Typography>
+          </CardContent>
+        </Card>
+      </Box>
+    );
+  }
 
   // Only allow admins
   if (!user?.roles?.includes("Admin")) {
     return (
       <Box 
         sx={{ 
-          minHeight: "100vh", 
+          minHeight: "calc(100vh - 64px)", // Account for navbar height
           display: "flex", 
           alignItems: "center", 
           justifyContent: "center",
@@ -155,7 +185,7 @@ export default function CreateUserPage() {
 
   return (
     <Box sx={{ 
-      minHeight: "100vh", 
+      minHeight: "calc(100vh - 64px)", // Account for navbar height
       background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
       py: 4
     }}>
