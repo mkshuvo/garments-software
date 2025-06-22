@@ -2,12 +2,15 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace GarmentsERP.API.Models
-{
-    public class Employee
+{    public class Employee
     {
         [Key]
         public Guid EmployeeId { get; set; } = Guid.NewGuid();
 
+        [ForeignKey("ApplicationUser")]
+        public Guid? UserId { get; set; }
+
+        // Employee personal information (to match migration schema)
         [Required]
         [MaxLength(100)]
         public string FirstName { get; set; } = string.Empty;
@@ -23,11 +26,9 @@ namespace GarmentsERP.API.Models
         [MaxLength(15)]
         public string? Phone { get; set; }
 
+        // HR-specific fields
         [MaxLength(500)]
         public string? Address { get; set; }
-
-        [ForeignKey("ApplicationUser")]
-        public Guid? UserId { get; set; }
 
         public DateTime HireDate { get; set; }
         public DateTime? TerminationDate { get; set; }
@@ -49,6 +50,13 @@ namespace GarmentsERP.API.Models
         // Navigation properties
         public virtual ApplicationUser? User { get; set; }
         public virtual ICollection<Payroll> Payrolls { get; set; } = new List<Payroll>();
+
+        // Convenience properties (computed from basic fields)
+        [NotMapped]
+        public string FullName => $"{FirstName} {LastName}".Trim();
+
+        [NotMapped]
+        public string? ContactNumber => User?.ContactNumber;
     }
 
     public class Payroll

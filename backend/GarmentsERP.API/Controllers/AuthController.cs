@@ -21,6 +21,7 @@ namespace GarmentsERP.API.Controllers
             _authService = authService;
             _logger = logger;
         }        [HttpPost("register")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Register(RegisterDto registerDto)
         {
             if (!ModelState.IsValid)

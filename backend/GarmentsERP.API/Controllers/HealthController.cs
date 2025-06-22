@@ -171,24 +171,10 @@ namespace GarmentsERP.API.Controllers
                 
                 await database.StringSetAsync(testKey, testValue, TimeSpan.FromSeconds(10));
                 var retrievedValue = await database.StringGetAsync(testKey);
-                await database.KeyDeleteAsync(testKey);
+                await database.KeyDeleteAsync(testKey);                var operationsWork = retrievedValue == testValue;
 
-                var operationsWork = retrievedValue == testValue;                // Get Redis info
-                var server = _redis.GetServer(_redis.GetEndPoints().First());
-                var info = await server.InfoAsync();
-                var redisVersion = "Unknown";
-                
-                foreach (var section in info)
-                {
-                    foreach (var item in section)
-                    {
-                        if (item.Key == "redis_version")
-                        {
-                            redisVersion = item.Value;
-                            break;
-                        }
-                    }
-                }
+                // Skip Redis INFO command that requires admin permissions
+                var redisVersion = "Connected";
 
                 var response = new
                 {

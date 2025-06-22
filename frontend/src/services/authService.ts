@@ -174,3 +174,8 @@ class AuthService {
 
 // Export singleton instance
 export const authService = new AuthService()
+
+export async function registerUser(data: RegisterDto) {
+  // Use the singleton authService
+  return await authService.register(data)
+}
