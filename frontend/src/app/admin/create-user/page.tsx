@@ -498,24 +498,29 @@ export default function CreateUserPage() {
                                 "& .MuiOutlinedInput-root": {
                                   borderRadius: 2,
                                 }
-                              }}
-                            >
+                              }}                            >
                               <MenuItem value="Admin">
                                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                                   <Chip label="Admin" color="error" size="small" />
                                   <Typography>Full system access</Typography>
                                 </Box>
                               </MenuItem>
-                              <MenuItem value="Manager">
-                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                  <Chip label="Manager" color="warning" size="small" />
-                                  <Typography>Management access</Typography>
-                                </Box>
-                              </MenuItem>
                               <MenuItem value="Employee">
                                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                                   <Chip label="Employee" color="primary" size="small" />
-                                  <Typography>Standard access</Typography>
+                                  <Typography>Standard employee access</Typography>
+                                </Box>
+                              </MenuItem>
+                              <MenuItem value="Customer">
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                  <Chip label="Customer" color="info" size="small" />
+                                  <Typography>Customer portal access</Typography>
+                                </Box>
+                              </MenuItem>
+                              <MenuItem value="Vendor">
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                  <Chip label="Vendor" color="success" size="small" />
+                                  <Typography>Vendor portal access</Typography>
                                 </Box>
                               </MenuItem>
                             </TextField>
