@@ -188,14 +188,8 @@ namespace GarmentsERP.API.Data
             // Configure unique constraints
             modelBuilder.Entity<Product>()
                 .HasIndex(p => p.SKU)
-                .IsUnique();
-
-            modelBuilder.Entity<ChartOfAccount>()
+                .IsUnique();            modelBuilder.Entity<ChartOfAccount>()
                 .HasIndex(c => c.AccountCode)
-                .IsUnique();
-
-            modelBuilder.Entity<Employee>()
-                .HasIndex(e => e.Email)
                 .IsUnique();
 
             // Configure relationships
@@ -256,9 +250,7 @@ namespace GarmentsERP.API.Data
                 .HasOne(poi => poi.Product)
                 .WithMany()
                 .HasForeignKey(poi => poi.ProductId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            // Configure unique constraints for purchasing
+                .OnDelete(DeleteBehavior.Restrict);            // Configure unique constraints for purchasing
             modelBuilder.Entity<PurchaseOrder>()
                 .HasIndex(p => p.PurchaseOrderNumber)
                 .IsUnique();
