@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using GarmentsERP.API.Models.Invoicing;
 
 namespace GarmentsERP.API.Models.Users
 {
@@ -42,7 +43,6 @@ namespace GarmentsERP.API.Models.Users
         public string? Notes { get; set; }
 
         // Navigation properties
-        public virtual ICollection<SalesOrder> SalesOrders { get; set; } = new List<SalesOrder>();
-        public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
+        public virtual ICollection<SalesInvoice> SalesInvoices { get; set; } = new List<SalesInvoice>();
     }
 }

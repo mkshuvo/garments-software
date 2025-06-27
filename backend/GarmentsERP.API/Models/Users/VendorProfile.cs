@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using GarmentsERP.API.Models.Invoicing;
 
 namespace GarmentsERP.API.Models.Users
 {
@@ -52,7 +53,6 @@ namespace GarmentsERP.API.Models.Users
         public int ServiceRating { get; set; } = 5; // 1-5 scale
 
         // Navigation properties
-        public virtual ICollection<PurchaseOrder> PurchaseOrders { get; set; } = new List<PurchaseOrder>();
-        public virtual ICollection<Bill> Bills { get; set; } = new List<Bill>();
+        public virtual ICollection<PurchaseInvoice> PurchaseInvoices { get; set; } = new List<PurchaseInvoice>();
     }
 }
