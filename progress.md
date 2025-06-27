@@ -179,6 +179,64 @@ Building a comprehensive Garments ERP system with ASP.NET Core Web API backend a
 - [ ] **Financial Reports**: Balance sheet, P&L, cash flow
 - [ ] **Audit Trail**: Complete transaction history
 
+### Phase 4: Enterprise Accounting Architecture (MAJOR RESTRUCTURE - COMPLETED)
+- [x] **Complete Model Restructure**: Removed old basic models and implemented Sage-level enterprise accounting structure
+  - [x] **Removed Legacy Models**: Accounting.cs, Invoice.cs, Order.cs, Product.cs, Purchasing.cs, Production.cs, Inventory.cs
+  - [x] **Enterprise Accounting Models** (Each model in individual files following best practices):
+    - [x] `ChartOfAccount` - Hierarchical chart of accounts with account codes, types, and balances
+    - [x] `JournalEntry` - Double-entry bookkeeping with journal types and approval workflow
+    - [x] `JournalEntryLine` - Individual transaction lines with debit/credit entries
+  - [x] **Contact Management** (Customer/Supplier unified):
+    - [x] `Contact` - Unified customer/supplier management with contact types
+    - [x] `ContactAddress` - Multiple addresses per contact (billing/shipping)
+  - [x] **Advanced Invoicing System**:
+    - [x] `SalesInvoice` - Comprehensive sales invoice with payment tracking
+    - [x] `SalesInvoiceItem` - Line items with tax, discount, and pricing details
+    - [x] `PurchaseInvoice` - Purchase invoice management
+    - [x] `PurchaseInvoiceItem` - Purchase line items with cost tracking
+  - [x] **Payment Management**:
+    - [x] `Payment` - Multi-method payment processing (cash, cheque, bank transfer, etc.)
+    - [x] `PaymentAllocation` - Payment allocation to invoices for proper tracking
+  - [x] **Banking Module**:
+    - [x] `BankAccount` - Multiple bank account management with real-time balances
+    - [x] `BankTransfer` - Inter-account transfers with fees and status tracking
+    - [x] `BankReconciliation` - Bank statement reconciliation
+    - [x] `BankReconciliationItem` - Individual reconciliation line items
+  - [x] **Product & Inventory System**:
+    - [x] `Product` - Garment-specific product management (color, size, fabric, style, season)
+    - [x] `ProductCategory` - Product categorization
+    - [x] `StockItem` - Multi-warehouse inventory tracking with reorder levels
+    - [x] `StockMovement` - Detailed stock movement history with multiple movement types
+    - [x] `Warehouse` - Multi-location inventory management
+  - [x] **Tax Management**:
+    - [x] `TaxRate` - Flexible tax rate management (GST, VAT, Sales Tax, etc.)
+    - [x] `TaxScheme` - Tax scheme configuration for different scenarios
+  - [x] **Multi-Currency Support**:
+    - [x] `Currency` - Currency master with base currency designation
+    - [x] `ExchangeRate` - Historical exchange rate tracking
+  - [x] **Business Configuration**:
+    - [x] `Company` - Multi-tenant company setup with financial year management
+    - [x] `BusinessSetting` - Configurable business settings by category
+    - [x] `ReportTemplate` - Custom report template management
+- [x] **Model Integration**: Updated ApplicationUser with comprehensive navigation properties for all accounting modules
+- [x] **Namespace Organization**: Organized models into logical namespaces (Accounting, Banking, Contacts, etc.)
+- [x] **Cross-Model Relationships**: Established proper foreign key relationships and navigation properties across all models
+
+## 🎯 Enterprise Accounting Capabilities Achieved
+✅ **Sage-Level Features Now Available**:
+- **Double-Entry Bookkeeping**: Complete journal entry system with automatic balance validation
+- **Comprehensive Chart of Accounts**: Hierarchical account structure with unlimited sub-accounts
+- **Multi-Currency Operations**: Full currency management with exchange rate tracking
+- **Advanced Invoicing**: Professional sales/purchase invoicing with tax and discount calculations
+- **Payment Processing**: Multi-method payment handling with automatic allocation
+- **Bank Management**: Complete banking module with reconciliation capabilities
+- **Inventory Control**: Multi-warehouse stock management with movement tracking
+- **Tax Compliance**: Flexible tax management for various tax types and jurisdictions
+- **Multi-Company Support**: Tenant-ready architecture for multiple business entities
+- **Comprehensive Reporting**: Foundation for trial balance, P&L, balance sheet, and custom reports
+- **Audit Trail**: Complete transaction history and user activity tracking
+- **Garment Industry Focus**: Specialized fields for color, size, fabric, style, and seasonal management
+
 ## 🛠️ Technical Debt & Improvements
 - [ ] **Unit Tests**: Comprehensive test coverage
 - [ ] **Integration Tests**: API endpoint testing

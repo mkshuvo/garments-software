@@ -1,0 +1,1446 @@
+﻿Enterprise Accounting Software Development Prompt
+Project Overview
+Create a comprehensive, enterprise-level accounting software similar to Sage Accounting, with a modern web-based architecture, RESTful API, and intuitive user interface.
+Core Architecture Requirements
+Technology Stack
+
+
+Backend: Node.js with Express.js or Python with FastAPI/Django
+Database: PostgreSQL with proper indexing and relationships
+Frontend: React.js with TypeScript for type safety
+Authentication: JWT-based authentication with role-based access control
+API: RESTful API with OpenAPI/Swagger documentation
+Testing: Jest for unit tests, Cypress for E2E testing
+Deployment: Docker containers with docker-compose for development
+
+
+Database Schema Design
+Create comprehensive database models for:
+
+
+Chart of Accounts
+
+
+Ledger accounts with hierarchical structure
+Account codes, names, types (Asset, Liability, Equity, Income, Expense)
+Opening and closing balances
+
+
+
+
+Transactions & Journals
+
+
+Journal entries with double-entry bookkeeping
+Transaction types, descriptions, references
+Audit trails with timestamps and user tracking
+
+
+
+
+Banking Module
+
+
+Bank accounts management
+Bank deposits and withdrawals
+Bank reconciliations
+Bank transfers between accounts
+
+
+
+
+Contacts Management
+
+
+Customers and suppliers
+Contact addresses (billing, shipping)
+Contact types and categories
+Credit limits and payment terms
+
+
+
+
+Invoicing System
+
+
+Sales: Quotes, estimates, invoices, credit notes
+Purchases: Purchase orders, bills, credit notes
+Invoice statuses and workflows
+Quick entry transactions
+
+
+
+
+Products & Services
+
+
+Product catalog with categories
+Stock items and inventory tracking
+Stock movements and adjustments
+Service items management
+
+
+
+
+Payments & Receipts
+
+
+Payment processing
+Receipt management
+Payment allocations to invoices
+Multiple payment methods
+
+
+
+
+Tax Management
+
+
+Tax rates and schemes
+Tax return frequencies
+VAT/GST calculations
+Tax reporting compliance
+
+
+
+
+Reporting Engine
+
+
+Trial balance
+Profit & Loss statements
+Balance sheets
+Cash flow statements
+Aged debtors/creditors reports
+
+
+
+
+User & Business Management
+
+
+Multi-tenant architecture
+User roles and permissions
+Business settings and preferences
+Multi-company support
+
+
+
+
+
+
+Core Features to Implement
+1. Authentication & Authorization
+javascript// Implement role-based access control
+const roles = ['admin', 'accountant', 'user', 'viewer'];
+const permissions = {
+  'admin': ['*'],
+  'accountant': ['read_all', 'write_transactions', 'generate_reports'],
+  'user': ['read_own', 'create_invoices'],
+  'viewer': ['read_reports']
+};
+2. Double-Entry Bookkeeping Engine
+
+
+Ensure every transaction has balanced debits and credits
+Automatic journal entry generation
+Transaction validation rules
+
+
+3. API Endpoints Structure
+Follow RESTful conventions:
+/api/v1/accounts (Chart of Accounts)
+/api/v1/transactions (Journal Entries)
+/api/v1/contacts (Customers/Suppliers)
+/api/v1/invoices (Sales/Purchase Invoices)
+/api/v1/payments (Payments & Receipts)
+/api/v1/products (Products & Services)
+/api/v1/reports (Financial Reports)
+/api/v1/settings (Business Configuration)
+/api/v1/taxes (Tax Management)
+/api/v1/banking (Bank Accounts & Reconciliation)
+4. Dashboard & Analytics
+
+
+Real-time financial KPIs
+Cash flow visualization
+Outstanding invoices/bills
+Revenue and expense trends
+Interactive charts using Chart.js or D3.js
+
+
+5. Report Generation
+
+
+PDF generation for invoices and reports
+Excel export functionality
+Custom report builder
+Scheduled report delivery
+
+
+Security Requirements
+
+
+Data Encryption: Encrypt sensitive financial data at rest and in transit
+Audit Logging: Track all financial transactions and user actions
+Backup Strategy: Automated daily backups with point-in-time recovery
+Access Control: Multi-factor authentication for admin users
+Data Validation: Server-side validation for all financial calculations
+
+
+Performance Requirements
+
+
+Database Optimization: Proper indexing for financial queries
+Caching: Redis for frequently accessed data
+Pagination: Implement pagination for large datasets
+Background Jobs: Queue system for report generation and email sending
+
+
+Compliance Features
+
+
+Financial Standards: Support for GAAP/IFRS accounting standards
+Tax Compliance: Automated tax calculations and reporting
+Audit Trail: Immutable transaction history
+Data Retention: Configurable data retention policies
+
+
+User Interface Requirements
+Modern, Responsive Design
+
+
+Clean, professional interface
+Mobile-responsive design
+Dark/light theme options
+Accessibility compliance (WCAG 2.1)
+
+
+Key UI Components
+
+
+Dashboard: Overview of financial health
+Transaction Entry: Intuitive journal entry forms
+Invoice Creation: Professional invoice templates
+Report Viewer: Interactive financial reports
+Settings Panel: Business configuration options
+
+
+Development Phases
+Phase 1: Core Foundation
+
+
+Database schema setup
+Authentication system
+Basic CRUD operations for accounts and contacts
+
+
+Phase 2: Transaction Engine
+
+
+Double-entry bookkeeping implementation
+Journal entry system
+Basic reporting (Trial Balance)
+
+
+Phase 3: Invoicing System
+
+
+Invoice creation and management
+Payment processing
+Customer/supplier management
+
+
+Phase 4: Advanced Features
+
+
+Bank reconciliation
+Multi-currency support
+Advanced reporting
+Dashboard analytics
+
+
+Phase 5: Enterprise Features
+
+
+Multi-company support
+Advanced user permissions
+API integrations
+Mobile app support
+
+
+Code Quality Standards
+
+
+TypeScript: Use TypeScript for type safety
+Testing: Minimum 80% code coverage
+Documentation: Comprehensive API documentation
+Code Review: Implement Git workflows with code reviews
+Linting: ESLint and Prettier for code consistency
+
+
+Specific Implementation Instructions
+
+
+Start with database schema creation using migrations
+Implement authentication middleware first
+Create RESTful API endpoints with proper error handling
+Build responsive frontend components
+Implement comprehensive testing suite
+Add proper logging and monitoring
+Create deployment configuration
+
+
+Success Criteria
+
+
+Support for 1000+ concurrent users
+Sub-second response times for common operations
+99.9% uptime reliability
+Comprehensive financial reporting capabilities
+Multi-tenant architecture supporting 100+ companies
+Full audit compliance with financial regulations
+
+
+Please implement this system incrementally, starting with the core foundation and building up to the advanced features. Ensure each component is thoroughly tested and documented before moving to the next phase.
+
+
+
+
+________________
+
+
+Enterprise Accounting Software - Database Schema & API Reference
+Table of Contents
+
+
+Database Schema Design
+API Endpoints Reference
+Request/Response Schemas
+Authentication & Authorization
+Error Handling
+Rate Limiting
+
+
+
+
+Database Schema Design
+1. Chart of Accounts (Ledger Accounts)
+sqlCREATE TABLE ledger_accounts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    code VARCHAR(20) UNIQUE NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    account_type VARCHAR(20) NOT NULL CHECK (account_type IN ('ASSET', 'LIABILITY', 'EQUITY', 'INCOME', 'EXPENSE')),
+    parent_account_id UUID REFERENCES ledger_accounts(id),
+    is_active BOOLEAN DEFAULT true,
+    opening_balance DECIMAL(15,2) DEFAULT 0.00,
+    closing_balance DECIMAL(15,2) DEFAULT 0.00,
+    control_name VARCHAR(100),
+    display_name VARCHAR(255),
+    balance_details JSON,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    business_id UUID NOT NULL REFERENCES businesses(id)
+);
+
+
+CREATE INDEX idx_ledger_accounts_code ON ledger_accounts(code);
+CREATE INDEX idx_ledger_accounts_type ON ledger_accounts(account_type);
+CREATE INDEX idx_ledger_accounts_parent ON ledger_accounts(parent_account_id);
+2. Businesses & Multi-Tenancy
+sqlCREATE TABLE businesses (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL,
+    legal_name VARCHAR(255),
+    registration_number VARCHAR(100),
+    tax_number VARCHAR(100),
+    address JSON,
+    contact_details JSON,
+    base_currency_id UUID REFERENCES currencies(id),
+    accounting_period_start_month INTEGER DEFAULT 1,
+    settings JSON,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_active BOOLEAN DEFAULT true
+);
+
+
+
+CREATE TABLE user_businesses (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id),
+    business_id UUID NOT NULL REFERENCES businesses(id),
+    role VARCHAR(50) NOT NULL,
+    permissions JSON,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, business_id)
+);
+4. Transactions & Journal Entries
+sqlCREATE TABLE transactions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    transaction_type VARCHAR(50) NOT NULL,
+    reference VARCHAR(100),
+    description TEXT,
+    date DATE NOT NULL,
+    total_amount DECIMAL(15,2) NOT NULL,
+    base_currency_total_amount DECIMAL(15,2),
+    exchange_rate DECIMAL(10,6) DEFAULT 1.000000,
+    currency_id UUID REFERENCES currencies(id),
+    contact_id UUID REFERENCES contacts(id),
+    bank_account_id UUID,
+    tax_reconciled BOOLEAN DEFAULT false,
+    status VARCHAR(20) DEFAULT 'ACTIVE',
+    audit_trail JSON,
+    created_by UUID REFERENCES users(id),
+    updated_by UUID REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    business_id UUID NOT NULL REFERENCES businesses(id)
+);
+
+
+CREATE TABLE transaction_lines (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    transaction_id UUID NOT NULL REFERENCES transactions(id),
+    ledger_account_id UUID NOT NULL REFERENCES ledger_accounts(id),
+    description TEXT,
+    debit_amount DECIMAL(15,2) DEFAULT 0.00,
+    credit_amount DECIMAL(15,2) DEFAULT 0.00,
+    base_currency_debit_amount DECIMAL(15,2) DEFAULT 0.00,
+    base_currency_credit_amount DECIMAL(15,2) DEFAULT 0.00,
+    tax_rate_id UUID REFERENCES tax_rates(id),
+    tax_amount DECIMAL(15,2) DEFAULT 0.00,
+    line_number INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    business_id UUID NOT NULL REFERENCES businesses(id)
+);
+5. Contacts (Customers & Suppliers)
+sqlCREATE TABLE contacts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    contact_type VARCHAR(20) NOT NULL CHECK (contact_type IN ('CUSTOMER', 'SUPPLIER', 'BOTH')),
+    name VARCHAR(255) NOT NULL,
+    reference VARCHAR(100),
+    contact_person VARCHAR(255),
+    email VARCHAR(255),
+    phone VARCHAR(50),
+    mobile VARCHAR(50),
+    website VARCHAR(255),
+    credit_limit DECIMAL(15,2) DEFAULT 0.00,
+    payment_terms_days INTEGER DEFAULT 30,
+    tax_number VARCHAR(100),
+    currency_id UUID REFERENCES currencies(id),
+    is_active BOOLEAN DEFAULT true,
+    balance DECIMAL(15,2) DEFAULT 0.00,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    business_id UUID NOT NULL REFERENCES businesses(id)
+);
+
+
+CREATE TABLE contact_addresses (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    contact_id UUID NOT NULL REFERENCES contacts(id),
+    address_type VARCHAR(20) DEFAULT 'BILLING',
+    address_line_1 VARCHAR(255),
+    address_line_2 VARCHAR(255),
+    city VARCHAR(100),
+    region VARCHAR(100),
+    postal_code VARCHAR(20),
+    country_id UUID REFERENCES countries(id),
+    is_main_address BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+6. Invoices & Sales Documents
+sqlCREATE TABLE sales_invoices (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    invoice_number VARCHAR(100) UNIQUE NOT NULL,
+    contact_id UUID NOT NULL REFERENCES contacts(id),
+    date DATE NOT NULL,
+    due_date DATE,
+    reference VARCHAR(100),
+    notes TEXT,
+    terms_and_conditions TEXT,
+    invoice_status VARCHAR(20) DEFAULT 'DRAFT',
+    total_quantity DECIMAL(15,2) DEFAULT 0.00,
+    net_amount DECIMAL(15,2) DEFAULT 0.00,
+    tax_amount DECIMAL(15,2) DEFAULT 0.00,
+    total_amount DECIMAL(15,2) DEFAULT 0.00,
+    outstanding_amount DECIMAL(15,2) DEFAULT 0.00,
+    base_currency_net_amount DECIMAL(15,2),
+    base_currency_tax_amount DECIMAL(15,2),
+    base_currency_total_amount DECIMAL(15,2),
+    currency_id UUID REFERENCES currencies(id),
+    exchange_rate DECIMAL(10,6) DEFAULT 1.000000,
+    sent_by_email BOOLEAN DEFAULT false,
+    created_by UUID REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    business_id UUID NOT NULL REFERENCES businesses(id)
+);
+
+
+CREATE TABLE sales_invoice_lines (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    sales_invoice_id UUID NOT NULL REFERENCES sales_invoices(id),
+    product_id UUID REFERENCES products(id),
+    ledger_account_id UUID REFERENCES ledger_accounts(id),
+    description TEXT NOT NULL,
+    quantity DECIMAL(15,2) DEFAULT 1.00,
+    unit_price DECIMAL(15,2) NOT NULL,
+    net_amount DECIMAL(15,2) NOT NULL,
+    tax_rate_id UUID REFERENCES tax_rates(id),
+    tax_amount DECIMAL(15,2) DEFAULT 0.00,
+    total_amount DECIMAL(15,2) NOT NULL,
+    base_currency_unit_price DECIMAL(15,2),
+    base_currency_net_amount DECIMAL(15,2),
+    base_currency_tax_amount DECIMAL(15,2),
+    base_currency_total_amount DECIMAL(15,2),
+    line_number INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+7. Purchase Documents
+sqlCREATE TABLE purchase_invoices (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    invoice_number VARCHAR(100) NOT NULL,
+    contact_id UUID NOT NULL REFERENCES contacts(id),
+    date DATE NOT NULL,
+    due_date DATE,
+    reference VARCHAR(100),
+    notes TEXT,
+    invoice_status VARCHAR(20) DEFAULT 'DRAFT',
+    total_quantity DECIMAL(15,2) DEFAULT 0.00,
+    net_amount DECIMAL(15,2) DEFAULT 0.00,
+    tax_amount DECIMAL(15,2) DEFAULT 0.00,
+    total_amount DECIMAL(15,2) DEFAULT 0.00,
+    outstanding_amount DECIMAL(15,2) DEFAULT 0.00,
+    base_currency_net_amount DECIMAL(15,2),
+    base_currency_tax_amount DECIMAL(15,2),
+    base_currency_total_amount DECIMAL(15,2),
+    currency_id UUID REFERENCES currencies(id),
+    exchange_rate DECIMAL(10,6) DEFAULT 1.000000,
+    created_by UUID REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    business_id UUID NOT NULL REFERENCES businesses(id)
+);
+
+
+CREATE TABLE purchase_invoice_lines (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    purchase_invoice_id UUID NOT NULL REFERENCES purchase_invoices(id),
+    product_id UUID REFERENCES products(id),
+    ledger_account_id UUID REFERENCES ledger_accounts(id),
+    description TEXT NOT NULL,
+    quantity DECIMAL(15,2) DEFAULT 1.00,
+    unit_price DECIMAL(15,2) NOT NULL,
+    net_amount DECIMAL(15,2) NOT NULL,
+    tax_rate_id UUID REFERENCES tax_rates(id),
+    tax_amount DECIMAL(15,2) DEFAULT 0.00,
+    total_amount DECIMAL(15,2) NOT NULL,
+    base_currency_unit_price DECIMAL(15,2),
+    base_currency_net_amount DECIMAL(15,2),
+    base_currency_tax_amount DECIMAL(15,2),
+    base_currency_total_amount DECIMAL(15,2),
+    line_number INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+8. Payments & Receipts
+sqlCREATE TABLE payments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    transaction_type VARCHAR(20) NOT NULL CHECK (transaction_type IN ('PAYMENT', 'RECEIPT')),
+    contact_id UUID REFERENCES contacts(id),
+    bank_account_id UUID NOT NULL REFERENCES bank_accounts(id),
+    payment_method VARCHAR(50) DEFAULT 'BANK_TRANSFER',
+    date DATE NOT NULL,
+    net_amount DECIMAL(15,2) NOT NULL,
+    tax_amount DECIMAL(15,2) DEFAULT 0.00,
+    total_amount DECIMAL(15,2) NOT NULL,
+    base_currency_net_amount DECIMAL(15,2),
+    base_currency_tax_amount DECIMAL(15,2),
+    base_currency_total_amount DECIMAL(15,2),
+    currency_id UUID REFERENCES currencies(id),
+    exchange_rate DECIMAL(10,6) DEFAULT 1.000000,
+    reference VARCHAR(100),
+    description TEXT,
+    created_by UUID REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    business_id UUID NOT NULL REFERENCES businesses(id)
+);
+
+
+CREATE TABLE payment_allocations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    payment_id UUID NOT NULL REFERENCES payments(id),
+    allocated_artefact_type VARCHAR(20) NOT NULL,
+    allocated_artefact_id UUID NOT NULL,
+    allocated_amount DECIMAL(15,2) NOT NULL,
+    base_currency_allocated_amount DECIMAL(15,2),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+9. Banking
+sqlCREATE TABLE bank_accounts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    account_name VARCHAR(255) NOT NULL,
+    account_number VARCHAR(100),
+    sort_code VARCHAR(20),
+    iban VARCHAR(50),
+    bic VARCHAR(20),
+    ledger_account_id UUID REFERENCES ledger_accounts(id),
+    bank_name VARCHAR(255),
+    currency_id UUID REFERENCES currencies(id),
+    balance DECIMAL(15,2) DEFAULT 0.00,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    business_id UUID NOT NULL REFERENCES businesses(id)
+);
+
+
+CREATE TABLE bank_transfers (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    from_bank_account_id UUID NOT NULL REFERENCES bank_accounts(id),
+    to_bank_account_id UUID NOT NULL REFERENCES bank_accounts(id),
+    amount DECIMAL(15,2) NOT NULL,
+    date DATE NOT NULL,
+    reference VARCHAR(100),
+    description TEXT,
+    created_by UUID REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    business_id UUID NOT NULL REFERENCES businesses(id)
+);
+10. Products & Services
+sqlCREATE TABLE products (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    item_type VARCHAR(20) NOT NULL CHECK (item_type IN ('STOCK', 'SERVICE', 'NON_STOCK')),
+    item_code VARCHAR(100) UNIQUE NOT NULL,
+    description TEXT NOT NULL,
+    sales_ledger_account_id UUID REFERENCES ledger_accounts(id),
+    purchase_ledger_account_id UUID REFERENCES ledger_accounts(id),
+    sales_tax_rate_id UUID REFERENCES tax_rates(id),
+    purchase_tax_rate_id UUID REFERENCES tax_rates(id),
+    cost_price DECIMAL(15,2) DEFAULT 0.00,
+    sales_price DECIMAL(15,2) DEFAULT 0.00,
+    usual_supplier_id UUID REFERENCES contacts(id),
+    active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    business_id UUID NOT NULL REFERENCES businesses(id)
+);
+
+
+CREATE TABLE stock_items (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    product_id UUID NOT NULL REFERENCES products(id),
+    quantity_in_stock DECIMAL(15,2) DEFAULT 0.00,
+    quantity_allocated DECIMAL(15,2) DEFAULT 0.00,
+    quantity_on_order DECIMAL(15,2) DEFAULT 0.00,
+    reorder_level DECIMAL(15,2) DEFAULT 0.00,
+    reorder_quantity DECIMAL(15,2) DEFAULT 0.00,
+    location VARCHAR(255),
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+CREATE TABLE stock_movements (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    stock_item_id UUID NOT NULL REFERENCES stock_items(id),
+    movement_type VARCHAR(50) NOT NULL,
+    quantity DECIMAL(15,2) NOT NULL,
+    cost_price DECIMAL(15,2),
+    date DATE NOT NULL,
+    reference VARCHAR(100),
+    description TEXT,
+    created_by UUID REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    business_id UUID NOT NULL REFERENCES businesses(id)
+);
+11. Tax Management
+sqlCREATE TABLE tax_rates (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(100) NOT NULL,
+    agency VARCHAR(100),
+    percentage DECIMAL(8,4) NOT NULL,
+    is_active BOOLEAN DEFAULT true,
+    is_visible BOOLEAN DEFAULT true,
+    is_recoverable BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    business_id UUID NOT NULL REFERENCES businesses(id)
+);
+
+
+CREATE TABLE tax_schemes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    business_id UUID NOT NULL REFERENCES businesses(id)
+);
+12. Currencies & Exchange Rates
+sqlCREATE TABLE currencies (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(100) NOT NULL,
+    code VARCHAR(3) UNIQUE NOT NULL,
+    symbol VARCHAR(10),
+    is_base_currency BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+CREATE TABLE exchange_rates (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    from_currency_id UUID NOT NULL REFERENCES currencies(id),
+    to_currency_id UUID NOT NULL REFERENCES currencies(id),
+    rate DECIMAL(10,6) NOT NULL,
+    date DATE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(from_currency_id, to_currency_id, date)
+);
+
+
+
+
+Chart of Accounts
+
+
+GET /ledger_accounts - List all ledger accounts
+POST /ledger_accounts - Create new ledger account
+GET /ledger_accounts/{id} - Get specific ledger account
+PUT /ledger_accounts/{id} - Update ledger account
+DELETE /ledger_accounts/{id} - Delete ledger account
+
+
+Transactions
+
+
+GET /transactions - List all transactions
+POST /transactions - Create new transaction
+GET /transactions/{id} - Get specific transaction
+PUT /transactions/{id} - Update transaction
+DELETE /transactions/{id} - Delete transaction
+POST /transactions/{id}/allocations - Allocate transaction
+
+
+Contacts
+
+
+GET /contacts - List all contacts
+POST /contacts - Create new contact
+GET /contacts/{id} - Get specific contact
+PUT /contacts/{id} - Update contact
+DELETE /contacts/{id} - Delete contact
+GET /contacts/{id}/addresses - Get contact addresses
+POST /contacts/{id}/addresses - Add contact address
+
+
+Sales Invoices
+
+
+GET /sales_invoices - List all sales invoices
+POST /sales_invoices - Create new sales invoice
+GET /sales_invoices/{id} - Get specific sales invoice
+PUT /sales_invoices/{id} - Update sales invoice
+DELETE /sales_invoices/{id} - Delete sales invoice
+GET /sales_invoices/{id}/pdf - Generate PDF
+POST /sales_invoices/{id}/email - Email invoice
+
+
+Purchase Invoices
+
+
+GET /purchase_invoices - List all purchase invoices
+POST /purchase_invoices - Create new purchase invoice
+GET /purchase_invoices/{id} - Get specific purchase invoice
+PUT /purchase_invoices/{id} - Update purchase invoice
+DELETE /purchase_invoices/{id} - Delete purchase invoice
+
+
+Payments & Receipts
+
+
+GET /payments - List all payments/receipts
+POST /payments - Create new payment/receipt
+GET /payments/{id} - Get specific payment/receipt
+PUT /payments/{id} - Update payment/receipt
+DELETE /payments/{id} - Delete payment/receipt
+POST /payments/{id}/allocations - Allocate payment
+
+
+Bank Accounts
+
+
+GET /bank_accounts - List all bank accounts
+POST /bank_accounts - Create new bank account
+GET /bank_accounts/{id} - Get specific bank account
+PUT /bank_accounts/{id} - Update bank account
+DELETE /bank_accounts/{id} - Delete bank account
+
+
+Bank Transfers
+
+
+GET /bank_transfers - List all bank transfers
+POST /bank_transfers - Create new bank transfer
+GET /bank_transfers/{id} - Get specific bank transfer
+PUT /bank_transfers/{id} - Update bank transfer
+DELETE /bank_transfers/{id} - Delete bank transfer
+
+
+Products & Services
+
+
+GET /products - List all products/services
+POST /products - Create new product/service
+GET /products/{id} - Get specific product/service
+PUT /products/{id} - Update product/service
+DELETE /products/{id} - Delete product/service
+
+
+Stock Management
+
+
+GET /stock_items - List all stock items
+GET /stock_items/{id} - Get specific stock item
+PUT /stock_items/{id} - Update stock levels
+GET /stock_movements - List stock movements
+POST /stock_movements - Create stock movement
+
+
+Tax Management
+
+
+GET /tax_rates - List all tax rates
+POST /tax_rates - Create new tax rate
+GET /tax_rates/{id} - Get specific tax rate
+PUT /tax_rates/{id} - Update tax rate
+DELETE /tax_rates/{id} - Delete tax rate
+
+
+Reports
+
+
+GET /reports/trial_balance - Generate trial balance
+GET /reports/profit_loss - Generate P&L statement
+GET /reports/balance_sheet - Generate balance sheet
+GET /reports/cash_flow - Generate cash flow statement
+GET /reports/aged_debtors - Generate aged debtors report
+GET /reports/aged_creditors - Generate aged creditors report
+
+
+Settings
+
+
+GET /settings/business - Get business settings
+PUT /settings/business - Update business settings
+GET /settings/financial - Get financial settings
+PUT /settings/financial - Update financial settings
+
+
+
+
+Request/Response Schemas
+Standard Response Format
+json{
+  "success": true,
+  "data": {
+    // Response data
+  },
+  "meta": {
+    "pagination": {
+      "page": 1,
+      "per_page": 50,
+      "total": 1000,
+      "total_pages": 20
+    }
+  },
+  "links": {
+    "first": "/api/v1/contacts?page=1",
+    "last": "/api/v1/contacts?page=20",
+    "prev": null,
+    "next": "/api/v1/contacts?page=2"
+  }
+}
+Error Response Format
+json{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "The request data is invalid",
+    "details": [
+      {
+        "field": "email",
+        "message": "Email is required"
+      }
+    ]
+  }
+}
+Ledger Account Schema
+json{
+  "id": "uuid",
+  "code": "string",
+  "name": "string",
+  "account_type": "ASSET|LIABILITY|EQUITY|INCOME|EXPENSE",
+  "parent_account_id": "uuid|null",
+  "is_active": "boolean",
+  "opening_balance": "decimal",
+  "closing_balance": "decimal",
+  "control_name": "string",
+  "display_name": "string",
+  "balance_details": "object",
+  "created_at": "timestamp",
+  "updated_at": "timestamp"
+}
+Transaction Schema
+json{
+  "id": "uuid",
+  "transaction_type": "string",
+  "reference": "string",
+  "description": "string",
+  "date": "date",
+  "total_amount": "decimal",
+  "base_currency_total_amount": "decimal",
+  "exchange_rate": "decimal",
+  "currency_id": "uuid",
+  "contact_id": "uuid|null",
+  "bank_account_id": "uuid|null",
+  "status": "string",
+  "lines": [
+    {
+      "id": "uuid",
+      "ledger_account_id": "uuid",
+      "description": "string",
+      "debit_amount": "decimal",
+      "credit_amount": "decimal",
+      "tax_rate_id": "uuid|null",
+      "tax_amount": "decimal"
+    }
+  ]
+}
+Contact Schema
+json{
+  "id": "uuid",
+  "contact_type": "CUSTOMER|SUPPLIER|BOTH",
+  "name": "string",
+  "reference": "string",
+  "contact_person": "string",
+  "email": "string",
+  "phone": "string",
+  "mobile": "string",
+  "website": "string",
+  "credit_limit": "decimal",
+  "payment_terms_days": "number",
+  "tax_number": "string",
+  "currency_id": "uuid",
+  "is_active": "boolean",
+  "balance": "decimal",
+  "addresses": [
+    {
+      "id": "uuid",
+      "address_type": "BILLING|SHIPPING",
+      "address_line_1": "string",
+      "address_line_2": "string",
+      "city": "string",
+      "region": "string",
+      "postal_code": "string",
+      "country_id": "uuid",
+      "is_main_address": "boolean"
+    }
+  ]
+}
+Sales Invoice Schema
+json{
+  "id": "uuid",
+  "invoice_number": "string",
+  "contact_id": "uuid",
+  "date": "date",
+  "due_date": "date",
+  "reference": "string",
+  "notes": "string",
+  "terms_and_conditions": "string",
+  "invoice_status": "DRAFT|SENT|PAID|OVERDUE|CANCELLED",
+  "total_quantity": "decimal",
+  "net_amount": "decimal",
+  "tax_amount": "decimal",
+  "total_amount": "decimal",
+  "outstanding_amount": "decimal",
+  "currency_id": "uuid",
+  "exchange_rate": "decimal",
+  "lines": [
+    {
+      "id": "uuid",
+      "product_id": "uuid|null",
+      "ledger_account_id": "uuid",
+      "description": "string",
+      "quantity": "decimal",
+      "unit_price": "decimal",
+      "net_amount": "decimal",
+      "tax_rate_id": "uuid|null",
+      "tax_amount": "decimal",
+      "total_amount": "decimal"
+    }
+  ]
+}
+Payment Schema
+json{
+  "id": "uuid",
+  "transaction_type": "PAYMENT|RECEIPT",
+  "contact_id": "uuid|null",
+  "bank_account_id": "uuid",
+  "payment_method": "string",
+  "date": "date",
+  "net_amount": "decimal",
+  "tax_amount": "decimal",
+  "total_amount": "decimal",
+  "currency_id": "uuid",
+  "exchange_rate": "decimal",
+  "reference": "string",
+  "description": "string",
+  "allocations": [
+    {
+      "id": "uuid",
+      "allocated_artefact_type": "SALES_INVOICE|PURCHASE_INVOICE|CREDIT_NOTE",
+      "allocated_artefact_id": "uuid",
+      "allocated_amount": "decimal"
+    }
+  ]
+}
+Product Schema
+json{
+  "id": "uuid",
+  "item_type": "STOCK|SERVICE|NON_STOCK",
+  "item_code": "string",
+  "description": "string",
+  "sales_ledger_account_id": "uuid",
+  "purchase_ledger_account_id": "uuid",
+  "sales_tax_rate_id": "uuid|null",
+  "purchase_tax_rate_id": "uuid|null",
+  "cost_price": "decimal",
+  "sales_price": "decimal",
+  "usual_supplier_id": "uuid|null",
+  "active": "boolean",
+  "stock_item": {
+    "quantity_in_stock": "decimal",
+    "quantity_allocated": "decimal",
+    "quantity_on_order": "decimal",
+    "reorder_level": "decimal",
+    "reorder_quantity": "decimal",
+    "location": "string"
+  }
+}
+
+
+Authentication & Authorization
+JWT Token Structure
+json{
+  "user_id": "uuid",
+  "email": "string",
+  "role": "string",
+  "business_id": "uuid",
+  "permissions": ["array_of_permissions"],
+  "exp": "timestamp",
+  "iat": "timestamp"
+}
+Role-Based Permissions
+json{
+  "admin": ["*"],
+  "accountant": [
+    "read_all",
+    "write_transactions",
+    "write_invoices",
+    "write_payments",
+    "generate_reports",
+    "manage_contacts",
+    "manage_products",
+    "manage_banking",
+    "manage_taxes",
+    "view_audit_trail",
+    "manage_users"
+  ],
+  "user": [
+    "read_own",
+    "create_invoices",
+    "create_quotes",
+    "view_reports",
+    "manage_own_contacts",
+    "create_payments",
+    "view_dashboard"
+  ],
+  "viewer": [
+    "read_reports",
+    "view_dashboard",
+    "read_invoices",
+    "read_contacts",
+    "read_products"
+  ],
+  "sales": [
+    "read_sales",
+    "create_quotes",
+    "create_invoices", 
+    "manage_customers",
+    "view_sales_reports",
+    "create_receipts"
+  ],
+  "purchases": [
+    "read_purchases",
+    "create_purchase_orders",
+    "create_bills",
+    "manage_suppliers",
+    "view_purchase_reports",
+    "create_payments"
+  ]
+}
+Authentication Headers
+json{
+  "Authorization": "Bearer <jwt_token>",
+  "Content-Type": "application/json",
+  "X-Business-ID": "uuid"
+}
+Error Handling
+Standard Error Codes
+json{
+  "400": {
+    "code": "BAD_REQUEST",
+    "message": "The request is malformed or invalid"
+  },
+  "401": {
+    "code": "UNAUTHORIZED", 
+    "message": "Authentication credentials are invalid or missing"
+  },
+  "403": {
+    "code": "FORBIDDEN",
+    "message": "Insufficient permissions to access this resource"
+  },
+  "404": {
+    "code": "NOT_FOUND",
+    "message": "The requested resource was not found"
+  },
+  "409": {
+    "code": "CONFLICT",
+    "message": "The request conflicts with the current state"
+  },
+  "422": {
+    "code": "VALIDATION_ERROR",
+    "message": "Request validation failed",
+    "details": [
+      {
+        "field": "field_name",
+        "message": "Specific validation error"
+      }
+    ]
+  },
+  "429": {
+    "code": "RATE_LIMIT_EXCEEDED",
+    "message": "API rate limit exceeded"
+  },
+  "500": {
+    "code": "INTERNAL_SERVER_ERROR",
+    "message": "An unexpected server error occurred"
+  }
+}
+Business Logic Error Codes
+json{
+  "TRANSACTION_NOT_BALANCED": {
+    "code": "TRANSACTION_NOT_BALANCED",
+    "message": "Transaction debits and credits must be equal"
+  },
+  "INSUFFICIENT_PERMISSIONS": {
+    "code": "INSUFFICIENT_PERMISSIONS", 
+    "message": "User does not have permission for this operation"
+  },
+  "INVOICE_ALREADY_PAID": {
+    "code": "INVOICE_ALREADY_PAID",
+    "message": "Cannot modify a paid invoice"
+  },
+  "ACCOUNT_INACTIVE": {
+    "code": "ACCOUNT_INACTIVE",
+    "message": "Cannot post to inactive account"
+  },
+  "PERIOD_LOCKED": {
+    "code": "PERIOD_LOCKED",
+    "message": "Cannot post to locked accounting period"
+  }
+}
+Rate Limiting
+Rate Limit Headers
+json{
+  "X-RateLimit-Limit": "1000",
+  "X-RateLimit-Remaining": "999", 
+  "X-RateLimit-Reset": "1640995200"
+}
+Rate Limit Tiers
+json{
+  "free": {
+    "requests_per_hour": 100,
+    "requests_per_day": 1000
+  },
+  "basic": {
+    "requests_per_hour": 1000,
+    "requests_per_day": 10000
+  },
+  "premium": {
+    "requests_per_hour": 5000,
+    "requests_per_day": 50000
+  },
+  "enterprise": {
+    "requests_per_hour": "unlimited",
+    "requests_per_day": "unlimited"
+  }
+}
+Advanced Schemas
+Bank Account Schema
+json{
+  "id": "uuid",
+  "account_name": "string",
+  "account_number": "string",
+  "sort_code": "string",
+  "iban": "string",
+  "bic": "string",
+  "ledger_account_id": "uuid",
+  "bank_name": "string",
+  "currency_id": "uuid",
+  "balance": "decimal",
+  "is_active": "boolean",
+  "created_at": "timestamp",
+  "updated_at": "timestamp"
+}
+Tax Rate Schema
+json{
+  "id": "uuid",
+  "name": "string",
+  "agency": "string",
+  "percentage": "decimal",
+  "is_active": "boolean",
+  "is_visible": "boolean",
+  "is_recoverable": "boolean",
+  "created_at": "timestamp",
+  "updated_at": "timestamp"
+}
+Currency Schema
+json{
+  "id": "uuid",
+  "name": "string",
+  "code": "string",
+  "symbol": "string",
+  "is_base_currency": "boolean",
+  "created_at": "timestamp"
+}
+Exchange Rate Schema
+json{
+  "id": "uuid",
+  "from_currency_id": "uuid",
+  "to_currency_id": "uuid", 
+  "rate": "decimal",
+  "date": "date",
+  "created_at": "timestamp"
+}
+Stock Movement Schema
+json{
+  "id": "uuid",
+  "stock_item_id": "uuid",
+  "movement_type": "IN|OUT|ADJUSTMENT|TRANSFER",
+  "quantity": "decimal",
+  "cost_price": "decimal",
+  "date": "date",
+  "reference": "string",
+  "description": "string",
+  "created_by": "uuid",
+  "created_at": "timestamp"
+}
+Report Schema
+json{
+  "trial_balance": {
+    "report_date": "date",
+    "accounts": [
+      {
+        "account_code": "string",
+        "account_name": "string",
+        "account_type": "string",
+        "debit_balance": "decimal",
+        "credit_balance": "decimal"
+      }
+    ],
+    "total_debits": "decimal",
+    "total_credits": "decimal"
+  },
+  "profit_loss": {
+    "period_start": "date",
+    "period_end": "date",
+    "income": [
+      {
+        "account_name": "string",
+        "amount": "decimal"
+      }
+    ],
+    "expenses": [
+      {
+        "account_name": "string", 
+        "amount": "decimal"
+      }
+    ],
+    "total_income": "decimal",
+    "total_expenses": "decimal",
+    "net_profit": "decimal"
+  },
+  "balance_sheet": {
+    "report_date": "date",
+    "assets": {
+      "current_assets": [
+        {
+          "account_name": "string",
+          "amount": "decimal"
+        }
+      ],
+      "fixed_assets": [
+        {
+          "account_name": "string",
+          "amount": "decimal"
+        }
+      ],
+      "total_assets": "decimal"
+    },
+    "liabilities": {
+      "current_liabilities": [
+        {
+          "account_name": "string",
+          "amount": "decimal"
+        }
+      ],
+      "long_term_liabilities": [
+        {
+          "account_name": "string",
+          "amount": "decimal"
+        }
+      ],
+      "total_liabilities": "decimal"
+    },
+    "equity": {
+      "share_capital": "decimal",
+      "retained_earnings": "decimal",
+      "total_equity": "decimal"
+    }
+  }
+}
+Business Settings Schema
+json{
+  "id": "uuid",
+  "business_id": "uuid",
+  "financial_year_start": "date",
+  "financial_year_end": "date",
+  "base_currency": "string",
+  "tax_scheme": "string",
+  "invoice_settings": {
+    "next_invoice_number": "integer",
+    "invoice_prefix": "string",
+    "invoice_terms": "string",
+    "payment_terms_days": "integer"
+  },
+  "email_settings": {
+    "smtp_host": "string",
+    "smtp_port": "integer",
+    "smtp_username": "string",
+    "smtp_password": "string",
+    "from_email": "string",
+    "from_name": "string"
+  },
+  "backup_settings": {
+    "auto_backup": "boolean",
+    "backup_frequency": "DAILY|WEEKLY|MONTHLY",
+    "backup_retention_days": "integer"
+  }
+}
+Audit Trail Schema
+json{
+  "id": "uuid",
+  "entity_type": "string",
+  "entity_id": "uuid",
+  "action": "CREATE|UPDATE|DELETE",
+  "user_id": "uuid",
+  "changes": {
+    "before": "object",
+    "after": "object"
+  },
+  "ip_address": "string",
+  "user_agent": "string",
+  "timestamp": "timestamp"
+}
+Validation Rules
+json{
+  "email": {
+    "required": true,
+    "format": "email"
+  },
+  "amount": {
+    "required": true,
+    "type": "decimal",
+    "min": 0,
+    "precision": 2
+  },
+  "date": {
+    "required": true,
+    "format": "YYYY-MM-DD"
+  },
+  "account_code": {
+    "required": true,
+    "max_length": 20,
+    "pattern": "^[A-Z0-9]+$"
+  },
+  "invoice_number": {
+    "required": true,
+    "max_length": 100,
+    "unique": true
+  }
+}
+Pagination Schema
+json{
+  "pagination": {
+    "page": "integer",
+    "per_page": "integer",
+    "total": "integer",
+    "total_pages": "integer",
+    "has_next": "boolean",
+    "has_prev": "boolean"
+  },
+  "sorting": {
+    "sort_by": "string",
+    "sort_order": "ASC|DESC"
+  },
+  "filtering": {
+    "filters": [
+      {
+        "field": "string",
+        "operator": "eq|ne|gt|lt|gte|lte|like|in",
+        "value": "mixed"
+      }
+    ]
+  }
+}
+Webhook Schema
+json{
+  "id": "uuid",
+  "event": "string",
+  "url": "string",
+  "secret": "string",
+  "is_active": "boolean",
+  "events": [
+    "transaction.created",
+    "transaction.updated", 
+    "invoice.created",
+    "invoice.paid",
+    "payment.created",
+    "contact.created"
+  ]
+}
+Multi-Currency Transaction Schema
+json{
+  "id": "uuid",
+  "base_currency_id": "uuid",
+  "transaction_currency_id": "uuid", 
+  "exchange_rate": "decimal",
+  "base_amount": "decimal",
+  "transaction_amount": "decimal",
+  "exchange_gain_loss": "decimal",
+  "revaluation_date": "date"
+}

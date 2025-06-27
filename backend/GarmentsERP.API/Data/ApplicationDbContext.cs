@@ -124,7 +124,8 @@ namespace GarmentsERP.API.Data
 
             modelBuilder.Entity<GLEntryLine>()
                 .Property(g => g.Debit)
-                .HasPrecision(18, 2);            modelBuilder.Entity<GLEntryLine>()
+                .HasPrecision(18, 2);
+            modelBuilder.Entity<GLEntryLine>()
                 .Property(g => g.Credit)
                 .HasPrecision(18, 2);
 
@@ -188,7 +189,8 @@ namespace GarmentsERP.API.Data
             // Configure unique constraints
             modelBuilder.Entity<Product>()
                 .HasIndex(p => p.SKU)
-                .IsUnique();            modelBuilder.Entity<ChartOfAccount>()
+                .IsUnique();
+            modelBuilder.Entity<ChartOfAccount>()
                 .HasIndex(c => c.AccountCode)
                 .IsUnique();
 
@@ -233,7 +235,8 @@ namespace GarmentsERP.API.Data
                 .HasOne(bi => bi.Bill)
                 .WithMany(b => b.Items)
                 .HasForeignKey(bi => bi.BillId)
-                .OnDelete(DeleteBehavior.Cascade);            modelBuilder.Entity<BillPayment>()
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<BillPayment>()
                 .HasOne(bp => bp.Bill)
                 .WithMany(b => b.Payments)
                 .HasForeignKey(bp => bp.BillId)
