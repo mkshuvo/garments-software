@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using GarmentsERP.API.DTOs.Products;
 using GarmentsERP.API.Interfaces;
+using GarmentsERP.API.Attributes;
 
 namespace GarmentsERP.API.Controllers
 {
@@ -25,6 +26,7 @@ namespace GarmentsERP.API.Controllers
         /// Get all product categories
         /// </summary>
         [HttpGet]
+        [RequirePermission("ProductCategory", "Read")]
         public async Task<ActionResult<IEnumerable<ProductCategoryResponseDto>>> GetProductCategories()
         {
             try
@@ -43,6 +45,7 @@ namespace GarmentsERP.API.Controllers
         /// Get product category by ID
         /// </summary>
         [HttpGet("{id}")]
+        [RequirePermission("ProductCategory", "Read")]
         public async Task<ActionResult<ProductCategoryResponseDto>> GetProductCategory(Guid id)
         {
             try
@@ -65,6 +68,7 @@ namespace GarmentsERP.API.Controllers
         /// Create a new product category
         /// </summary>
         [HttpPost]
+        [RequirePermission("ProductCategory", "Create")]
         public async Task<ActionResult<ProductCategoryResponseDto>> CreateProductCategory(CreateProductCategoryDto createDto)
         {
             try

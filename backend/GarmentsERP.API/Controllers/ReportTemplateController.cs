@@ -4,6 +4,7 @@ using System.Security.Claims;
 using GarmentsERP.API.DTOs.Reports;
 using GarmentsERP.API.Interfaces;
 using GarmentsERP.API.Models.Reports;
+using GarmentsERP.API.Attributes;
 
 namespace GarmentsERP.API.Controllers
 {
@@ -27,6 +28,7 @@ namespace GarmentsERP.API.Controllers
         /// Get all report templates
         /// </summary>
         [HttpGet]
+        [RequirePermission("ReportTemplate", "Read")]
         public async Task<ActionResult<IEnumerable<ReportTemplateDto>>> GetReportTemplates()
         {
             try
@@ -45,6 +47,7 @@ namespace GarmentsERP.API.Controllers
         /// Get report template by ID
         /// </summary>
         [HttpGet("{id}")]
+        [RequirePermission("ReportTemplate", "Read")]
         public async Task<ActionResult<ReportTemplateDto>> GetReportTemplate(Guid id)
         {
             try
@@ -67,6 +70,7 @@ namespace GarmentsERP.API.Controllers
         /// Create a new report template
         /// </summary>
         [HttpPost]
+        [RequirePermission("ReportTemplate", "Create")]
         public async Task<ActionResult<ReportTemplateDto>> CreateReportTemplate(CreateReportTemplateDto createDto)
         {
             try
@@ -91,6 +95,7 @@ namespace GarmentsERP.API.Controllers
         /// Update an existing report template
         /// </summary>
         [HttpPut("{id}")]
+        [RequirePermission("ReportTemplate", "Update")]
         public async Task<ActionResult<ReportTemplateDto>> UpdateReportTemplate(Guid id, UpdateReportTemplateDto updateDto)
         {
             try
@@ -113,6 +118,7 @@ namespace GarmentsERP.API.Controllers
         /// Delete a report template
         /// </summary>
         [HttpDelete("{id}")]
+        [RequirePermission("ReportTemplate", "Delete")]
         public async Task<ActionResult> DeleteReportTemplate(Guid id)
         {
             try
@@ -135,6 +141,7 @@ namespace GarmentsERP.API.Controllers
         /// Get active report templates
         /// </summary>
         [HttpGet("active")]
+        [RequirePermission("ReportTemplate", "Read")]
         public async Task<ActionResult<IEnumerable<ReportTemplateDto>>> GetActiveReportTemplates()
         {
             try
@@ -153,6 +160,7 @@ namespace GarmentsERP.API.Controllers
         /// Get report templates by type
         /// </summary>
         [HttpGet("by-type/{reportType}")]
+        [RequirePermission("ReportTemplate", "Read")]
         public async Task<ActionResult<IEnumerable<ReportTemplateDto>>> GetReportTemplatesByType(ReportType reportType)
         {
             try
@@ -171,6 +179,7 @@ namespace GarmentsERP.API.Controllers
         /// Get report templates by user
         /// </summary>
         [HttpGet("by-user/{userId}")]
+        [RequirePermission("ReportTemplate", "Read")]
         public async Task<ActionResult<IEnumerable<ReportTemplateDto>>> GetReportTemplatesByUser(Guid userId)
         {
             try
@@ -189,6 +198,7 @@ namespace GarmentsERP.API.Controllers
         /// Get current user's report templates
         /// </summary>
         [HttpGet("my-templates")]
+        [RequirePermission("ReportTemplate", "Read")]
         public async Task<ActionResult<IEnumerable<ReportTemplateDto>>> GetMyReportTemplates()
         {
             try

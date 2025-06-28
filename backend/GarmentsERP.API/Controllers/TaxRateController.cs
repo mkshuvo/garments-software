@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using GarmentsERP.API.DTOs.Tax;
 using GarmentsERP.API.Interfaces;
+using GarmentsERP.API.Attributes;
 
 namespace GarmentsERP.API.Controllers
 {
@@ -25,6 +26,7 @@ namespace GarmentsERP.API.Controllers
         /// Get all tax rates
         /// </summary>
         [HttpGet]
+        [RequirePermission("TaxRate", "Read")]
         public async Task<ActionResult<IEnumerable<TaxRateResponseDto>>> GetTaxRates()
         {
             try
@@ -43,6 +45,7 @@ namespace GarmentsERP.API.Controllers
         /// Get tax rate by ID
         /// </summary>
         [HttpGet("{id}")]
+        [RequirePermission("TaxRate", "Read")]
         public async Task<ActionResult<TaxRateResponseDto>> GetTaxRate(Guid id)
         {
             try
@@ -65,6 +68,7 @@ namespace GarmentsERP.API.Controllers
         /// Create a new tax rate
         /// </summary>
         [HttpPost]
+        [RequirePermission("TaxRate", "Create")]
         public async Task<ActionResult<TaxRateResponseDto>> CreateTaxRate(CreateTaxRateDto createDto)
         {
             try
@@ -83,6 +87,7 @@ namespace GarmentsERP.API.Controllers
         /// Update an existing tax rate
         /// </summary>
         [HttpPut("{id}")]
+        [RequirePermission("TaxRate", "Update")]
         public async Task<ActionResult<TaxRateResponseDto>> UpdateTaxRate(Guid id, UpdateTaxRateDto updateDto)
         {
             try
@@ -105,6 +110,7 @@ namespace GarmentsERP.API.Controllers
         /// Delete a tax rate
         /// </summary>
         [HttpDelete("{id}")]
+        [RequirePermission("TaxRate", "Delete")]
         public async Task<ActionResult> DeleteTaxRate(Guid id)
         {
             try
@@ -127,6 +133,7 @@ namespace GarmentsERP.API.Controllers
         /// Get active tax rates
         /// </summary>
         [HttpGet("active")]
+        [RequirePermission("TaxRate", "Read")]
         public async Task<ActionResult<IEnumerable<TaxRateResponseDto>>> GetActiveTaxRates()
         {
             try

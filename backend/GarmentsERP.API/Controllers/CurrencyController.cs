@@ -1,5 +1,6 @@
 using GarmentsERP.API.DTOs.Currency;
 using GarmentsERP.API.Interfaces;
+using GarmentsERP.API.Attributes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -23,6 +24,7 @@ namespace GarmentsERP.API.Controllers
         /// Get all currencies
         /// </summary>
         [HttpGet]
+        [RequirePermission("Currency", "Read")]
         public async Task<ActionResult<IEnumerable<CurrencyResponseDto>>> GetAll()
         {
             try
@@ -41,6 +43,7 @@ namespace GarmentsERP.API.Controllers
         /// Get currency by ID
         /// </summary>
         [HttpGet("{id}")]
+        [RequirePermission("Currency", "Read")]
         public async Task<ActionResult<CurrencyResponseDto>> GetById(Guid id)
         {
             try
@@ -62,7 +65,7 @@ namespace GarmentsERP.API.Controllers
         /// Create a new currency
         /// </summary>
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [RequirePermission("Currency", "Create")]
         public async Task<ActionResult<CurrencyResponseDto>> Create(CreateCurrencyDto createDto)
         {
             try
@@ -88,7 +91,7 @@ namespace GarmentsERP.API.Controllers
         /// Update an existing currency
         /// </summary>
         [HttpPut("{id}")]
-        [Authorize(Roles = "Admin")]
+        [RequirePermission("Currency", "Update")]
         public async Task<ActionResult<CurrencyResponseDto>> Update(Guid id, UpdateCurrencyDto updateDto)
         {
             try
@@ -117,7 +120,7 @@ namespace GarmentsERP.API.Controllers
         /// Delete a currency
         /// </summary>
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin")]
+        [RequirePermission("Currency", "Delete")]
         public async Task<ActionResult> Delete(Guid id)
         {
             try

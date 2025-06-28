@@ -4,6 +4,7 @@ using System.Security.Claims;
 using GarmentsERP.API.DTOs.Settings;
 using GarmentsERP.API.Interfaces;
 using GarmentsERP.API.Models.Settings;
+using GarmentsERP.API.Attributes;
 
 namespace GarmentsERP.API.Controllers
 {
@@ -27,6 +28,7 @@ namespace GarmentsERP.API.Controllers
         /// Get all business settings
         /// </summary>
         [HttpGet]
+        [RequirePermission("BusinessSetting", "Read")]
         public async Task<ActionResult<IEnumerable<BusinessSettingDto>>> GetBusinessSettings()
         {
             try
@@ -45,6 +47,7 @@ namespace GarmentsERP.API.Controllers
         /// Get business setting by ID
         /// </summary>
         [HttpGet("{id}")]
+        [RequirePermission("BusinessSetting", "Read")]
         public async Task<ActionResult<BusinessSettingDto>> GetBusinessSetting(Guid id)
         {
             try
@@ -67,6 +70,7 @@ namespace GarmentsERP.API.Controllers
         /// Get business setting by key
         /// </summary>
         [HttpGet("by-key/{key}")]
+        [RequirePermission("BusinessSetting", "Read")]
         public async Task<ActionResult<BusinessSettingDto>> GetBusinessSettingByKey(string key)
         {
             try
@@ -89,6 +93,7 @@ namespace GarmentsERP.API.Controllers
         /// Create a new business setting
         /// </summary>
         [HttpPost]
+        [RequirePermission("BusinessSetting", "Create")]
         public async Task<ActionResult<BusinessSettingDto>> CreateBusinessSetting(CreateBusinessSettingDto createDto)
         {
             try
@@ -111,6 +116,7 @@ namespace GarmentsERP.API.Controllers
         /// Update an existing business setting
         /// </summary>
         [HttpPut("{id}")]
+        [RequirePermission("BusinessSetting", "Update")]
         public async Task<ActionResult<BusinessSettingDto>> UpdateBusinessSetting(Guid id, UpdateBusinessSettingDto updateDto)
         {
             try
@@ -137,6 +143,7 @@ namespace GarmentsERP.API.Controllers
         /// Delete a business setting
         /// </summary>
         [HttpDelete("{id}")]
+        [RequirePermission("BusinessSetting", "Delete")]
         public async Task<ActionResult> DeleteBusinessSetting(Guid id)
         {
             try
@@ -163,6 +170,7 @@ namespace GarmentsERP.API.Controllers
         /// Get business settings by category
         /// </summary>
         [HttpGet("by-category/{category}")]
+        [RequirePermission("BusinessSetting", "Read")]
         public async Task<ActionResult<IEnumerable<BusinessSettingDto>>> GetBusinessSettingsByCategory(SettingCategory category)
         {
             try
@@ -181,6 +189,7 @@ namespace GarmentsERP.API.Controllers
         /// Get setting value by key
         /// </summary>
         [HttpGet("value/{key}")]
+        [RequirePermission("BusinessSetting", "Read")]
         public async Task<ActionResult<string>> GetSettingValue(string key)
         {
             try
@@ -203,6 +212,7 @@ namespace GarmentsERP.API.Controllers
         /// Update setting value by key
         /// </summary>
         [HttpPut("value/{key}")]
+        [RequirePermission("BusinessSetting", "Update")]
         public async Task<ActionResult> UpdateSettingValue(string key, [FromBody] string value)
         {
             try

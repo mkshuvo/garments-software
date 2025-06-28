@@ -30,6 +30,11 @@ namespace GarmentsERP.API.Data
         public DbSet<VendorProfile> VendorProfiles { get; set; }
         public DbSet<PayrollRecord> PayrollRecords { get; set; }
 
+        // Permission System
+        public DbSet<Permission> Permissions { get; set; }
+        public DbSet<RolePermission> RolePermissions { get; set; }
+        public DbSet<UserPermission> UserPermissions { get; set; }
+
         // Enterprise Accounting Models
         // Accounting
         public DbSet<ChartOfAccount> ChartOfAccounts { get; set; }
@@ -397,6 +402,110 @@ namespace GarmentsERP.API.Data
                 .HasOne(s => s.StockItem)
                 .WithMany(s => s.StockMovements)
                 .HasForeignKey(s => s.StockItemId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure ApplicationUser relationships for auditing fields
+            // JournalEntry relationships - explicitly configure to avoid ambiguity
+            modelBuilder.Entity<JournalEntry>()
+                .HasOne(j => j.CreatedBy)
+                .WithMany(u => u.CreatedJournalEntries)
+                .HasForeignKey(j => j.CreatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("FK_JournalEntry_ApplicationUser_CreatedBy");
+
+            modelBuilder.Entity<JournalEntry>()
+                .HasOne(j => j.ApprovedBy)
+                .WithMany(u => u.ApprovedJournalEntries)
+                .HasForeignKey(j => j.ApprovedByUserId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("FK_JournalEntry_ApplicationUser_ApprovedBy");
+
+            // SalesInvoice relationships
+            modelBuilder.Entity<SalesInvoice>()
+                .HasOne(s => s.CreatedBy)
+                .WithMany(u => u.CreatedSalesInvoices)
+                .HasForeignKey(s => s.CreatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // PurchaseInvoice relationships
+            modelBuilder.Entity<PurchaseInvoice>()
+                .HasOne(p => p.CreatedBy)
+                .WithMany(u => u.CreatedPurchaseInvoices)
+                .HasForeignKey(p => p.CreatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Payment relationships
+            modelBuilder.Entity<Payment>()
+                .HasOne(p => p.CreatedBy)
+                .WithMany(u => u.CreatedPayments)
+                .HasForeignKey(p => p.CreatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // BankTransfer relationships
+            modelBuilder.Entity<BankTransfer>()
+                .HasOne(b => b.CreatedBy)
+                .WithMany(u => u.CreatedBankTransfers)
+                .HasForeignKey(b => b.CreatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Configure BankTransfer to BankAccount relationships
+            modelBuilder.Entity<BankTransfer>()
+                .HasOne(bt => bt.FromAccount)
+                .WithMany(ba => ba.FromTransfers)
+                .HasForeignKey(bt => bt.FromAccountId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<BankTransfer>()
+                .HasOne(bt => bt.ToAccount)
+                .WithMany(ba => ba.ToTransfers)
+                .HasForeignKey(bt => bt.ToAccountId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // BankReconciliation relationships
+            modelBuilder.Entity<BankReconciliation>()
+                .HasOne(b => b.ReconciledBy)
+                .WithMany(u => u.ReconciledBankReconciliations)
+                .HasForeignKey(b => b.ReconciledByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ReportTemplate relationships
+            modelBuilder.Entity<ReportTemplate>()
+                .HasOne(r => r.CreatedBy)
+                .WithMany()
+                .HasForeignKey(r => r.CreatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // StockMovement relationships
+            modelBuilder.Entity<StockMovement>()
+                .HasOne(s => s.CreatedBy)
+                .WithMany(u => u.CreatedStockMovements)
+                .HasForeignKey(s => s.CreatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // UserPermission relationships
+            modelBuilder.Entity<UserPermission>()
+                .HasOne(up => up.User)
+                .WithMany(u => u.UserPermissions)
+                .HasForeignKey(up => up.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<UserPermission>()
+                .HasOne(up => up.Permission)
+                .WithMany(p => p.UserPermissions)
+                .HasForeignKey(up => up.PermissionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // RolePermission relationships
+            modelBuilder.Entity<RolePermission>()
+                .HasOne(rp => rp.Role)
+                .WithMany(r => r.RolePermissions)
+                .HasForeignKey(rp => rp.RoleId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<RolePermission>()
+                .HasOne(rp => rp.Permission)
+                .WithMany(p => p.RolePermissions)
+                .HasForeignKey(rp => rp.PermissionId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             // Seed default roles

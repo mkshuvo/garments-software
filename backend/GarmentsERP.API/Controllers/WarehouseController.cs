@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using GarmentsERP.API.DTOs.Inventory;
 using GarmentsERP.API.Interfaces;
+using GarmentsERP.API.Attributes;
 
 namespace GarmentsERP.API.Controllers
 {
@@ -25,6 +26,7 @@ namespace GarmentsERP.API.Controllers
         /// Get all warehouses
         /// </summary>
         [HttpGet]
+        [RequirePermission("Warehouse", "Read")]
         public async Task<ActionResult<IEnumerable<WarehouseResponseDto>>> GetWarehouses()
         {
             try
@@ -43,6 +45,7 @@ namespace GarmentsERP.API.Controllers
         /// Get warehouse by ID
         /// </summary>
         [HttpGet("{id}")]
+        [RequirePermission("Warehouse", "Read")]
         public async Task<ActionResult<WarehouseResponseDto>> GetWarehouse(Guid id)
         {
             try
@@ -65,6 +68,7 @@ namespace GarmentsERP.API.Controllers
         /// Create a new warehouse
         /// </summary>
         [HttpPost]
+        [RequirePermission("Warehouse", "Create")]
         public async Task<ActionResult<WarehouseResponseDto>> CreateWarehouse(CreateWarehouseDto createDto)
         {
             try
@@ -83,6 +87,7 @@ namespace GarmentsERP.API.Controllers
         /// Update an existing warehouse
         /// </summary>
         [HttpPut("{id}")]
+        [RequirePermission("Warehouse", "Update")]
         public async Task<ActionResult<WarehouseResponseDto>> UpdateWarehouse(Guid id, UpdateWarehouseDto updateDto)
         {
             try
@@ -105,6 +110,7 @@ namespace GarmentsERP.API.Controllers
         /// Delete a warehouse
         /// </summary>
         [HttpDelete("{id}")]
+        [RequirePermission("Warehouse", "Delete")]
         public async Task<ActionResult> DeleteWarehouse(Guid id)
         {
             try
@@ -127,6 +133,7 @@ namespace GarmentsERP.API.Controllers
         /// Get active warehouses
         /// </summary>
         [HttpGet("active")]
+        [RequirePermission("Warehouse", "Read")]
         public async Task<ActionResult<IEnumerable<WarehouseResponseDto>>> GetActiveWarehouses()
         {
             try

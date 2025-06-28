@@ -3,17 +3,20 @@ using System;
 using GarmentsERP.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace GarmentsERP.API.Migrations
+namespace GarmentsERP.API.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250628201537_UpdateEnterpriseModels")]
+    partial class UpdateEnterpriseModels
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -80,6 +83,12 @@ namespace GarmentsERP.API.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("ApplicationUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ApplicationUserId1")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime?>("ApprovedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -125,6 +134,10 @@ namespace GarmentsERP.API.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ApplicationUserId");
+
+                    b.HasIndex("ApplicationUserId1");
 
                     b.HasIndex("ApprovedByUserId");
 
@@ -209,40 +222,40 @@ namespace GarmentsERP.API.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("ef166e87-1cac-4896-ae57-ce46114ecc43"),
-                            CreatedAt = new DateTime(2025, 6, 28, 20, 27, 24, 636, DateTimeKind.Utc).AddTicks(7495),
+                            Id = new Guid("bdd250ff-3291-4e1b-b91f-ff58384985c2"),
+                            CreatedAt = new DateTime(2025, 6, 28, 20, 15, 36, 424, DateTimeKind.Utc).AddTicks(8739),
                             Description = "System Administrator with full access",
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         },
                         new
                         {
-                            Id = new Guid("f962e05e-db0c-4be9-8c0a-1a8c6229d427"),
-                            CreatedAt = new DateTime(2025, 6, 28, 20, 27, 24, 636, DateTimeKind.Utc).AddTicks(7504),
+                            Id = new Guid("0ceb3f14-ea92-4020-a414-230fc5def487"),
+                            CreatedAt = new DateTime(2025, 6, 28, 20, 15, 36, 424, DateTimeKind.Utc).AddTicks(8745),
                             Description = "Manager with administrative privileges",
                             Name = "Manager",
                             NormalizedName = "MANAGER"
                         },
                         new
                         {
-                            Id = new Guid("d30fd39b-2411-4656-971d-882d8934a2b5"),
-                            CreatedAt = new DateTime(2025, 6, 28, 20, 27, 24, 636, DateTimeKind.Utc).AddTicks(7505),
+                            Id = new Guid("3ee591c5-b37e-49b9-9478-59ad85c92275"),
+                            CreatedAt = new DateTime(2025, 6, 28, 20, 15, 36, 424, DateTimeKind.Utc).AddTicks(8746),
                             Description = "Regular employee with limited access",
                             Name = "Employee",
                             NormalizedName = "EMPLOYEE"
                         },
                         new
                         {
-                            Id = new Guid("76ccc3ac-a426-4bf3-9019-60a7b7a55fd4"),
-                            CreatedAt = new DateTime(2025, 6, 28, 20, 27, 24, 636, DateTimeKind.Utc).AddTicks(7506),
+                            Id = new Guid("78e3da3d-efa1-4827-ad31-86d4d246f5af"),
+                            CreatedAt = new DateTime(2025, 6, 28, 20, 15, 36, 424, DateTimeKind.Utc).AddTicks(8747),
                             Description = "External vendor/supplier",
                             Name = "Vendor",
                             NormalizedName = "VENDOR"
                         },
                         new
                         {
-                            Id = new Guid("30d25b6f-7da2-4101-81bb-71e59b65aae0"),
-                            CreatedAt = new DateTime(2025, 6, 28, 20, 27, 24, 636, DateTimeKind.Utc).AddTicks(7507),
+                            Id = new Guid("f9287304-e722-4cf5-9266-421bfab30b05"),
+                            CreatedAt = new DateTime(2025, 6, 28, 20, 15, 36, 424, DateTimeKind.Utc).AddTicks(8748),
                             Description = "Customer with limited access",
                             Name = "Customer",
                             NormalizedName = "CUSTOMER"
@@ -342,8 +355,8 @@ namespace GarmentsERP.API.Migrations
                         {
                             Id = new Guid("11111111-1111-1111-1111-111111111111"),
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "83635566-04f7-4c6d-ad3a-247e6440b4ab",
-                            CreatedAt = new DateTime(2025, 6, 28, 20, 27, 24, 636, DateTimeKind.Utc).AddTicks(7736),
+                            ConcurrencyStamp = "f46459d9-358d-4d38-86d0-21291fb638fe",
+                            CreatedAt = new DateTime(2025, 6, 28, 20, 15, 36, 424, DateTimeKind.Utc).AddTicks(9121),
                             Email = "admin@erp.com",
                             EmailConfirmed = true,
                             FullName = "System Administrator",
@@ -351,9 +364,9 @@ namespace GarmentsERP.API.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@ERP.COM",
                             NormalizedUserName = "ADMIN",
-                            PasswordHash = "AQAAAAIAAYagAAAAEHZPP/LjnhCoNdlaqiRXrQsYK4LK0ZUpeqk8zwrCi965hUOaRa0ZYKpe6lLSkOyOPA==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEKqYNgt3whOGwoXBMIDRKxkexzr0W7nw5q/fyOiWjCShU7YvhR46IqTV0D0j3yuK6A==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "b50b1343-54c0-4df1-b9ea-b6b037d1797d",
+                            SecurityStamp = "dd787116-6ecb-46e4-9ee1-5bc96fbbdc25",
                             TwoFactorEnabled = false,
                             UserName = "admin",
                             UserType = 4
@@ -427,6 +440,9 @@ namespace GarmentsERP.API.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("ApplicationUserId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("BankAccountId")
                         .HasColumnType("uuid");
 
@@ -459,6 +475,8 @@ namespace GarmentsERP.API.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ApplicationUserId");
 
                     b.HasIndex("BankAccountId");
 
@@ -523,6 +541,9 @@ namespace GarmentsERP.API.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<Guid?>("ApplicationUserId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -562,6 +583,8 @@ namespace GarmentsERP.API.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ApplicationUserId");
 
                     b.HasIndex("CreatedByUserId");
 
@@ -793,6 +816,9 @@ namespace GarmentsERP.API.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("ApplicationUserId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -831,6 +857,8 @@ namespace GarmentsERP.API.Migrations
                         .HasColumnType("decimal(18,4)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ApplicationUserId");
 
                     b.HasIndex("CreatedByUserId");
 
@@ -893,6 +921,9 @@ namespace GarmentsERP.API.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ApplicationUserId")
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("BalanceAmount")
@@ -961,6 +992,8 @@ namespace GarmentsERP.API.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ApplicationUserId");
 
                     b.HasIndex("ContactId");
 
@@ -1042,6 +1075,9 @@ namespace GarmentsERP.API.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("ApplicationUserId")
+                        .HasColumnType("uuid");
+
                     b.Property<decimal>("BalanceAmount")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
@@ -1104,6 +1140,8 @@ namespace GarmentsERP.API.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ApplicationUserId");
 
                     b.HasIndex("ContactId");
 
@@ -1189,6 +1227,9 @@ namespace GarmentsERP.API.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<Guid?>("ApplicationUserId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid?>("BankAccountId")
                         .HasColumnType("uuid");
 
@@ -1237,6 +1278,8 @@ namespace GarmentsERP.API.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ApplicationUserId");
 
                     b.HasIndex("BankAccountId");
 
@@ -1896,12 +1939,17 @@ namespace GarmentsERP.API.Migrations
                     b.Property<Guid>("PermissionId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("PermissionId1")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("RoleId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
                     b.HasIndex("PermissionId");
+
+                    b.HasIndex("PermissionId1");
 
                     b.HasIndex("RoleId");
 
@@ -1920,12 +1968,17 @@ namespace GarmentsERP.API.Migrations
                     b.Property<Guid>("PermissionId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("PermissionId1")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
                     b.HasIndex("PermissionId");
+
+                    b.HasIndex("PermissionId1");
 
                     b.HasIndex("UserId");
 
@@ -2178,18 +2231,24 @@ namespace GarmentsERP.API.Migrations
 
             modelBuilder.Entity("GarmentsERP.API.Models.Accounting.JournalEntry", b =>
                 {
-                    b.HasOne("GarmentsERP.API.Models.ApplicationUser", "ApprovedBy")
+                    b.HasOne("GarmentsERP.API.Models.ApplicationUser", null)
                         .WithMany("ApprovedJournalEntries")
+                        .HasForeignKey("ApplicationUserId");
+
+                    b.HasOne("GarmentsERP.API.Models.ApplicationUser", null)
+                        .WithMany("CreatedJournalEntries")
+                        .HasForeignKey("ApplicationUserId1");
+
+                    b.HasOne("GarmentsERP.API.Models.ApplicationUser", "ApprovedBy")
+                        .WithMany()
                         .HasForeignKey("ApprovedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("FK_JournalEntry_ApplicationUser_ApprovedBy");
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("GarmentsERP.API.Models.ApplicationUser", "CreatedBy")
-                        .WithMany("CreatedJournalEntries")
+                        .WithMany()
                         .HasForeignKey("CreatedByUserId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("FK_JournalEntry_ApplicationUser_CreatedBy");
+                        .IsRequired();
 
                     b.Navigation("ApprovedBy");
 
@@ -2217,6 +2276,10 @@ namespace GarmentsERP.API.Migrations
 
             modelBuilder.Entity("GarmentsERP.API.Models.Banking.BankReconciliation", b =>
                 {
+                    b.HasOne("GarmentsERP.API.Models.ApplicationUser", null)
+                        .WithMany("ReconciledBankReconciliations")
+                        .HasForeignKey("ApplicationUserId");
+
                     b.HasOne("GarmentsERP.API.Models.Banking.BankAccount", "BankAccount")
                         .WithMany("BankReconciliations")
                         .HasForeignKey("BankAccountId")
@@ -2224,7 +2287,7 @@ namespace GarmentsERP.API.Migrations
                         .IsRequired();
 
                     b.HasOne("GarmentsERP.API.Models.ApplicationUser", "ReconciledBy")
-                        .WithMany("ReconciledBankReconciliations")
+                        .WithMany()
                         .HasForeignKey("ReconciledByUserId")
                         .OnDelete(DeleteBehavior.Restrict);
 
@@ -2252,8 +2315,12 @@ namespace GarmentsERP.API.Migrations
 
             modelBuilder.Entity("GarmentsERP.API.Models.Banking.BankTransfer", b =>
                 {
-                    b.HasOne("GarmentsERP.API.Models.ApplicationUser", "CreatedBy")
+                    b.HasOne("GarmentsERP.API.Models.ApplicationUser", null)
                         .WithMany("CreatedBankTransfers")
+                        .HasForeignKey("ApplicationUserId");
+
+                    b.HasOne("GarmentsERP.API.Models.ApplicationUser", "CreatedBy")
+                        .WithMany()
                         .HasForeignKey("CreatedByUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -2327,8 +2394,12 @@ namespace GarmentsERP.API.Migrations
 
             modelBuilder.Entity("GarmentsERP.API.Models.Inventory.StockMovement", b =>
                 {
-                    b.HasOne("GarmentsERP.API.Models.ApplicationUser", "CreatedBy")
+                    b.HasOne("GarmentsERP.API.Models.ApplicationUser", null)
                         .WithMany("CreatedStockMovements")
+                        .HasForeignKey("ApplicationUserId");
+
+                    b.HasOne("GarmentsERP.API.Models.ApplicationUser", "CreatedBy")
+                        .WithMany()
                         .HasForeignKey("CreatedByUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -2358,6 +2429,10 @@ namespace GarmentsERP.API.Migrations
 
             modelBuilder.Entity("GarmentsERP.API.Models.Invoicing.PurchaseInvoice", b =>
                 {
+                    b.HasOne("GarmentsERP.API.Models.ApplicationUser", null)
+                        .WithMany("CreatedPurchaseInvoices")
+                        .HasForeignKey("ApplicationUserId");
+
                     b.HasOne("GarmentsERP.API.Models.Contacts.Contact", "Contact")
                         .WithMany("PurchaseInvoices")
                         .HasForeignKey("ContactId")
@@ -2365,7 +2440,7 @@ namespace GarmentsERP.API.Migrations
                         .IsRequired();
 
                     b.HasOne("GarmentsERP.API.Models.ApplicationUser", "CreatedBy")
-                        .WithMany("CreatedPurchaseInvoices")
+                        .WithMany()
                         .HasForeignKey("CreatedByUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -2398,6 +2473,10 @@ namespace GarmentsERP.API.Migrations
 
             modelBuilder.Entity("GarmentsERP.API.Models.Invoicing.SalesInvoice", b =>
                 {
+                    b.HasOne("GarmentsERP.API.Models.ApplicationUser", null)
+                        .WithMany("CreatedSalesInvoices")
+                        .HasForeignKey("ApplicationUserId");
+
                     b.HasOne("GarmentsERP.API.Models.Contacts.Contact", "Contact")
                         .WithMany("SalesInvoices")
                         .HasForeignKey("ContactId")
@@ -2405,7 +2484,7 @@ namespace GarmentsERP.API.Migrations
                         .IsRequired();
 
                     b.HasOne("GarmentsERP.API.Models.ApplicationUser", "CreatedBy")
-                        .WithMany("CreatedSalesInvoices")
+                        .WithMany()
                         .HasForeignKey("CreatedByUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -2438,6 +2517,10 @@ namespace GarmentsERP.API.Migrations
 
             modelBuilder.Entity("GarmentsERP.API.Models.Payments.Payment", b =>
                 {
+                    b.HasOne("GarmentsERP.API.Models.ApplicationUser", null)
+                        .WithMany("CreatedPayments")
+                        .HasForeignKey("ApplicationUserId");
+
                     b.HasOne("GarmentsERP.API.Models.Banking.BankAccount", "BankAccount")
                         .WithMany("Payments")
                         .HasForeignKey("BankAccountId");
@@ -2449,7 +2532,7 @@ namespace GarmentsERP.API.Migrations
                         .IsRequired();
 
                     b.HasOne("GarmentsERP.API.Models.ApplicationUser", "CreatedBy")
-                        .WithMany("CreatedPayments")
+                        .WithMany()
                         .HasForeignKey("CreatedByUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -2552,13 +2635,17 @@ namespace GarmentsERP.API.Migrations
             modelBuilder.Entity("GarmentsERP.API.Models.Users.RolePermission", b =>
                 {
                     b.HasOne("GarmentsERP.API.Models.Users.Permission", "Permission")
-                        .WithMany("RolePermissions")
+                        .WithMany()
                         .HasForeignKey("PermissionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("GarmentsERP.API.Models.ApplicationRole", "Role")
+                    b.HasOne("GarmentsERP.API.Models.Users.Permission", null)
                         .WithMany("RolePermissions")
+                        .HasForeignKey("PermissionId1");
+
+                    b.HasOne("GarmentsERP.API.Models.ApplicationRole", "Role")
+                        .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -2571,10 +2658,14 @@ namespace GarmentsERP.API.Migrations
             modelBuilder.Entity("GarmentsERP.API.Models.Users.UserPermission", b =>
                 {
                     b.HasOne("GarmentsERP.API.Models.Users.Permission", "Permission")
-                        .WithMany("UserPermissions")
+                        .WithMany()
                         .HasForeignKey("PermissionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("GarmentsERP.API.Models.Users.Permission", null)
+                        .WithMany("UserPermissions")
+                        .HasForeignKey("PermissionId1");
 
                     b.HasOne("GarmentsERP.API.Models.ApplicationUser", "User")
                         .WithMany("UserPermissions")
@@ -2671,8 +2762,6 @@ namespace GarmentsERP.API.Migrations
 
             modelBuilder.Entity("GarmentsERP.API.Models.ApplicationRole", b =>
                 {
-                    b.Navigation("RolePermissions");
-
                     b.Navigation("UserRoles");
                 });
 

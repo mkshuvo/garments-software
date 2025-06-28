@@ -3,17 +3,20 @@ using System;
 using GarmentsERP.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace GarmentsERP.API.Migrations
+namespace GarmentsERP.API.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250628202441_FixRelationshipWarnings")]
+    partial class FixRelationshipWarnings
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -209,40 +212,40 @@ namespace GarmentsERP.API.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("ef166e87-1cac-4896-ae57-ce46114ecc43"),
-                            CreatedAt = new DateTime(2025, 6, 28, 20, 27, 24, 636, DateTimeKind.Utc).AddTicks(7495),
+                            Id = new Guid("3a135c6d-9742-4a54-83af-da86e61606a0"),
+                            CreatedAt = new DateTime(2025, 6, 28, 20, 24, 41, 212, DateTimeKind.Utc).AddTicks(5088),
                             Description = "System Administrator with full access",
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         },
                         new
                         {
-                            Id = new Guid("f962e05e-db0c-4be9-8c0a-1a8c6229d427"),
-                            CreatedAt = new DateTime(2025, 6, 28, 20, 27, 24, 636, DateTimeKind.Utc).AddTicks(7504),
+                            Id = new Guid("24c45ef0-7aa1-4e16-8f44-9db36b54667c"),
+                            CreatedAt = new DateTime(2025, 6, 28, 20, 24, 41, 212, DateTimeKind.Utc).AddTicks(5095),
                             Description = "Manager with administrative privileges",
                             Name = "Manager",
                             NormalizedName = "MANAGER"
                         },
                         new
                         {
-                            Id = new Guid("d30fd39b-2411-4656-971d-882d8934a2b5"),
-                            CreatedAt = new DateTime(2025, 6, 28, 20, 27, 24, 636, DateTimeKind.Utc).AddTicks(7505),
+                            Id = new Guid("5ad9a63c-62c3-45d4-8ba9-54679eb8b075"),
+                            CreatedAt = new DateTime(2025, 6, 28, 20, 24, 41, 212, DateTimeKind.Utc).AddTicks(5096),
                             Description = "Regular employee with limited access",
                             Name = "Employee",
                             NormalizedName = "EMPLOYEE"
                         },
                         new
                         {
-                            Id = new Guid("76ccc3ac-a426-4bf3-9019-60a7b7a55fd4"),
-                            CreatedAt = new DateTime(2025, 6, 28, 20, 27, 24, 636, DateTimeKind.Utc).AddTicks(7506),
+                            Id = new Guid("b987a0e0-44df-4ed2-8eaf-f21d1dbb89e6"),
+                            CreatedAt = new DateTime(2025, 6, 28, 20, 24, 41, 212, DateTimeKind.Utc).AddTicks(5097),
                             Description = "External vendor/supplier",
                             Name = "Vendor",
                             NormalizedName = "VENDOR"
                         },
                         new
                         {
-                            Id = new Guid("30d25b6f-7da2-4101-81bb-71e59b65aae0"),
-                            CreatedAt = new DateTime(2025, 6, 28, 20, 27, 24, 636, DateTimeKind.Utc).AddTicks(7507),
+                            Id = new Guid("eec6f30e-6676-4aac-9589-8a03fe7f2a18"),
+                            CreatedAt = new DateTime(2025, 6, 28, 20, 24, 41, 212, DateTimeKind.Utc).AddTicks(5098),
                             Description = "Customer with limited access",
                             Name = "Customer",
                             NormalizedName = "CUSTOMER"
@@ -342,8 +345,8 @@ namespace GarmentsERP.API.Migrations
                         {
                             Id = new Guid("11111111-1111-1111-1111-111111111111"),
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "83635566-04f7-4c6d-ad3a-247e6440b4ab",
-                            CreatedAt = new DateTime(2025, 6, 28, 20, 27, 24, 636, DateTimeKind.Utc).AddTicks(7736),
+                            ConcurrencyStamp = "6864b36a-c433-426b-86f5-703fc6183ad9",
+                            CreatedAt = new DateTime(2025, 6, 28, 20, 24, 41, 212, DateTimeKind.Utc).AddTicks(5389),
                             Email = "admin@erp.com",
                             EmailConfirmed = true,
                             FullName = "System Administrator",
@@ -351,9 +354,9 @@ namespace GarmentsERP.API.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@ERP.COM",
                             NormalizedUserName = "ADMIN",
-                            PasswordHash = "AQAAAAIAAYagAAAAEHZPP/LjnhCoNdlaqiRXrQsYK4LK0ZUpeqk8zwrCi965hUOaRa0ZYKpe6lLSkOyOPA==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEKEp3z8txRvdNOXAjpcGzHAbSH2WoTuBLzp5Jg+XorJBZT4aq8fG/wY00/oOXHuofA==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "b50b1343-54c0-4df1-b9ea-b6b037d1797d",
+                            SecurityStamp = "091eb6cb-3038-4979-83b2-e3f9f41601d5",
                             TwoFactorEnabled = false,
                             UserName = "admin",
                             UserType = 4
