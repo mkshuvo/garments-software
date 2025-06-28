@@ -10,6 +10,7 @@ using GarmentsERP.API.Services;
 using GarmentsERP.API.Services.Users;
 using GarmentsERP.API.Services.Auth;
 using GarmentsERP.API.Services.Interfaces;
+using GarmentsERP.API.Interfaces;
 using GarmentsERP.API.Middleware;
 using StackExchange.Redis;
 
@@ -72,6 +73,16 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IUserManagementService, UserManagementService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+
+// Register independent model services
+builder.Services.AddScoped<ICurrencyService, CurrencyService>();
+builder.Services.AddScoped<IProductCategoryService, ProductCategoryService>();
+builder.Services.AddScoped<ITaxRateService, TaxRateService>();
+builder.Services.AddScoped<ITaxSchemeService, TaxSchemeService>();
+builder.Services.AddScoped<IWarehouseService, WarehouseService>();
+builder.Services.AddScoped<ICompanyService, CompanyService>();
+builder.Services.AddScoped<IBusinessSettingService, BusinessSettingService>();
+builder.Services.AddScoped<IReportTemplateService, ReportTemplateService>();
 
 // Redis Configuration
 builder.Services.AddSingleton<IConnectionMultiplexer>(provider =>

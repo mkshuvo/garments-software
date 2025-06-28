@@ -4,6 +4,17 @@ using Microsoft.EntityFrameworkCore;
 using GarmentsERP.API.Models;
 using GarmentsERP.API.Models.Users;
 using GarmentsERP.API.Data.Seed;
+using GarmentsERP.API.Models.Accounting;
+using GarmentsERP.API.Models.Banking;
+using GarmentsERP.API.Models.Contacts;
+using GarmentsERP.API.Models.Currency;
+using GarmentsERP.API.Models.Inventory;
+using GarmentsERP.API.Models.Invoicing;
+using GarmentsERP.API.Models.Payments;
+using GarmentsERP.API.Models.Products;
+using GarmentsERP.API.Models.Reports;
+using GarmentsERP.API.Models.Settings;
+using GarmentsERP.API.Models.Tax;
 
 namespace GarmentsERP.API.Data
 {
@@ -13,254 +24,380 @@ namespace GarmentsERP.API.Data
         {
         }
 
-        // User Profile Entities
+        // User Profile Entities (legacy - keeping for compatibility)
         public DbSet<EmployeeProfile> EmployeeProfiles { get; set; }
         public DbSet<CustomerProfile> CustomerProfiles { get; set; }
         public DbSet<VendorProfile> VendorProfiles { get; set; }
         public DbSet<PayrollRecord> PayrollRecords { get; set; }
 
-        // Business Entities
-        public DbSet<Product> Products { get; set; }
-        public DbSet<Inventory> Inventories { get; set; }
-        public DbSet<Customer> Customers { get; set; }
-        public DbSet<SalesOrder> SalesOrders { get; set; }
-        public DbSet<OrderItem> OrderItems { get; set; }
-        public DbSet<ProductionLine> ProductionLines { get; set; }
-        public DbSet<WorkOrder> WorkOrders { get; set; }
-        public DbSet<ProductionSchedule> ProductionSchedules { get; set; }
-        public DbSet<Order> Orders { get; set; }
-        public DbSet<OrderDetail> OrderDetails { get; set; }
-        public DbSet<Invoice> Invoices { get; set; }
-        public DbSet<InvoiceItem> InvoiceItems { get; set; }
-        public DbSet<Employee> Employees { get; set; }
-        public DbSet<Payroll> Payrolls { get; set; }
+        // Enterprise Accounting Models
+        // Accounting
         public DbSet<ChartOfAccount> ChartOfAccounts { get; set; }
-        public DbSet<GLEntry> GLEntries { get; set; }
-        public DbSet<GLEntryLine> GLEntryLines { get; set; }
+        public DbSet<JournalEntry> JournalEntries { get; set; }
+        public DbSet<JournalEntryLine> JournalEntryLines { get; set; }
 
-        // Purchasing Entities
-        public DbSet<PurchaseOrder> PurchaseOrders { get; set; }
-        public DbSet<PurchaseOrderItem> PurchaseOrderItems { get; set; }
-        public DbSet<Bill> Bills { get; set; }
-        public DbSet<BillItem> BillItems { get; set; }
-        public DbSet<BillPayment> BillPayments { get; set; }
+        // Banking
+        public DbSet<BankAccount> BankAccounts { get; set; }
+        public DbSet<BankTransfer> BankTransfers { get; set; }
+        public DbSet<BankReconciliation> BankReconciliations { get; set; }
+        public DbSet<BankReconciliationItem> BankReconciliationItems { get; set; }
+
+        // Contacts
+        public DbSet<Contact> Contacts { get; set; }
+        public DbSet<ContactAddress> ContactAddresses { get; set; }
+
+        // Currency
+        public DbSet<Models.Currency.Currency> Currencies { get; set; }
+        public DbSet<ExchangeRate> ExchangeRates { get; set; }
+
+        // Inventory
+        public DbSet<StockItem> StockItems { get; set; }
+        public DbSet<StockMovement> StockMovements { get; set; }
+        public DbSet<Warehouse> Warehouses { get; set; }
+
+        // Invoicing
+        public DbSet<SalesInvoice> SalesInvoices { get; set; }
+        public DbSet<SalesInvoiceItem> SalesInvoiceItems { get; set; }
+        public DbSet<PurchaseInvoice> PurchaseInvoices { get; set; }
+        public DbSet<PurchaseInvoiceItem> PurchaseInvoiceItems { get; set; }
+
+        // Payments
+        public DbSet<Payment> Payments { get; set; }
+        public DbSet<PaymentAllocation> PaymentAllocations { get; set; }
+
+        // Products
+        public DbSet<Product> Products { get; set; }
+        public DbSet<ProductCategory> ProductCategories { get; set; }
+
+        // Reports
+        public DbSet<ReportTemplate> ReportTemplates { get; set; }
+
+        // Settings
+        public DbSet<Company> Companies { get; set; }
+        public DbSet<BusinessSetting> BusinessSettings { get; set; }
+
+        // Tax
+        public DbSet<TaxRate> TaxRates { get; set; }
+        public DbSet<TaxScheme> TaxSchemes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // Configure decimal precision
+            // Configure decimal precision for new enterprise models
+            
+            // Product decimal precision
             modelBuilder.Entity<Product>()
-                .Property(p => p.Price)
+                .Property(p => p.SalesPrice)
+                .HasPrecision(18, 4);
+
+            modelBuilder.Entity<Product>()
+                .Property(p => p.CostPrice)
+                .HasPrecision(18, 4);
+
+            modelBuilder.Entity<Product>()
+                .Property(p => p.TaxPercentage)
+                .HasPrecision(5, 2);
+
+            // StockItem decimal precision
+            modelBuilder.Entity<StockItem>()
+                .Property(s => s.QuantityInStock)
+                .HasPrecision(18, 4);
+
+            modelBuilder.Entity<StockItem>()
+                .Property(s => s.ReorderLevel)
+                .HasPrecision(18, 4);
+
+            modelBuilder.Entity<StockItem>()
+                .Property(s => s.MaximumLevel)
+                .HasPrecision(18, 4);
+
+            modelBuilder.Entity<StockItem>()
+                .Property(s => s.AverageCost)
+                .HasPrecision(18, 4);
+
+            // StockMovement decimal precision
+            modelBuilder.Entity<StockMovement>()
+                .Property(s => s.Quantity)
+                .HasPrecision(18, 4);
+
+            modelBuilder.Entity<StockMovement>()
+                .Property(s => s.UnitCost)
+                .HasPrecision(18, 4);
+
+            // Sales Invoice decimal precision
+            modelBuilder.Entity<SalesInvoice>()
+                .Property(s => s.SubTotal)
                 .HasPrecision(18, 2);
 
-            modelBuilder.Entity<SalesOrder>()
+            modelBuilder.Entity<SalesInvoice>()
+                .Property(s => s.TaxAmount)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<SalesInvoice>()
+                .Property(s => s.DiscountAmount)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<SalesInvoice>()
                 .Property(s => s.TotalAmount)
                 .HasPrecision(18, 2);
 
-            modelBuilder.Entity<OrderItem>()
-                .Property(o => o.UnitPrice)
+            modelBuilder.Entity<SalesInvoice>()
+                .Property(s => s.PaidAmount)
                 .HasPrecision(18, 2);
 
-            modelBuilder.Entity<OrderItem>()
-                .Property(o => o.LineTotal)
+            modelBuilder.Entity<SalesInvoice>()
+                .Property(s => s.BalanceAmount)
                 .HasPrecision(18, 2);
 
-            modelBuilder.Entity<Order>()
-                .Property(o => o.TotalAmount)
+            // Sales Invoice Item decimal precision
+            modelBuilder.Entity<SalesInvoiceItem>()
+                .Property(s => s.Quantity)
+                .HasPrecision(18, 4);
+
+            modelBuilder.Entity<SalesInvoiceItem>()
+                .Property(s => s.UnitPrice)
+                .HasPrecision(18, 4);
+
+            modelBuilder.Entity<SalesInvoiceItem>()
+                .Property(s => s.DiscountPercentage)
+                .HasPrecision(5, 2);
+
+            modelBuilder.Entity<SalesInvoiceItem>()
+                .Property(s => s.DiscountAmount)
                 .HasPrecision(18, 2);
 
-            modelBuilder.Entity<OrderDetail>()
-                .Property(o => o.Price)
+            modelBuilder.Entity<SalesInvoiceItem>()
+                .Property(s => s.TaxPercentage)
+                .HasPrecision(5, 2);
+
+            modelBuilder.Entity<SalesInvoiceItem>()
+                .Property(s => s.TaxAmount)
                 .HasPrecision(18, 2);
 
-            modelBuilder.Entity<OrderDetail>()
-                .Property(o => o.LineTotal)
+            modelBuilder.Entity<SalesInvoiceItem>()
+                .Property(s => s.LineTotal)
                 .HasPrecision(18, 2);
 
-            modelBuilder.Entity<Invoice>()
-                .Property(i => i.Subtotal)
+            // Purchase Invoice decimal precision
+            modelBuilder.Entity<PurchaseInvoice>()
+                .Property(p => p.SubTotal)
                 .HasPrecision(18, 2);
 
-            modelBuilder.Entity<Invoice>()
-                .Property(i => i.Taxes)
-                .HasPrecision(18, 2);
-
-            modelBuilder.Entity<Invoice>()
-                .Property(i => i.TotalAmount)
-                .HasPrecision(18, 2);
-
-            modelBuilder.Entity<InvoiceItem>()
-                .Property(i => i.UnitPrice)
-                .HasPrecision(18, 2);
-
-            modelBuilder.Entity<InvoiceItem>()
-                .Property(i => i.LineTotal)
-                .HasPrecision(18, 2);
-
-            modelBuilder.Entity<Employee>()
-                .Property(e => e.Salary)
-                .HasPrecision(18, 2);
-
-            modelBuilder.Entity<Payroll>()
-                .Property(p => p.GrossSalary)
-                .HasPrecision(18, 2);
-
-            modelBuilder.Entity<Payroll>()
-                .Property(p => p.Deductions)
-                .HasPrecision(18, 2);
-
-            modelBuilder.Entity<Payroll>()
-                .Property(p => p.NetSalary)
-                .HasPrecision(18, 2);
-
-            modelBuilder.Entity<GLEntry>()
-                .Property(g => g.TotalDebit)
-                .HasPrecision(18, 2);
-
-            modelBuilder.Entity<GLEntry>()
-                .Property(g => g.TotalCredit)
-                .HasPrecision(18, 2);
-
-            modelBuilder.Entity<GLEntryLine>()
-                .Property(g => g.Debit)
-                .HasPrecision(18, 2);
-            modelBuilder.Entity<GLEntryLine>()
-                .Property(g => g.Credit)
-                .HasPrecision(18, 2);
-
-            // Configure purchasing entity decimal precision
-            modelBuilder.Entity<PurchaseOrder>()
-                .Property(p => p.TotalAmount)
-                .HasPrecision(18, 2);
-
-            modelBuilder.Entity<PurchaseOrder>()
+            modelBuilder.Entity<PurchaseInvoice>()
                 .Property(p => p.TaxAmount)
                 .HasPrecision(18, 2);
 
-            modelBuilder.Entity<PurchaseOrder>()
-                .Property(p => p.GrandTotal)
+            modelBuilder.Entity<PurchaseInvoice>()
+                .Property(p => p.DiscountAmount)
                 .HasPrecision(18, 2);
 
-            modelBuilder.Entity<PurchaseOrderItem>()
+            modelBuilder.Entity<PurchaseInvoice>()
+                .Property(p => p.TotalAmount)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<PurchaseInvoice>()
+                .Property(p => p.PaidAmount)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<PurchaseInvoice>()
+                .Property(p => p.BalanceAmount)
+                .HasPrecision(18, 2);
+
+            // Purchase Invoice Item decimal precision
+            modelBuilder.Entity<PurchaseInvoiceItem>()
+                .Property(p => p.Quantity)
+                .HasPrecision(18, 4);
+
+            modelBuilder.Entity<PurchaseInvoiceItem>()
                 .Property(p => p.UnitPrice)
                 .HasPrecision(18, 4);
 
-            modelBuilder.Entity<PurchaseOrderItem>()
-                .Property(p => p.TotalPrice)
+            modelBuilder.Entity<PurchaseInvoiceItem>()
+                .Property(p => p.DiscountPercentage)
+                .HasPrecision(5, 2);
+
+            modelBuilder.Entity<PurchaseInvoiceItem>()
+                .Property(p => p.DiscountAmount)
                 .HasPrecision(18, 2);
 
-            modelBuilder.Entity<Bill>()
+            modelBuilder.Entity<PurchaseInvoiceItem>()
+                .Property(p => p.TaxPercentage)
+                .HasPrecision(5, 2);
+
+            modelBuilder.Entity<PurchaseInvoiceItem>()
+                .Property(p => p.TaxAmount)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<PurchaseInvoiceItem>()
+                .Property(p => p.LineTotal)
+                .HasPrecision(18, 2);
+
+            // Payment decimal precision
+            modelBuilder.Entity<Payment>()
+                .Property(p => p.Amount)
+                .HasPrecision(18, 2);
+
+            // Payment Allocation decimal precision
+            modelBuilder.Entity<PaymentAllocation>()
+                .Property(p => p.AllocatedAmount)
+                .HasPrecision(18, 2);
+
+            // Bank Account decimal precision
+            modelBuilder.Entity<BankAccount>()
+                .Property(b => b.OpeningBalance)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<BankAccount>()
+                .Property(b => b.CurrentBalance)
+                .HasPrecision(18, 2);
+
+            // Bank Transfer decimal precision
+            modelBuilder.Entity<BankTransfer>()
                 .Property(b => b.Amount)
                 .HasPrecision(18, 2);
 
-            modelBuilder.Entity<Bill>()
-                .Property(b => b.TaxAmount)
+            modelBuilder.Entity<BankTransfer>()
+                .Property(b => b.TransferFee)
                 .HasPrecision(18, 2);
 
-            modelBuilder.Entity<Bill>()
-                .Property(b => b.TotalAmount)
+            // Chart of Account decimal precision
+            modelBuilder.Entity<ChartOfAccount>()
+                .Property(c => c.OpeningBalance)
                 .HasPrecision(18, 2);
 
-            modelBuilder.Entity<Bill>()
-                .Property(b => b.PaidAmount)
+            // Journal Entry Line decimal precision
+            modelBuilder.Entity<JournalEntryLine>()
+                .Property(j => j.Debit)
                 .HasPrecision(18, 2);
 
-            modelBuilder.Entity<Bill>()
-                .Property(b => b.BalanceAmount)
+            modelBuilder.Entity<JournalEntryLine>()
+                .Property(j => j.Credit)
                 .HasPrecision(18, 2);
 
-            modelBuilder.Entity<BillItem>()
-                .Property(b => b.UnitPrice)
-                .HasPrecision(18, 4);
+            // Exchange Rate decimal precision
+            modelBuilder.Entity<ExchangeRate>()
+                .Property(e => e.Rate)
+                .HasPrecision(10, 6);
 
-            modelBuilder.Entity<BillItem>()
-                .Property(b => b.TotalPrice)
-                .HasPrecision(18, 2);
-
-            modelBuilder.Entity<BillPayment>()
-                .Property(b => b.Amount)
-                .HasPrecision(18, 2);
-
-            modelBuilder.Entity<VendorProfile>()
-                .Property(v => v.CurrentBalance)
-                .HasPrecision(18, 2);
+            // Tax Rate decimal precision
+            modelBuilder.Entity<TaxRate>()
+                .Property(t => t.TaxPercentage)
+                .HasPrecision(5, 2);
 
             // Configure unique constraints
             modelBuilder.Entity<Product>()
-                .HasIndex(p => p.SKU)
+                .HasIndex(p => p.ProductCode)
                 .IsUnique();
+
             modelBuilder.Entity<ChartOfAccount>()
                 .HasIndex(c => c.AccountCode)
                 .IsUnique();
 
-            // Configure relationships
-            modelBuilder.Entity<OrderItem>()
-                .HasOne(oi => oi.SalesOrder)
-                .WithMany(so => so.OrderItems)
-                .HasForeignKey(oi => oi.OrderId)
-                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<Models.Currency.Currency>()
+                .HasIndex(c => c.Code)
+                .IsUnique();
 
-            modelBuilder.Entity<OrderDetail>()
-                .HasOne(od => od.Order)
-                .WithMany(o => o.OrderDetails)
-                .HasForeignKey(od => od.OrderId)
-                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<SalesInvoice>()
+                .HasIndex(s => s.InvoiceNumber)
+                .IsUnique();
 
-            modelBuilder.Entity<InvoiceItem>()
-                .HasOne(ii => ii.Invoice)
-                .WithMany(i => i.InvoiceItems)
-                .HasForeignKey(ii => ii.InvoiceId)
-                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<PurchaseInvoice>()
+                .HasIndex(p => p.InvoiceNumber)
+                .IsUnique();
 
-            modelBuilder.Entity<GLEntryLine>()
-                .HasOne(gel => gel.GLEntry)
-                .WithMany(ge => ge.GLEntryLines)
-                .HasForeignKey(gel => gel.GLEntryId)
-                .OnDelete(DeleteBehavior.Cascade);            // Configure self-referencing relationship for ChartOfAccount
+            modelBuilder.Entity<BankAccount>()
+                .HasIndex(b => b.AccountNumber)
+                .IsUnique();
+
+            // Configure self-referencing relationship for ChartOfAccount
             modelBuilder.Entity<ChartOfAccount>()
                 .HasOne(c => c.ParentAccount)
                 .WithMany(c => c.SubAccounts)
                 .HasForeignKey(c => c.ParentAccountId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Configure purchasing entity relationships
-            modelBuilder.Entity<PurchaseOrderItem>()
-                .HasOne(poi => poi.PurchaseOrder)
-                .WithMany(po => po.Items)
-                .HasForeignKey(poi => poi.PurchaseOrderId)
+            // Configure relationships for SalesInvoice
+            modelBuilder.Entity<SalesInvoiceItem>()
+                .HasOne(s => s.SalesInvoice)
+                .WithMany(s => s.Items)
+                .HasForeignKey(s => s.SalesInvoiceId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<BillItem>()
-                .HasOne(bi => bi.Bill)
-                .WithMany(b => b.Items)
-                .HasForeignKey(bi => bi.BillId)
-                .OnDelete(DeleteBehavior.Cascade);
-            modelBuilder.Entity<BillPayment>()
-                .HasOne(bp => bp.Bill)
-                .WithMany(b => b.Payments)
-                .HasForeignKey(bp => bp.BillId)
+            // Configure relationships for PurchaseInvoice
+            modelBuilder.Entity<PurchaseInvoiceItem>()
+                .HasOne(p => p.PurchaseInvoice)
+                .WithMany(p => p.Items)
+                .HasForeignKey(p => p.PurchaseInvoiceId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Configure Product relationships explicitly
-            modelBuilder.Entity<BillItem>()
-                .HasOne(bi => bi.Product)
-                .WithMany()
-                .HasForeignKey(bi => bi.ProductId)
+            // Configure relationships for JournalEntry
+            modelBuilder.Entity<JournalEntryLine>()
+                .HasOne(j => j.JournalEntry)
+                .WithMany(j => j.JournalEntryLines)
+                .HasForeignKey(j => j.JournalEntryId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure relationships for PaymentAllocation
+            modelBuilder.Entity<PaymentAllocation>()
+                .HasOne(p => p.Payment)
+                .WithMany(p => p.PaymentAllocations)
+                .HasForeignKey(p => p.PaymentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure relationships for ContactAddress
+            modelBuilder.Entity<ContactAddress>()
+                .HasOne(c => c.Contact)
+                .WithMany(c => c.Addresses)
+                .HasForeignKey(c => c.ContactId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure relationships for ExchangeRate
+            modelBuilder.Entity<ExchangeRate>()
+                .HasOne(e => e.FromCurrency)
+                .WithMany(c => c.FromExchangeRates)
+                .HasForeignKey(e => e.FromCurrencyId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ExchangeRate>()
+                .HasOne(e => e.ToCurrency)
+                .WithMany(c => c.ToExchangeRates)
+                .HasForeignKey(e => e.ToCurrencyId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Configure relationships for TaxScheme
+            modelBuilder.Entity<TaxScheme>()
+                .HasOne(t => t.TaxRate)
+                .WithMany(t => t.TaxSchemes)
+                .HasForeignKey(t => t.TaxRateId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Configure ProductCategory relationship
+            modelBuilder.Entity<Product>()
+                .HasOne(p => p.Category)
+                .WithMany(c => c.Products)
+                .HasForeignKey(p => p.CategoryId)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            modelBuilder.Entity<PurchaseOrderItem>()
-                .HasOne(poi => poi.Product)
-                .WithMany()
-                .HasForeignKey(poi => poi.ProductId)
-                .OnDelete(DeleteBehavior.Restrict);            // Configure unique constraints for purchasing
-            modelBuilder.Entity<PurchaseOrder>()
-                .HasIndex(p => p.PurchaseOrderNumber)
-                .IsUnique();
+            // Configure StockItem relationships
+            modelBuilder.Entity<StockItem>()
+                .HasOne(s => s.Product)
+                .WithMany(p => p.StockItems)
+                .HasForeignKey(s => s.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<Bill>()
-                .HasIndex(b => b.BillNumber)
-                .IsUnique();
+            modelBuilder.Entity<StockItem>()
+                .HasOne(s => s.Warehouse)
+                .WithMany(w => w.StockItems)
+                .HasForeignKey(s => s.WarehouseId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Configure StockMovement relationships
+            modelBuilder.Entity<StockMovement>()
+                .HasOne(s => s.StockItem)
+                .WithMany(s => s.StockMovements)
+                .HasForeignKey(s => s.StockItemId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // Seed default roles
             SeedRoles(modelBuilder);

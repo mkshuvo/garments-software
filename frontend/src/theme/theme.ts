@@ -8,15 +8,15 @@ const themeOptions: ThemeOptions = {
   palette: {
     mode: 'light',
     primary: {
-      main: '#1976d2',
-      light: '#42a5f5',
-      dark: '#1565c0',
+      main: '#FF6B35', // Orange from MMFashion logo
+      light: '#FF8A65',
+      dark: '#E65100',
       contrastText: '#ffffff',
     },
     secondary: {
-      main: '#dc004e',
-      light: '#ff5983',
-      dark: '#9a0036',
+      main: '#2C3E50', // Dark teal/navy from MMFashion logo
+      light: '#34495E',
+      dark: '#1A252F',
       contrastText: '#ffffff',
     },
     background: {
@@ -24,14 +24,14 @@ const themeOptions: ThemeOptions = {
       paper: '#ffffff',
     },
     text: {
-      primary: '#212121',
+      primary: '#2C3E50', // Using secondary color for main text
       secondary: '#666666',
     },
     error: {
       main: '#f44336',
     },
     warning: {
-      main: '#ff9800',
+      main: '#FF6B35', // Using primary orange for warnings
     },
     info: {
       main: '#2196f3',
