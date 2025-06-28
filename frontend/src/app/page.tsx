@@ -15,92 +15,82 @@ import {
 import Link from 'next/link'
 import { useAuthStore } from '@/stores/authStore'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
-import Inventory2Icon from '@mui/icons-material/Inventory2';
-import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
-import ShoppingCartCheckoutIcon from '@mui/icons-material/ShoppingCartCheckout';
-import FactoryIcon from '@mui/icons-material/Factory';
-import WorkHistoryIcon from '@mui/icons-material/WorkHistory';
-import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
-import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
-import AssessmentIcon from '@mui/icons-material/Assessment';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import BusinessIcon from '@mui/icons-material/Business';
+import CurrencyExchangeIcon from '@mui/icons-material/CurrencyExchange';
+import CategoryIcon from '@mui/icons-material/Category';
+import PercentIcon from '@mui/icons-material/Percent';
+import WarehouseIcon from '@mui/icons-material/Warehouse';
+import DescriptionIcon from '@mui/icons-material/Description';
+import SettingsIcon from '@mui/icons-material/Settings';
 import LoginIcon from '@mui/icons-material/Login';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 
 const menuItems = [
+  // Admin & User Management
   {
-    title: 'Dashboard',
-    description: 'ERP overview and quick stats',
-    icon: <DashboardIcon sx={{ fontSize: 40 }} color="primary" />, 
-    href: '/dashboard',
+    title: 'Permissions',
+    description: 'Manage user and role permissions',
+    icon: <AdminPanelSettingsIcon sx={{ fontSize: 40 }} color="primary" />, 
+    href: '/admin/permissions',
+    category: 'Administration'
+  },
+  
+  // Company & Business Settings
+  {
+    title: 'Companies',
+    description: 'Manage company information',
+    icon: <BusinessIcon sx={{ fontSize: 40 }} color="primary" />, 
+    href: '/admin/companies',
+    category: 'Business'
   },
   {
-    title: 'User Management',
-    description: 'Manage users, roles, and permissions',
-    icon: <PeopleAltIcon sx={{ fontSize: 40 }} color="primary" />, 
-    href: '/users',
+    title: 'Business Settings',
+    description: 'Configure business settings',
+    icon: <SettingsIcon sx={{ fontSize: 40 }} color="primary" />, 
+    href: '/admin/business-settings',
+    category: 'Business'
+  },
+  
+  // Financial Configuration
+  {
+    title: 'Currencies',
+    description: 'Manage currencies and exchange rates',
+    icon: <CurrencyExchangeIcon sx={{ fontSize: 40 }} color="primary" />, 
+    href: '/admin/currencies',
+    category: 'Financial'
   },
   {
-    title: 'Inventory',
-    description: 'Stock, warehouses, and inventory tracking',
-    icon: <Inventory2Icon sx={{ fontSize: 40 }} color="primary" />, 
-    href: '/inventory',
+    title: 'Tax Rates',
+    description: 'Configure tax rates and types',
+    icon: <PercentIcon sx={{ fontSize: 40 }} color="primary" />, 
+    href: '/admin/tax-rates',
+    category: 'Financial'
+  },
+  
+  // Inventory & Products
+  {
+    title: 'Product Categories',
+    description: 'Organize products into categories',
+    icon: <CategoryIcon sx={{ fontSize: 40 }} color="primary" />, 
+    href: '/admin/product-categories',
+    category: 'Inventory'
   },
   {
-    title: 'Products',
-    description: 'Product catalog and details',
-    icon: <ShoppingBagIcon sx={{ fontSize: 40 }} color="primary" />, 
-    href: '/products',
+    title: 'Warehouses',
+    description: 'Manage warehouse locations',
+    icon: <WarehouseIcon sx={{ fontSize: 40 }} color="primary" />, 
+    href: '/admin/warehouses',
+    category: 'Inventory'
   },
+  
+  // Reports
   {
-    title: 'Orders',
-    description: 'Order management and fulfillment',
-    icon: <ShoppingCartCheckoutIcon sx={{ fontSize: 40 }} color="primary" />, 
-    href: '/orders',
-  },
-  {
-    title: 'Sales',
-    description: 'Sales orders and customer management',
-    icon: <AssessmentIcon sx={{ fontSize: 40 }} color="primary" />, 
-    href: '/sales',
-  },
-  {
-    title: 'Purchasing',
-    description: 'Purchase orders and vendor management',
-    icon: <ShoppingCartIcon sx={{ fontSize: 40 }} color="primary" />, 
-    href: '/purchasing',
-  },
-  {
-    title: 'Production',
-    description: 'Work orders and production lines',
-    icon: <FactoryIcon sx={{ fontSize: 40 }} color="primary" />, 
-    href: '/production',
-  },
-  {
-    title: 'HR & Payroll',
-    description: 'Employee management and payroll',
-    icon: <WorkHistoryIcon sx={{ fontSize: 40 }} color="primary" />, 
-    href: '/hr',
-  },
-  {
-    title: 'Accounting',
-    description: 'Chart of accounts, ledgers, and finance',
-    icon: <AccountBalanceIcon sx={{ fontSize: 40 }} color="primary" />, 
-    href: '/accounting',
-  },
-  {
-    title: 'Invoicing',
-    description: 'Invoices, payments, and billing',
-    icon: <ReceiptLongIcon sx={{ fontSize: 40 }} color="primary" />, 
-    href: '/invoicing',
-  },
-  {
-    title: 'Reports & Analytics',
-    description: 'Business intelligence and reporting',
-    icon: <AssessmentIcon sx={{ fontSize: 40 }} color="primary" />, 
-    href: '/reports',
+    title: 'Report Templates',
+    description: 'Configure and manage report templates',
+    icon: <DescriptionIcon sx={{ fontSize: 40 }} color="primary" />, 
+    href: '/admin/report-templates',
+    category: 'Reports'
   },
 ];
 
@@ -291,55 +281,69 @@ export default function HomePage() {
                 Welcome to GarmentsERP
               </Typography>
               <Typography variant="h6" color="text.secondary" sx={{ maxWidth: '600px', mx: 'auto' }}>
-                Select a module to get started
+                Select a module to get started with your ERP configuration
               </Typography>
             </Box>
-            <Box
-              sx={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: 4,
-                justifyContent: { xs: 'center', md: 'flex-start' },
-              }}
-            >
-              {menuItems.map((item) => (
-                <Box
-                  key={item.title}
-                  sx={{
-                    flex: { xs: '1 1 100%', sm: '1 1 45%', md: '1 1 30%', lg: '1 1 22%' },
-                    minWidth: 260,
-                    maxWidth: 350,
-                    mb: 4,
-                    display: 'flex',
-                  }}
-                >
-                  <Card
+            
+            {/* Group menu items by category */}
+            {['Administration', 'Business', 'Financial', 'Inventory', 'Reports'].map((category) => {
+              const categoryItems = menuItems.filter(item => item.category === category);
+              if (categoryItems.length === 0) return null;
+              
+              return (
+                <Box key={category}>
+                  <Typography variant="h4" gutterBottom color="text.primary" sx={{ mb: 4 }}>
+                    {category}
+                  </Typography>
+                  <Box
                     sx={{
-                      width: '100%',
-                      height: '100%',
-                      transition: 'all 0.3s',
-                      '&:hover': {
-                        boxShadow: 8,
-                        transform: 'translateY(-6px) scale(1.03)',
-                      },
-                      cursor: 'pointer',
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: 4,
+                      justifyContent: { xs: 'center', md: 'flex-start' },
                     }}
-                    component={Link}
-                    href={item.href}
                   >
-                    <CardContent sx={{ p: 4, textAlign: 'center' }}>
-                      <Box mb={2}>{item.icon}</Box>
-                      <Typography variant="h6" fontWeight="bold" gutterBottom>
-                        {item.title}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {item.description}
-                      </Typography>
-                    </CardContent>
-                  </Card>
+                    {categoryItems.map((item) => (
+                      <Box
+                        key={item.title}
+                        sx={{
+                          flex: { xs: '1 1 100%', sm: '1 1 45%', md: '1 1 30%', lg: '1 1 22%' },
+                          minWidth: 260,
+                          maxWidth: 350,
+                          mb: 4,
+                          display: 'flex',
+                        }}
+                      >
+                        <Card
+                          sx={{
+                            width: '100%',
+                            height: '100%',
+                            transition: 'all 0.3s',
+                            '&:hover': {
+                              boxShadow: 8,
+                              transform: 'translateY(-6px) scale(1.03)',
+                            },
+                            cursor: 'pointer',
+                          }}
+                          component={Link}
+                          href={item.href}
+                        >
+                          <CardContent sx={{ p: 4, textAlign: 'center' }}>
+                            <Box mb={2}>{item.icon}</Box>
+                            <Typography variant="h6" fontWeight="bold" gutterBottom>
+                              {item.title}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {item.description}
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Box>
+                    ))}
+                  </Box>
                 </Box>
-              ))}
-            </Box>
+              );
+            })}
           </Stack>
         </Container>
 

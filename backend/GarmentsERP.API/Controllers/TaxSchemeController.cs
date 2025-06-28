@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using GarmentsERP.API.DTOs.Tax;
 using GarmentsERP.API.Interfaces;
+using GarmentsERP.API.Attributes;
 
 namespace GarmentsERP.API.Controllers
 {
@@ -25,6 +26,7 @@ namespace GarmentsERP.API.Controllers
         /// Get all tax schemes
         /// </summary>
         [HttpGet]
+        [RequirePermission("TaxScheme", "Read")]
         public async Task<ActionResult<IEnumerable<TaxSchemeDto>>> GetTaxSchemes()
         {
             try
@@ -43,6 +45,7 @@ namespace GarmentsERP.API.Controllers
         /// Get tax scheme by ID
         /// </summary>
         [HttpGet("{id}")]
+        [RequirePermission("TaxScheme", "Read")]
         public async Task<ActionResult<TaxSchemeDto>> GetTaxScheme(Guid id)
         {
             try
@@ -65,6 +68,7 @@ namespace GarmentsERP.API.Controllers
         /// Create a new tax scheme
         /// </summary>
         [HttpPost]
+        [RequirePermission("TaxScheme", "Create")]
         public async Task<ActionResult<TaxSchemeDto>> CreateTaxScheme(CreateTaxSchemeDto createDto)
         {
             try
@@ -83,6 +87,7 @@ namespace GarmentsERP.API.Controllers
         /// Update an existing tax scheme
         /// </summary>
         [HttpPut("{id}")]
+        [RequirePermission("TaxScheme", "Update")]
         public async Task<ActionResult<TaxSchemeDto>> UpdateTaxScheme(Guid id, UpdateTaxSchemeDto updateDto)
         {
             try
@@ -105,6 +110,7 @@ namespace GarmentsERP.API.Controllers
         /// Delete a tax scheme
         /// </summary>
         [HttpDelete("{id}")]
+        [RequirePermission("TaxScheme", "Delete")]
         public async Task<ActionResult> DeleteTaxScheme(Guid id)
         {
             try
@@ -127,6 +133,7 @@ namespace GarmentsERP.API.Controllers
         /// Get active tax schemes
         /// </summary>
         [HttpGet("active")]
+        [RequirePermission("TaxScheme", "Read")]
         public async Task<ActionResult<IEnumerable<TaxSchemeDto>>> GetActiveTaxSchemes()
         {
             try
@@ -145,6 +152,7 @@ namespace GarmentsERP.API.Controllers
         /// Get tax schemes by tax rate
         /// </summary>
         [HttpGet("by-tax-rate/{taxRateId}")]
+        [RequirePermission("TaxScheme", "Read")]
         public async Task<ActionResult<IEnumerable<TaxSchemeDto>>> GetTaxSchemesByTaxRate(Guid taxRateId)
         {
             try

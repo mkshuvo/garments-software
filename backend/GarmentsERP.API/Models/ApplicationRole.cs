@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
+using GarmentsERP.API.Models.Users;
 
 namespace GarmentsERP.API.Models
 {
@@ -12,6 +13,7 @@ namespace GarmentsERP.API.Models
 
         // Navigation properties
         public virtual ICollection<IdentityUserRole<Guid>> UserRoles { get; set; } = new List<IdentityUserRole<Guid>>();
+        public virtual ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();
     }
 
     public enum UserRoles

@@ -22,6 +22,157 @@ namespace GarmentsERP.API.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("GarmentsERP.API.Models.Accounting.ChartOfAccount", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AccountCode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<string>("AccountName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("AccountType")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("CurrentBalance")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal>("OpeningBalance")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid?>("ParentAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountCode")
+                        .IsUnique();
+
+                    b.HasIndex("ParentAccountId");
+
+                    b.ToTable("ChartOfAccounts");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Accounting.JournalEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ApprovedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("JournalNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("JournalType")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ReferenceNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("TotalCredit")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("TotalDebit")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("TransactionDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApprovedByUserId");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.ToTable("JournalEntries");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Accounting.JournalEntryLine", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Credit")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("Debit")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("JournalEntryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("LineOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Reference")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("JournalEntryId");
+
+                    b.ToTable("JournalEntryLines");
+                });
+
             modelBuilder.Entity("GarmentsERP.API.Models.ApplicationRole", b =>
                 {
                     b.Property<Guid>("Id")
@@ -58,40 +209,40 @@ namespace GarmentsERP.API.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("de3240f4-3cab-4639-941d-89bd277e5097"),
-                            CreatedAt = new DateTime(2025, 6, 18, 21, 52, 16, 691, DateTimeKind.Utc).AddTicks(3026),
+                            Id = new Guid("ef166e87-1cac-4896-ae57-ce46114ecc43"),
+                            CreatedAt = new DateTime(2025, 6, 28, 20, 27, 24, 636, DateTimeKind.Utc).AddTicks(7495),
                             Description = "System Administrator with full access",
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         },
                         new
                         {
-                            Id = new Guid("9d260717-745c-4691-9114-de136d97ec18"),
-                            CreatedAt = new DateTime(2025, 6, 18, 21, 52, 16, 691, DateTimeKind.Utc).AddTicks(3031),
+                            Id = new Guid("f962e05e-db0c-4be9-8c0a-1a8c6229d427"),
+                            CreatedAt = new DateTime(2025, 6, 28, 20, 27, 24, 636, DateTimeKind.Utc).AddTicks(7504),
                             Description = "Manager with administrative privileges",
                             Name = "Manager",
                             NormalizedName = "MANAGER"
                         },
                         new
                         {
-                            Id = new Guid("16656327-516b-4008-a40a-9194714459e5"),
-                            CreatedAt = new DateTime(2025, 6, 18, 21, 52, 16, 691, DateTimeKind.Utc).AddTicks(3032),
+                            Id = new Guid("d30fd39b-2411-4656-971d-882d8934a2b5"),
+                            CreatedAt = new DateTime(2025, 6, 28, 20, 27, 24, 636, DateTimeKind.Utc).AddTicks(7505),
                             Description = "Regular employee with limited access",
                             Name = "Employee",
                             NormalizedName = "EMPLOYEE"
                         },
                         new
                         {
-                            Id = new Guid("799d4c1f-dded-4efa-a237-34afc2cf94de"),
-                            CreatedAt = new DateTime(2025, 6, 18, 21, 52, 16, 691, DateTimeKind.Utc).AddTicks(3033),
+                            Id = new Guid("76ccc3ac-a426-4bf3-9019-60a7b7a55fd4"),
+                            CreatedAt = new DateTime(2025, 6, 28, 20, 27, 24, 636, DateTimeKind.Utc).AddTicks(7506),
                             Description = "External vendor/supplier",
                             Name = "Vendor",
                             NormalizedName = "VENDOR"
                         },
                         new
                         {
-                            Id = new Guid("f5da2a56-81a5-425d-b9f0-a3ed4c107753"),
-                            CreatedAt = new DateTime(2025, 6, 18, 21, 52, 16, 691, DateTimeKind.Utc).AddTicks(3034),
+                            Id = new Guid("30d25b6f-7da2-4101-81bb-71e59b65aae0"),
+                            CreatedAt = new DateTime(2025, 6, 28, 20, 27, 24, 636, DateTimeKind.Utc).AddTicks(7507),
                             Description = "Customer with limited access",
                             Name = "Customer",
                             NormalizedName = "CUSTOMER"
@@ -185,229 +336,516 @@ namespace GarmentsERP.API.Migrations
                         .HasDatabaseName("UserNameIndex");
 
                     b.ToTable("AspNetUsers", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("11111111-1111-1111-1111-111111111111"),
+                            AccessFailedCount = 0,
+                            ConcurrencyStamp = "83635566-04f7-4c6d-ad3a-247e6440b4ab",
+                            CreatedAt = new DateTime(2025, 6, 28, 20, 27, 24, 636, DateTimeKind.Utc).AddTicks(7736),
+                            Email = "admin@erp.com",
+                            EmailConfirmed = true,
+                            FullName = "System Administrator",
+                            IsActive = true,
+                            LockoutEnabled = false,
+                            NormalizedEmail = "ADMIN@ERP.COM",
+                            NormalizedUserName = "ADMIN",
+                            PasswordHash = "AQAAAAIAAYagAAAAEHZPP/LjnhCoNdlaqiRXrQsYK4LK0ZUpeqk8zwrCi965hUOaRa0ZYKpe6lLSkOyOPA==",
+                            PhoneNumberConfirmed = false,
+                            SecurityStamp = "b50b1343-54c0-4df1-b9ea-b6b037d1797d",
+                            TwoFactorEnabled = false,
+                            UserName = "admin",
+                            UserType = 4
+                        });
                 });
 
-            modelBuilder.Entity("GarmentsERP.API.Models.Bill", b =>
+            modelBuilder.Entity("GarmentsERP.API.Models.Banking.BankAccount", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AccountName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("AccountNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("AccountType")
                         .HasColumnType("integer");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<decimal>("Amount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("BalanceAmount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("BillDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("BillNumber")
+                    b.Property<string>("BankName")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("BranchName")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("CreatedBy")
+                    b.Property<decimal>("CurrentBalance")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("IFSCCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal>("OpeningBalance")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("SWIFTCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountNumber")
+                        .IsUnique();
+
+                    b.ToTable("BankAccounts");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Banking.BankReconciliation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BankAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("BookBalance")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime?>("ReconciledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("ReconciledBalance")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid?>("ReconciledByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("StatementBalance")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("StatementDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BankAccountId");
+
+                    b.HasIndex("ReconciledByUserId");
+
+                    b.ToTable("BankReconciliations");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Banking.BankReconciliationItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BankReconciliationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("CreditAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("DebitAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
-                    b.Property<DateTime?>("DueDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("ModifiedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("ModifiedBy")
-                        .HasColumnType("text");
+                    b.Property<bool>("IsReconciled")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Notes")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
-                    b.Property<decimal>("PaidAmount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("PaymentTerms")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<int?>("PurchaseOrderId")
-                        .HasColumnType("integer");
+                    b.Property<Guid?>("PaymentId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Reference")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<decimal>("TaxAmount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("TotalAmount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<Guid>("VendorId")
-                        .HasColumnType("uuid");
+                    b.Property<DateTime>("TransactionDate")
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BillNumber")
-                        .IsUnique();
+                    b.HasIndex("BankReconciliationId");
 
-                    b.HasIndex("PurchaseOrderId");
+                    b.HasIndex("PaymentId");
 
-                    b.HasIndex("VendorId");
-
-                    b.ToTable("Bills");
+                    b.ToTable("BankReconciliationItems");
                 });
 
-            modelBuilder.Entity("GarmentsERP.API.Models.BillItem", b =>
+            modelBuilder.Entity("GarmentsERP.API.Models.Banking.BankTransfer", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("uuid");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
 
-                    b.Property<int>("BillId")
-                        .HasColumnType("integer");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("FromAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Reference")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("ToAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("TransferDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("TransferFee")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("TransferNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("FromAccountId");
+
+                    b.HasIndex("ToAccountId");
+
+                    b.ToTable("BankTransfers");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Contacts.Contact", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CompanyName")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<Guid?>("ProductId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Quantity")
+                    b.Property<int>("ContactType")
                         .HasColumnType("integer");
 
-                    b.Property<decimal>("TotalPrice")
-                        .HasPrecision(18, 2)
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("CreditLimit")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<string>("Unit")
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Fax")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Mobile")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("PaymentTerms")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("TaxNumber")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.Property<decimal>("UnitPrice")
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Website")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Contacts");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Contacts.ContactAddress", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("AddressType")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("City")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid>("ContactId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Country")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("PostalCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("State")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContactId");
+
+                    b.ToTable("ContactAddresses");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Currency.Currency", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsBaseCurrency")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Symbol")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("Currencies");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Currency.ExchangeRate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("FromCurrencyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Rate")
+                        .HasPrecision(10, 6)
+                        .HasColumnType("decimal(10,6)");
+
+                    b.Property<Guid>("ToCurrencyId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FromCurrencyId");
+
+                    b.HasIndex("ToCurrencyId");
+
+                    b.ToTable("ExchangeRates");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Inventory.StockItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("AverageCost")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<DateTime>("LastUpdated")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("MaximumLevel")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("QuantityInStock")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("ReorderLevel")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<Guid?>("WarehouseId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("WarehouseId");
+
+                    b.ToTable("StockItems");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Inventory.StockMovement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime>("MovementDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("MovementType")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("PurchaseInvoiceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<string>("Reference")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid?>("SalesInvoiceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("StockItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("UnitCost")
                         .HasPrecision(18, 4)
                         .HasColumnType("decimal(18,4)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BillId");
+                    b.HasIndex("CreatedByUserId");
 
-                    b.HasIndex("ProductId");
+                    b.HasIndex("PurchaseInvoiceId");
 
-                    b.ToTable("BillItems");
+                    b.HasIndex("SalesInvoiceId");
+
+                    b.HasIndex("StockItemId");
+
+                    b.ToTable("StockMovements");
                 });
 
-            modelBuilder.Entity("GarmentsERP.API.Models.BillPayment", b =>
+            modelBuilder.Entity("GarmentsERP.API.Models.Inventory.Warehouse", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<decimal>("Amount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("BillId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<DateTime>("PaymentDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("PaymentMethod")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<string>("Reference")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BillId");
-
-                    b.ToTable("BillPayments");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.ChartOfAccount", b =>
-                {
-                    b.Property<Guid>("AccountId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("AccountCode")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)");
-
-                    b.Property<string>("AccountName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<int>("AccountType")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<Guid?>("ParentAccountId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("AccountId");
-
-                    b.HasIndex("AccountCode")
-                        .IsUnique();
-
-                    b.HasIndex("ParentAccountId");
-
-                    b.ToTable("ChartOfAccounts");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Customer", b =>
-                {
-                    b.Property<Guid>("CustomerId")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
@@ -415,220 +853,64 @@ namespace GarmentsERP.API.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
-                    b.Property<string>("CompanyName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                    b.Property<string>("City")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("ContactPerson")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Email")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Phone")
-                        .HasMaxLength(15)
-                        .HasColumnType("character varying(15)");
-
-                    b.HasKey("CustomerId");
-
-                    b.ToTable("Customers");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Employee", b =>
-                {
-                    b.Property<Guid>("EmployeeId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Address")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                    b.Property<string>("ContactPhone")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Department")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("FirstName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<DateTime>("HireDate")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("LastName")
+                    b.Property<string>("PostalCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("State")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("WarehouseName")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<string>("Phone")
-                        .HasMaxLength(15)
-                        .HasColumnType("character varying(15)");
+                    b.HasKey("Id");
 
-                    b.Property<string>("Position")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<decimal>("Salary")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<DateTime?>("TerminationDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("EmployeeId");
-
-                    b.HasIndex("Email")
-                        .IsUnique();
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Employees");
+                    b.ToTable("Warehouses");
                 });
 
-            modelBuilder.Entity("GarmentsERP.API.Models.GLEntry", b =>
+            modelBuilder.Entity("GarmentsERP.API.Models.Invoicing.PurchaseInvoice", b =>
                 {
-                    b.Property<Guid>("GLEntryId")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("BalanceAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid>("ContactId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid?>("CreatedByUserId")
+                    b.Property<Guid>("CreatedByUserId")
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<string>("ReferenceNumber")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal>("TotalCredit")
+                    b.Property<decimal>("DiscountAmount")
                         .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<decimal>("TotalDebit")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("VoucherType")
-                        .HasColumnType("integer");
-
-                    b.HasKey("GLEntryId");
-
-                    b.HasIndex("CreatedByUserId");
-
-                    b.ToTable("GLEntries");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.GLEntryLine", b =>
-                {
-                    b.Property<Guid>("LineId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("AccountId")
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("Credit")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<decimal>("Debit")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<Guid>("GLEntryId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Remarks")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.HasKey("LineId");
-
-                    b.HasIndex("AccountId");
-
-                    b.HasIndex("GLEntryId");
-
-                    b.ToTable("GLEntryLines");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Inventory", b =>
-                {
-                    b.Property<Guid>("InventoryId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("LastUpdated")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("ProductId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("QuantityInStock")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("ReorderLevel")
-                        .HasColumnType("integer");
-
-                    b.HasKey("InventoryId");
-
-                    b.HasIndex("ProductId");
-
-                    b.ToTable("Inventories");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Invoice", b =>
-                {
-                    b.Property<Guid>("InvoiceId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("CustomerProfileId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("DueDate")
                         .HasColumnType("timestamp with time zone");
@@ -641,437 +923,103 @@ namespace GarmentsERP.API.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.Property<Guid>("OrderId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal>("Subtotal")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<decimal>("Taxes")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<decimal>("TotalAmount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("InvoiceId");
-
-                    b.HasIndex("CustomerProfileId");
-
-                    b.HasIndex("OrderId");
-
-                    b.ToTable("Invoices");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.InvoiceItem", b =>
-                {
-                    b.Property<Guid>("InvoiceItemId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<Guid>("InvoiceId")
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("LineTotal")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<Guid?>("ProductId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal>("UnitPrice")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.HasKey("InvoiceItemId");
-
-                    b.HasIndex("InvoiceId");
-
-                    b.HasIndex("ProductId");
-
-                    b.ToTable("InvoiceItems");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Order", b =>
-                {
-                    b.Property<Guid>("OrderId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("CustomerId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("DeliveryDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("ProductionOrderId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("SalesOrderId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal>("TotalAmount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("OrderId");
-
-                    b.HasIndex("CustomerId");
-
-                    b.HasIndex("ProductionOrderId");
-
-                    b.HasIndex("SalesOrderId");
-
-                    b.ToTable("Orders");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.OrderDetail", b =>
-                {
-                    b.Property<Guid>("OrderDetailId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("LineTotal")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<Guid>("OrderId")
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("Price")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<Guid>("ProductId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("integer");
-
-                    b.HasKey("OrderDetailId");
-
-                    b.HasIndex("OrderId");
-
-                    b.HasIndex("ProductId");
-
-                    b.ToTable("OrderDetails");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.OrderItem", b =>
-                {
-                    b.Property<Guid>("OrderItemId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("LineTotal")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<Guid>("OrderId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ProductId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal>("UnitPrice")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.HasKey("OrderItemId");
-
-                    b.HasIndex("OrderId");
-
-                    b.HasIndex("ProductId");
-
-                    b.ToTable("OrderItems");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Payroll", b =>
-                {
-                    b.Property<Guid>("PayrollId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<decimal>("Deductions")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<Guid>("EmployeeId")
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("GrossSalary")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<decimal>("NetSalary")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<DateTime>("PayPeriodEnd")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("PayPeriodStart")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("ProcessedDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.HasKey("PayrollId");
-
-                    b.HasIndex("EmployeeId");
-
-                    b.ToTable("Payrolls");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Product", b =>
-                {
-                    b.Property<Guid>("ProductId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Category")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<decimal>("Price")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<string>("ProductName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<string>("SKU")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("ProductId");
-
-                    b.HasIndex("SKU")
-                        .IsUnique();
-
-                    b.ToTable("Products");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.ProductionLine", b =>
-                {
-                    b.Property<Guid>("ProductionLineId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("LineName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.HasKey("ProductionLineId");
-
-                    b.ToTable("ProductionLines");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.ProductionSchedule", b =>
-                {
-                    b.Property<Guid>("ScheduleId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("ActualQuantity")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("PlannedQuantity")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("ProductionDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Shift")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("WorkOrderId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("ScheduleId");
-
-                    b.HasIndex("WorkOrderId");
-
-                    b.ToTable("ProductionSchedules");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.PurchaseOrder", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime?>("ActualDeliveryDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("DeliveryAddress")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<DateTime?>("ExpectedDeliveryDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<decimal>("GrandTotal")
+                    b.Property<decimal>("PaidAmount")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<DateTime?>("ModifiedAt")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<string>("Reference")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
-                    b.Property<string>("ModifiedBy")
-                        .HasColumnType("text");
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
 
-                    b.Property<string>("Notes")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                    b.Property<decimal>("SubTotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
 
-                    b.Property<DateTime>("OrderDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("PurchaseOrderNumber")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                    b.Property<string>("SupplierInvoiceNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<decimal>("TaxAmount")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<string>("Terms")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
                     b.Property<decimal>("TotalAmount")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<Guid>("VendorId")
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("VendorProfileId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PurchaseOrderNumber")
+                    b.HasIndex("ContactId");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("InvoiceNumber")
                         .IsUnique();
 
-                    b.HasIndex("VendorId");
+                    b.HasIndex("VendorProfileId");
 
-                    b.ToTable("PurchaseOrders");
+                    b.ToTable("PurchaseInvoices");
                 });
 
-            modelBuilder.Entity("GarmentsERP.API.Models.PurchaseOrderItem", b =>
+            modelBuilder.Entity("GarmentsERP.API.Models.Invoicing.PurchaseInvoiceItem", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("uuid");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Notes")
+                    b.Property<string>("Description")
+                        .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
-                    b.Property<Guid>("ProductId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ProductName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("ProductSku")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<int>("PurchaseOrderId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime?>("ReceivedDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int?>("ReceivedQuantity")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<decimal>("TotalPrice")
+                    b.Property<decimal>("DiscountAmount")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<decimal>("DiscountPercentage")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<int>("LineOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("LineTotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid?>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("PurchaseInvoiceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("TaxAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("TaxPercentage")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
                     b.Property<string>("Unit")
+                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
@@ -1083,46 +1031,593 @@ namespace GarmentsERP.API.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.HasIndex("PurchaseOrderId");
+                    b.HasIndex("PurchaseInvoiceId");
 
-                    b.ToTable("PurchaseOrderItems");
+                    b.ToTable("PurchaseInvoiceItems");
                 });
 
-            modelBuilder.Entity("GarmentsERP.API.Models.SalesOrder", b =>
+            modelBuilder.Entity("GarmentsERP.API.Models.Invoicing.SalesInvoice", b =>
                 {
-                    b.Property<Guid>("OrderId")
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("BalanceAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid>("ContactId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("CustomerProfileId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("DiscountAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("DueDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("InvoiceDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("InvoiceNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<decimal>("PaidAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Reference")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("SubTotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("TaxAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Terms")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContactId");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("CustomerProfileId");
+
+                    b.HasIndex("InvoiceNumber")
+                        .IsUnique();
+
+                    b.ToTable("SalesInvoices");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Invoicing.SalesInvoiceItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<decimal>("DiscountAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("DiscountPercentage")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<int>("LineOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("LineTotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid?>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<Guid>("SalesInvoiceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("TaxAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("TaxPercentage")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("SalesInvoiceId");
+
+                    b.ToTable("SalesInvoiceItems");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Payments.Payment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid?>("BankAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ChequeDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ChequeNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<Guid>("ContactId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime>("PaymentDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("PaymentMethod")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PaymentNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("PaymentType")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Reference")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BankAccountId");
+
+                    b.HasIndex("ContactId");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.ToTable("Payments");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Payments.PaymentAllocation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("AllocatedAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("AllocationDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid>("PaymentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("PurchaseInvoiceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("SalesInvoiceId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PaymentId");
+
+                    b.HasIndex("PurchaseInvoiceId");
+
+                    b.HasIndex("SalesInvoiceId");
+
+                    b.ToTable("PaymentAllocations");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Products.Product", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("CategoryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Color")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<decimal>("CostPrice")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("Fabric")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("ProductCode")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("ProductType")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("SalesPrice")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<string>("Season")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Size")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Style")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<decimal>("TaxPercentage")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("ProductCode")
+                        .IsUnique();
+
+                    b.ToTable("Products");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Products.ProductCategory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CategoryName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ProductCategories");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Reports.ReportTemplate", b =>
+                {
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("CustomerId")
+                    b.Property<Guid>("CreatedByUserId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("CustomerProfileId")
-                        .HasColumnType("uuid");
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
-                    b.Property<DateTime>("OrderDate")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
 
-                    b.Property<int>("Status")
+                    b.Property<int>("ReportType")
                         .HasColumnType("integer");
 
-                    b.Property<decimal>("TotalAmount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
+                    b.Property<string>("TemplateContent")
+                        .IsRequired()
+                        .HasColumnType("text");
 
-                    b.Property<DateTime>("UpdatedAt")
+                    b.Property<string>("TemplateName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.HasKey("OrderId");
+                    b.HasKey("Id");
 
-                    b.HasIndex("CustomerId");
+                    b.HasIndex("CreatedByUserId");
 
-                    b.HasIndex("CustomerProfileId");
+                    b.ToTable("ReportTemplates");
+                });
 
-                    b.ToTable("SalesOrders");
+            modelBuilder.Entity("GarmentsERP.API.Models.Settings.BusinessSetting", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Category")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<bool>("IsSystem")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("SettingKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("SettingValue")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("BusinessSettings");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Settings.Company", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Address")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("City")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("CompanyName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Country")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Fax")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("FinancialYearEnd")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("FinancialYearStart")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Logo")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("PostalCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("RegistrationNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("State")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("TaxNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Website")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Companies");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Tax.TaxRate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime>("EffectiveFrom")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("EffectiveTo")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("TaxName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<decimal>("TaxPercentage")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<int>("TaxType")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TaxRates");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Tax.TaxScheme", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("SchemeName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid>("TaxRateId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TaxRateId");
+
+                    b.ToTable("TaxSchemes");
                 });
 
             modelBuilder.Entity("GarmentsERP.API.Models.Users.CustomerProfile", b =>
@@ -1353,6 +1848,90 @@ namespace GarmentsERP.API.Migrations
                     b.ToTable("PayrollRecords");
                 });
 
+            modelBuilder.Entity("GarmentsERP.API.Models.Users.Permission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Resource")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Permissions");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Users.RolePermission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("PermissionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PermissionId");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("RolePermissions");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Users.UserPermission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("PermissionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PermissionId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserPermissions");
+                });
+
             modelBuilder.Entity("GarmentsERP.API.Models.Users.VendorProfile", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1392,7 +1971,6 @@ namespace GarmentsERP.API.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<decimal>("CurrentBalance")
-                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("DeliveryRating")
@@ -1466,51 +2044,6 @@ namespace GarmentsERP.API.Migrations
                         .IsUnique();
 
                     b.ToTable("VendorProfiles");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.WorkOrder", b =>
-                {
-                    b.Property<Guid>("WorkOrderId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("ActualEndDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("ActualStartDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("ProductId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ProductionLineId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("ScheduledEndDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("ScheduledStartDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("WorkOrderId");
-
-                    b.HasIndex("ProductId");
-
-                    b.HasIndex("ProductionLineId");
-
-                    b.ToTable("WorkOrders");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
@@ -1605,6 +2138,13 @@ namespace GarmentsERP.API.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("AspNetUserRoles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            UserId = new Guid("11111111-1111-1111-1111-111111111111"),
+                            RoleId = new Guid("22222222-2222-2222-2222-222222222222")
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<System.Guid>", b =>
@@ -1626,55 +2166,9 @@ namespace GarmentsERP.API.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("GarmentsERP.API.Models.Bill", b =>
+            modelBuilder.Entity("GarmentsERP.API.Models.Accounting.ChartOfAccount", b =>
                 {
-                    b.HasOne("GarmentsERP.API.Models.PurchaseOrder", "PurchaseOrder")
-                        .WithMany("Bills")
-                        .HasForeignKey("PurchaseOrderId");
-
-                    b.HasOne("GarmentsERP.API.Models.Users.VendorProfile", "Vendor")
-                        .WithMany("Bills")
-                        .HasForeignKey("VendorId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("PurchaseOrder");
-
-                    b.Navigation("Vendor");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.BillItem", b =>
-                {
-                    b.HasOne("GarmentsERP.API.Models.Bill", "Bill")
-                        .WithMany("Items")
-                        .HasForeignKey("BillId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("GarmentsERP.API.Models.Product", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Bill");
-
-                    b.Navigation("Product");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.BillPayment", b =>
-                {
-                    b.HasOne("GarmentsERP.API.Models.Bill", "Bill")
-                        .WithMany("Payments")
-                        .HasForeignKey("BillId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Bill");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.ChartOfAccount", b =>
-                {
-                    b.HasOne("GarmentsERP.API.Models.ChartOfAccount", "ParentAccount")
+                    b.HasOne("GarmentsERP.API.Models.Accounting.ChartOfAccount", "ParentAccount")
                         .WithMany("SubAccounts")
                         .HasForeignKey("ParentAccountId")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -1682,212 +2176,344 @@ namespace GarmentsERP.API.Migrations
                     b.Navigation("ParentAccount");
                 });
 
-            modelBuilder.Entity("GarmentsERP.API.Models.Employee", b =>
+            modelBuilder.Entity("GarmentsERP.API.Models.Accounting.JournalEntry", b =>
                 {
-                    b.HasOne("GarmentsERP.API.Models.ApplicationUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId");
+                    b.HasOne("GarmentsERP.API.Models.ApplicationUser", "ApprovedBy")
+                        .WithMany("ApprovedJournalEntries")
+                        .HasForeignKey("ApprovedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_JournalEntry_ApplicationUser_ApprovedBy");
 
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.GLEntry", b =>
-                {
                     b.HasOne("GarmentsERP.API.Models.ApplicationUser", "CreatedBy")
-                        .WithMany()
-                        .HasForeignKey("CreatedByUserId");
+                        .WithMany("CreatedJournalEntries")
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_JournalEntry_ApplicationUser_CreatedBy");
+
+                    b.Navigation("ApprovedBy");
 
                     b.Navigation("CreatedBy");
                 });
 
-            modelBuilder.Entity("GarmentsERP.API.Models.GLEntryLine", b =>
+            modelBuilder.Entity("GarmentsERP.API.Models.Accounting.JournalEntryLine", b =>
                 {
-                    b.HasOne("GarmentsERP.API.Models.ChartOfAccount", "Account")
-                        .WithMany("GLEntryLines")
+                    b.HasOne("GarmentsERP.API.Models.Accounting.ChartOfAccount", "Account")
+                        .WithMany("JournalEntryLines")
                         .HasForeignKey("AccountId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("GarmentsERP.API.Models.GLEntry", "GLEntry")
-                        .WithMany("GLEntryLines")
-                        .HasForeignKey("GLEntryId")
+                    b.HasOne("GarmentsERP.API.Models.Accounting.JournalEntry", "JournalEntry")
+                        .WithMany("JournalEntryLines")
+                        .HasForeignKey("JournalEntryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Account");
 
-                    b.Navigation("GLEntry");
+                    b.Navigation("JournalEntry");
                 });
 
-            modelBuilder.Entity("GarmentsERP.API.Models.Inventory", b =>
+            modelBuilder.Entity("GarmentsERP.API.Models.Banking.BankReconciliation", b =>
                 {
-                    b.HasOne("GarmentsERP.API.Models.Product", "Product")
-                        .WithMany("Inventories")
-                        .HasForeignKey("ProductId")
+                    b.HasOne("GarmentsERP.API.Models.Banking.BankAccount", "BankAccount")
+                        .WithMany("BankReconciliations")
+                        .HasForeignKey("BankAccountId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Product");
+                    b.HasOne("GarmentsERP.API.Models.ApplicationUser", "ReconciledBy")
+                        .WithMany("ReconciledBankReconciliations")
+                        .HasForeignKey("ReconciledByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("BankAccount");
+
+                    b.Navigation("ReconciledBy");
                 });
 
-            modelBuilder.Entity("GarmentsERP.API.Models.Invoice", b =>
+            modelBuilder.Entity("GarmentsERP.API.Models.Banking.BankReconciliationItem", b =>
                 {
-                    b.HasOne("GarmentsERP.API.Models.Users.CustomerProfile", null)
-                        .WithMany("Invoices")
-                        .HasForeignKey("CustomerProfileId");
-
-                    b.HasOne("GarmentsERP.API.Models.Order", "Order")
-                        .WithMany("Invoices")
-                        .HasForeignKey("OrderId")
+                    b.HasOne("GarmentsERP.API.Models.Banking.BankReconciliation", "BankReconciliation")
+                        .WithMany("ReconciliationItems")
+                        .HasForeignKey("BankReconciliationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Order");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.InvoiceItem", b =>
-                {
-                    b.HasOne("GarmentsERP.API.Models.Invoice", "Invoice")
-                        .WithMany("InvoiceItems")
-                        .HasForeignKey("InvoiceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("GarmentsERP.API.Models.Product", "Product")
-                        .WithMany("InvoiceItems")
-                        .HasForeignKey("ProductId");
-
-                    b.Navigation("Invoice");
-
-                    b.Navigation("Product");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Order", b =>
-                {
-                    b.HasOne("GarmentsERP.API.Models.Customer", "Customer")
-                        .WithMany("Orders")
-                        .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("GarmentsERP.API.Models.WorkOrder", "ProductionOrder")
+                    b.HasOne("GarmentsERP.API.Models.Payments.Payment", "Payment")
                         .WithMany()
-                        .HasForeignKey("ProductionOrderId");
+                        .HasForeignKey("PaymentId");
 
-                    b.HasOne("GarmentsERP.API.Models.SalesOrder", "SalesOrder")
-                        .WithMany()
-                        .HasForeignKey("SalesOrderId");
+                    b.Navigation("BankReconciliation");
 
-                    b.Navigation("Customer");
-
-                    b.Navigation("ProductionOrder");
-
-                    b.Navigation("SalesOrder");
+                    b.Navigation("Payment");
                 });
 
-            modelBuilder.Entity("GarmentsERP.API.Models.OrderDetail", b =>
+            modelBuilder.Entity("GarmentsERP.API.Models.Banking.BankTransfer", b =>
                 {
-                    b.HasOne("GarmentsERP.API.Models.Order", "Order")
-                        .WithMany("OrderDetails")
-                        .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("GarmentsERP.API.Models.Product", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Order");
-
-                    b.Navigation("Product");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.OrderItem", b =>
-                {
-                    b.HasOne("GarmentsERP.API.Models.SalesOrder", "SalesOrder")
-                        .WithMany("OrderItems")
-                        .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("GarmentsERP.API.Models.Product", "Product")
-                        .WithMany("OrderItems")
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Product");
-
-                    b.Navigation("SalesOrder");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Payroll", b =>
-                {
-                    b.HasOne("GarmentsERP.API.Models.Employee", "Employee")
-                        .WithMany("Payrolls")
-                        .HasForeignKey("EmployeeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Employee");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.ProductionSchedule", b =>
-                {
-                    b.HasOne("GarmentsERP.API.Models.WorkOrder", "WorkOrder")
-                        .WithMany("ProductionSchedules")
-                        .HasForeignKey("WorkOrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("WorkOrder");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.PurchaseOrder", b =>
-                {
-                    b.HasOne("GarmentsERP.API.Models.Users.VendorProfile", "Vendor")
-                        .WithMany("PurchaseOrders")
-                        .HasForeignKey("VendorId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Vendor");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.PurchaseOrderItem", b =>
-                {
-                    b.HasOne("GarmentsERP.API.Models.Product", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductId")
+                    b.HasOne("GarmentsERP.API.Models.ApplicationUser", "CreatedBy")
+                        .WithMany("CreatedBankTransfers")
+                        .HasForeignKey("CreatedByUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("GarmentsERP.API.Models.PurchaseOrder", "PurchaseOrder")
+                    b.HasOne("GarmentsERP.API.Models.Banking.BankAccount", "FromAccount")
+                        .WithMany("FromTransfers")
+                        .HasForeignKey("FromAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GarmentsERP.API.Models.Banking.BankAccount", "ToAccount")
+                        .WithMany("ToTransfers")
+                        .HasForeignKey("ToAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("FromAccount");
+
+                    b.Navigation("ToAccount");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Contacts.ContactAddress", b =>
+                {
+                    b.HasOne("GarmentsERP.API.Models.Contacts.Contact", "Contact")
+                        .WithMany("Addresses")
+                        .HasForeignKey("ContactId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Contact");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Currency.ExchangeRate", b =>
+                {
+                    b.HasOne("GarmentsERP.API.Models.Currency.Currency", "FromCurrency")
+                        .WithMany("FromExchangeRates")
+                        .HasForeignKey("FromCurrencyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GarmentsERP.API.Models.Currency.Currency", "ToCurrency")
+                        .WithMany("ToExchangeRates")
+                        .HasForeignKey("ToCurrencyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("FromCurrency");
+
+                    b.Navigation("ToCurrency");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Inventory.StockItem", b =>
+                {
+                    b.HasOne("GarmentsERP.API.Models.Products.Product", "Product")
+                        .WithMany("StockItems")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("GarmentsERP.API.Models.Inventory.Warehouse", "Warehouse")
+                        .WithMany("StockItems")
+                        .HasForeignKey("WarehouseId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Product");
+
+                    b.Navigation("Warehouse");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Inventory.StockMovement", b =>
+                {
+                    b.HasOne("GarmentsERP.API.Models.ApplicationUser", "CreatedBy")
+                        .WithMany("CreatedStockMovements")
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GarmentsERP.API.Models.Invoicing.PurchaseInvoice", "PurchaseInvoice")
+                        .WithMany()
+                        .HasForeignKey("PurchaseInvoiceId");
+
+                    b.HasOne("GarmentsERP.API.Models.Invoicing.SalesInvoice", "SalesInvoice")
+                        .WithMany()
+                        .HasForeignKey("SalesInvoiceId");
+
+                    b.HasOne("GarmentsERP.API.Models.Inventory.StockItem", "StockItem")
+                        .WithMany("StockMovements")
+                        .HasForeignKey("StockItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("PurchaseInvoice");
+
+                    b.Navigation("SalesInvoice");
+
+                    b.Navigation("StockItem");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Invoicing.PurchaseInvoice", b =>
+                {
+                    b.HasOne("GarmentsERP.API.Models.Contacts.Contact", "Contact")
+                        .WithMany("PurchaseInvoices")
+                        .HasForeignKey("ContactId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("GarmentsERP.API.Models.ApplicationUser", "CreatedBy")
+                        .WithMany("CreatedPurchaseInvoices")
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GarmentsERP.API.Models.Users.VendorProfile", null)
+                        .WithMany("PurchaseInvoices")
+                        .HasForeignKey("VendorProfileId");
+
+                    b.Navigation("Contact");
+
+                    b.Navigation("CreatedBy");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Invoicing.PurchaseInvoiceItem", b =>
+                {
+                    b.HasOne("GarmentsERP.API.Models.Products.Product", "Product")
+                        .WithMany("PurchaseInvoiceItems")
+                        .HasForeignKey("ProductId");
+
+                    b.HasOne("GarmentsERP.API.Models.Invoicing.PurchaseInvoice", "PurchaseInvoice")
                         .WithMany("Items")
-                        .HasForeignKey("PurchaseOrderId")
+                        .HasForeignKey("PurchaseInvoiceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Product");
 
-                    b.Navigation("PurchaseOrder");
+                    b.Navigation("PurchaseInvoice");
                 });
 
-            modelBuilder.Entity("GarmentsERP.API.Models.SalesOrder", b =>
+            modelBuilder.Entity("GarmentsERP.API.Models.Invoicing.SalesInvoice", b =>
                 {
-                    b.HasOne("GarmentsERP.API.Models.Customer", "Customer")
-                        .WithMany("SalesOrders")
-                        .HasForeignKey("CustomerId")
+                    b.HasOne("GarmentsERP.API.Models.Contacts.Contact", "Contact")
+                        .WithMany("SalesInvoices")
+                        .HasForeignKey("ContactId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("GarmentsERP.API.Models.ApplicationUser", "CreatedBy")
+                        .WithMany("CreatedSalesInvoices")
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("GarmentsERP.API.Models.Users.CustomerProfile", null)
-                        .WithMany("SalesOrders")
+                        .WithMany("SalesInvoices")
                         .HasForeignKey("CustomerProfileId");
 
-                    b.Navigation("Customer");
+                    b.Navigation("Contact");
+
+                    b.Navigation("CreatedBy");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Invoicing.SalesInvoiceItem", b =>
+                {
+                    b.HasOne("GarmentsERP.API.Models.Products.Product", "Product")
+                        .WithMany("SalesInvoiceItems")
+                        .HasForeignKey("ProductId");
+
+                    b.HasOne("GarmentsERP.API.Models.Invoicing.SalesInvoice", "SalesInvoice")
+                        .WithMany("Items")
+                        .HasForeignKey("SalesInvoiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+
+                    b.Navigation("SalesInvoice");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Payments.Payment", b =>
+                {
+                    b.HasOne("GarmentsERP.API.Models.Banking.BankAccount", "BankAccount")
+                        .WithMany("Payments")
+                        .HasForeignKey("BankAccountId");
+
+                    b.HasOne("GarmentsERP.API.Models.Contacts.Contact", "Contact")
+                        .WithMany("Payments")
+                        .HasForeignKey("ContactId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("GarmentsERP.API.Models.ApplicationUser", "CreatedBy")
+                        .WithMany("CreatedPayments")
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("BankAccount");
+
+                    b.Navigation("Contact");
+
+                    b.Navigation("CreatedBy");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Payments.PaymentAllocation", b =>
+                {
+                    b.HasOne("GarmentsERP.API.Models.Payments.Payment", "Payment")
+                        .WithMany("PaymentAllocations")
+                        .HasForeignKey("PaymentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("GarmentsERP.API.Models.Invoicing.PurchaseInvoice", "PurchaseInvoice")
+                        .WithMany("PaymentAllocations")
+                        .HasForeignKey("PurchaseInvoiceId");
+
+                    b.HasOne("GarmentsERP.API.Models.Invoicing.SalesInvoice", "SalesInvoice")
+                        .WithMany("PaymentAllocations")
+                        .HasForeignKey("SalesInvoiceId");
+
+                    b.Navigation("Payment");
+
+                    b.Navigation("PurchaseInvoice");
+
+                    b.Navigation("SalesInvoice");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Products.Product", b =>
+                {
+                    b.HasOne("GarmentsERP.API.Models.Products.ProductCategory", "Category")
+                        .WithMany("Products")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Category");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Reports.ReportTemplate", b =>
+                {
+                    b.HasOne("GarmentsERP.API.Models.ApplicationUser", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CreatedBy");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Tax.TaxScheme", b =>
+                {
+                    b.HasOne("GarmentsERP.API.Models.Tax.TaxRate", "TaxRate")
+                        .WithMany("TaxSchemes")
+                        .HasForeignKey("TaxRateId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("TaxRate");
                 });
 
             modelBuilder.Entity("GarmentsERP.API.Models.Users.CustomerProfile", b =>
@@ -1923,6 +2549,44 @@ namespace GarmentsERP.API.Migrations
                     b.Navigation("Employee");
                 });
 
+            modelBuilder.Entity("GarmentsERP.API.Models.Users.RolePermission", b =>
+                {
+                    b.HasOne("GarmentsERP.API.Models.Users.Permission", "Permission")
+                        .WithMany("RolePermissions")
+                        .HasForeignKey("PermissionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("GarmentsERP.API.Models.ApplicationRole", "Role")
+                        .WithMany("RolePermissions")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Permission");
+
+                    b.Navigation("Role");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Users.UserPermission", b =>
+                {
+                    b.HasOne("GarmentsERP.API.Models.Users.Permission", "Permission")
+                        .WithMany("UserPermissions")
+                        .HasForeignKey("PermissionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("GarmentsERP.API.Models.ApplicationUser", "User")
+                        .WithMany("UserPermissions")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Permission");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("GarmentsERP.API.Models.Users.VendorProfile", b =>
                 {
                     b.HasOne("GarmentsERP.API.Models.ApplicationUser", "User")
@@ -1932,25 +2596,6 @@ namespace GarmentsERP.API.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.WorkOrder", b =>
-                {
-                    b.HasOne("GarmentsERP.API.Models.Product", "Product")
-                        .WithMany("WorkOrders")
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("GarmentsERP.API.Models.ProductionLine", "ProductionLine")
-                        .WithMany("WorkOrders")
-                        .HasForeignKey("ProductionLineId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Product");
-
-                    b.Navigation("ProductionLine");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
@@ -2012,98 +2657,139 @@ namespace GarmentsERP.API.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("GarmentsERP.API.Models.Accounting.ChartOfAccount", b =>
+                {
+                    b.Navigation("JournalEntryLines");
+
+                    b.Navigation("SubAccounts");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Accounting.JournalEntry", b =>
+                {
+                    b.Navigation("JournalEntryLines");
+                });
+
             modelBuilder.Entity("GarmentsERP.API.Models.ApplicationRole", b =>
                 {
+                    b.Navigation("RolePermissions");
+
                     b.Navigation("UserRoles");
                 });
 
             modelBuilder.Entity("GarmentsERP.API.Models.ApplicationUser", b =>
                 {
+                    b.Navigation("ApprovedJournalEntries");
+
+                    b.Navigation("CreatedBankTransfers");
+
+                    b.Navigation("CreatedJournalEntries");
+
+                    b.Navigation("CreatedPayments");
+
+                    b.Navigation("CreatedPurchaseInvoices");
+
+                    b.Navigation("CreatedSalesInvoices");
+
+                    b.Navigation("CreatedStockMovements");
+
                     b.Navigation("CustomerProfile");
 
                     b.Navigation("EmployeeProfile");
+
+                    b.Navigation("ReconciledBankReconciliations");
+
+                    b.Navigation("UserPermissions");
 
                     b.Navigation("UserRoles");
 
                     b.Navigation("VendorProfile");
                 });
 
-            modelBuilder.Entity("GarmentsERP.API.Models.Bill", b =>
+            modelBuilder.Entity("GarmentsERP.API.Models.Banking.BankAccount", b =>
                 {
-                    b.Navigation("Items");
+                    b.Navigation("BankReconciliations");
+
+                    b.Navigation("FromTransfers");
 
                     b.Navigation("Payments");
+
+                    b.Navigation("ToTransfers");
                 });
 
-            modelBuilder.Entity("GarmentsERP.API.Models.ChartOfAccount", b =>
+            modelBuilder.Entity("GarmentsERP.API.Models.Banking.BankReconciliation", b =>
                 {
-                    b.Navigation("GLEntryLines");
-
-                    b.Navigation("SubAccounts");
+                    b.Navigation("ReconciliationItems");
                 });
 
-            modelBuilder.Entity("GarmentsERP.API.Models.Customer", b =>
+            modelBuilder.Entity("GarmentsERP.API.Models.Contacts.Contact", b =>
                 {
-                    b.Navigation("Orders");
+                    b.Navigation("Addresses");
 
-                    b.Navigation("SalesOrders");
+                    b.Navigation("Payments");
+
+                    b.Navigation("PurchaseInvoices");
+
+                    b.Navigation("SalesInvoices");
                 });
 
-            modelBuilder.Entity("GarmentsERP.API.Models.Employee", b =>
+            modelBuilder.Entity("GarmentsERP.API.Models.Currency.Currency", b =>
                 {
-                    b.Navigation("Payrolls");
+                    b.Navigation("FromExchangeRates");
+
+                    b.Navigation("ToExchangeRates");
                 });
 
-            modelBuilder.Entity("GarmentsERP.API.Models.GLEntry", b =>
+            modelBuilder.Entity("GarmentsERP.API.Models.Inventory.StockItem", b =>
                 {
-                    b.Navigation("GLEntryLines");
+                    b.Navigation("StockMovements");
                 });
 
-            modelBuilder.Entity("GarmentsERP.API.Models.Invoice", b =>
+            modelBuilder.Entity("GarmentsERP.API.Models.Inventory.Warehouse", b =>
                 {
-                    b.Navigation("InvoiceItems");
+                    b.Navigation("StockItems");
                 });
 
-            modelBuilder.Entity("GarmentsERP.API.Models.Order", b =>
+            modelBuilder.Entity("GarmentsERP.API.Models.Invoicing.PurchaseInvoice", b =>
                 {
-                    b.Navigation("Invoices");
-
-                    b.Navigation("OrderDetails");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Product", b =>
-                {
-                    b.Navigation("Inventories");
-
-                    b.Navigation("InvoiceItems");
-
-                    b.Navigation("OrderItems");
-
-                    b.Navigation("WorkOrders");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.ProductionLine", b =>
-                {
-                    b.Navigation("WorkOrders");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.PurchaseOrder", b =>
-                {
-                    b.Navigation("Bills");
-
                     b.Navigation("Items");
+
+                    b.Navigation("PaymentAllocations");
                 });
 
-            modelBuilder.Entity("GarmentsERP.API.Models.SalesOrder", b =>
+            modelBuilder.Entity("GarmentsERP.API.Models.Invoicing.SalesInvoice", b =>
                 {
-                    b.Navigation("OrderItems");
+                    b.Navigation("Items");
+
+                    b.Navigation("PaymentAllocations");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Payments.Payment", b =>
+                {
+                    b.Navigation("PaymentAllocations");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Products.Product", b =>
+                {
+                    b.Navigation("PurchaseInvoiceItems");
+
+                    b.Navigation("SalesInvoiceItems");
+
+                    b.Navigation("StockItems");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Products.ProductCategory", b =>
+                {
+                    b.Navigation("Products");
+                });
+
+            modelBuilder.Entity("GarmentsERP.API.Models.Tax.TaxRate", b =>
+                {
+                    b.Navigation("TaxSchemes");
                 });
 
             modelBuilder.Entity("GarmentsERP.API.Models.Users.CustomerProfile", b =>
                 {
-                    b.Navigation("Invoices");
-
-                    b.Navigation("SalesOrders");
+                    b.Navigation("SalesInvoices");
                 });
 
             modelBuilder.Entity("GarmentsERP.API.Models.Users.EmployeeProfile", b =>
@@ -2111,16 +2797,16 @@ namespace GarmentsERP.API.Migrations
                     b.Navigation("PayrollRecords");
                 });
 
-            modelBuilder.Entity("GarmentsERP.API.Models.Users.VendorProfile", b =>
+            modelBuilder.Entity("GarmentsERP.API.Models.Users.Permission", b =>
                 {
-                    b.Navigation("Bills");
+                    b.Navigation("RolePermissions");
 
-                    b.Navigation("PurchaseOrders");
+                    b.Navigation("UserPermissions");
                 });
 
-            modelBuilder.Entity("GarmentsERP.API.Models.WorkOrder", b =>
+            modelBuilder.Entity("GarmentsERP.API.Models.Users.VendorProfile", b =>
                 {
-                    b.Navigation("ProductionSchedules");
+                    b.Navigation("PurchaseInvoices");
                 });
 #pragma warning restore 612, 618
         }

@@ -1,11 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using GarmentsERP.API.DTOs.Settings;
 using GarmentsERP.API.Interfaces;
+using GarmentsERP.API.Attributes;
 
 namespace GarmentsERP.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class CompanyController : ControllerBase
     {
         private readonly ICompanyService _companyService;
@@ -16,6 +19,7 @@ namespace GarmentsERP.API.Controllers
         }
 
         [HttpGet]
+        [RequirePermission("Company", "Read")]
         public async Task<ActionResult<IEnumerable<CompanyResponseDto>>> GetAll()
         {
             try
@@ -30,6 +34,7 @@ namespace GarmentsERP.API.Controllers
         }
 
         [HttpGet("{id}")]
+        [RequirePermission("Company", "Read")]
         public async Task<ActionResult<CompanyResponseDto>> GetById(Guid id)
         {
             try
@@ -50,6 +55,7 @@ namespace GarmentsERP.API.Controllers
         }
 
         [HttpPost]
+        [RequirePermission("Company", "Create")]
         public async Task<ActionResult<CompanyResponseDto>> Create([FromBody] CreateCompanyDto createDto)
         {
             try
@@ -76,6 +82,7 @@ namespace GarmentsERP.API.Controllers
         }
 
         [HttpPut("{id}")]
+        [RequirePermission("Company", "Update")]
         public async Task<ActionResult<CompanyResponseDto>> Update(Guid id, [FromBody] UpdateCompanyDto updateDto)
         {
             try
@@ -114,6 +121,7 @@ namespace GarmentsERP.API.Controllers
         }
 
         [HttpDelete("{id}")]
+        [RequirePermission("Company", "Delete")]
         public async Task<IActionResult> Delete(Guid id)
         {
             try
@@ -134,6 +142,7 @@ namespace GarmentsERP.API.Controllers
         }
 
         [HttpGet("exists/{id}")]
+        [RequirePermission("Company", "Read")]
         public async Task<ActionResult<bool>> Exists(Guid id)
         {
             try
@@ -148,6 +157,7 @@ namespace GarmentsERP.API.Controllers
         }
 
         [HttpGet("name-exists")]
+        [RequirePermission("Company", "Read")]
         public async Task<ActionResult<bool>> NameExists([FromQuery] string name, [FromQuery] Guid? excludeId = null)
         {
             try

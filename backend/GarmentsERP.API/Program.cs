@@ -73,6 +73,7 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IUserManagementService, UserManagementService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IPermissionService, PermissionService>();
 
 // Register independent model services
 builder.Services.AddScoped<ICurrencyService, CurrencyService>();

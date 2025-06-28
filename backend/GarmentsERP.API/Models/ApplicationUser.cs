@@ -35,6 +35,7 @@ namespace GarmentsERP.API.Models
         public virtual VendorProfile? VendorProfile { get; set; }
 
         public virtual ICollection<IdentityUserRole<Guid>> UserRoles { get; set; } = new List<IdentityUserRole<Guid>>();
+        public virtual ICollection<UserPermission> UserPermissions { get; set; } = new List<UserPermission>();
         
         // Accounting navigation properties
         public virtual ICollection<JournalEntry> CreatedJournalEntries { get; set; } = new List<JournalEntry>();
