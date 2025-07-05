@@ -12,23 +12,21 @@ import {
 } from '@mui/material';
 import Link from 'next/link';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
-import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import BusinessIcon from '@mui/icons-material/Business';
 import CurrencyExchangeIcon from '@mui/icons-material/CurrencyExchange';
 import CategoryIcon from '@mui/icons-material/Category';
 import PercentIcon from '@mui/icons-material/Percent';
-import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import WarehouseIcon from '@mui/icons-material/Warehouse';
 import DescriptionIcon from '@mui/icons-material/Description';
 import SettingsIcon from '@mui/icons-material/Settings';
 
 const adminMenuItems = [
-  // User Management
+  // User Management - Permissions
   {
-    title: 'User Management',
-    description: 'Create and manage users',
-    icon: <PeopleAltIcon sx={{ fontSize: 48 }} color="primary" />, 
-    href: '/admin/create-user',
+    title: 'Permissions',
+    description: 'Manage user and role permissions',
+    icon: <AdminPanelSettingsIcon sx={{ fontSize: 48 }} color="primary" />, 
+    href: '/admin/permissions',
     category: 'Administration',
     color: 'primary.main'
   },
@@ -65,14 +63,6 @@ const adminMenuItems = [
     description: 'Configure tax rates and types',
     icon: <PercentIcon sx={{ fontSize: 48 }} color="success" />, 
     href: '/admin/tax-rates',
-    category: 'Financial',
-    color: 'success.main'
-  },
-  {
-    title: 'Tax Schemes',
-    description: 'Manage tax calculation schemes',
-    icon: <AccountTreeIcon sx={{ fontSize: 48 }} color="success" />, 
-    href: '/admin/tax-schemes',
     category: 'Financial',
     color: 'success.main'
   },

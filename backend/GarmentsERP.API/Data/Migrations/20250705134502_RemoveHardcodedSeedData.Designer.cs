@@ -3,17 +3,20 @@ using System;
 using GarmentsERP.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace GarmentsERP.API.Migrations
+namespace GarmentsERP.API.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250705134502_RemoveHardcodedSeedData")]
+    partial class RemoveHardcodedSeedData
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -210,7 +213,7 @@ namespace GarmentsERP.API.Migrations
                         new
                         {
                             Id = new Guid("bdd250ff-3291-4e1b-b91f-ff58384985c2"),
-                            CreatedAt = new DateTime(2025, 7, 5, 15, 16, 23, 496, DateTimeKind.Utc).AddTicks(283),
+                            CreatedAt = new DateTime(2025, 7, 5, 13, 45, 1, 964, DateTimeKind.Utc).AddTicks(1981),
                             Description = "System Administrator with full access",
                             Name = "Admin",
                             NormalizedName = "ADMIN"
@@ -218,7 +221,7 @@ namespace GarmentsERP.API.Migrations
                         new
                         {
                             Id = new Guid("0ceb3f14-ea92-4020-a414-230fc5def487"),
-                            CreatedAt = new DateTime(2025, 7, 5, 15, 16, 23, 496, DateTimeKind.Utc).AddTicks(293),
+                            CreatedAt = new DateTime(2025, 7, 5, 13, 45, 1, 964, DateTimeKind.Utc).AddTicks(1993),
                             Description = "Manager with administrative privileges",
                             Name = "Manager",
                             NormalizedName = "MANAGER"
@@ -226,7 +229,7 @@ namespace GarmentsERP.API.Migrations
                         new
                         {
                             Id = new Guid("3ee591c5-b37e-49b9-9478-59ad85c92275"),
-                            CreatedAt = new DateTime(2025, 7, 5, 15, 16, 23, 496, DateTimeKind.Utc).AddTicks(295),
+                            CreatedAt = new DateTime(2025, 7, 5, 13, 45, 1, 964, DateTimeKind.Utc).AddTicks(1995),
                             Description = "Regular employee with limited access",
                             Name = "Employee",
                             NormalizedName = "EMPLOYEE"
@@ -234,7 +237,7 @@ namespace GarmentsERP.API.Migrations
                         new
                         {
                             Id = new Guid("78e3da3d-efa1-4827-ad31-86d4d246f5af"),
-                            CreatedAt = new DateTime(2025, 7, 5, 15, 16, 23, 496, DateTimeKind.Utc).AddTicks(296),
+                            CreatedAt = new DateTime(2025, 7, 5, 13, 45, 1, 964, DateTimeKind.Utc).AddTicks(1996),
                             Description = "External vendor/supplier",
                             Name = "Vendor",
                             NormalizedName = "VENDOR"
@@ -242,7 +245,7 @@ namespace GarmentsERP.API.Migrations
                         new
                         {
                             Id = new Guid("f9287304-e722-4cf5-9266-421bfab30b05"),
-                            CreatedAt = new DateTime(2025, 7, 5, 15, 16, 23, 496, DateTimeKind.Utc).AddTicks(297),
+                            CreatedAt = new DateTime(2025, 7, 5, 13, 45, 1, 964, DateTimeKind.Utc).AddTicks(1997),
                             Description = "Customer with limited access",
                             Name = "Customer",
                             NormalizedName = "CUSTOMER"
@@ -342,8 +345,8 @@ namespace GarmentsERP.API.Migrations
                         {
                             Id = new Guid("5b6b1d3c-c143-463a-916f-735989ad3f88"),
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "9b36f08a-1251-4631-80ee-19d5a377f53f",
-                            CreatedAt = new DateTime(2025, 7, 5, 15, 16, 23, 496, DateTimeKind.Utc).AddTicks(675),
+                            ConcurrencyStamp = "542025ec-4986-40e3-8f3b-3d002d9d188d",
+                            CreatedAt = new DateTime(2025, 7, 5, 13, 45, 1, 964, DateTimeKind.Utc).AddTicks(2496),
                             Email = "superadmin@erp.com",
                             EmailConfirmed = true,
                             FullName = "Super Administrator",
@@ -351,9 +354,9 @@ namespace GarmentsERP.API.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "SUPERADMIN@ERP.COM",
                             NormalizedUserName = "SUPERADMIN",
-                            PasswordHash = "AQAAAAIAAYagAAAAEJmYwz+LFoScrx8I/UfduWRz5gxl1Vuol+wW1wWXlstvptzifbiBL2WIcWVx1ZdP9Q==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEAhRG4T94M8uHuGi+SdtqEWlFP/pxjeoFmQ+/udYGBf/igMBn5pEL3MPQ5iGfyLUsw==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "6fc542f9-5454-421b-a7d2-0cd2728f0346",
+                            SecurityStamp = "07d24ff6-2066-4d5a-a5eb-bd0ded5a1278",
                             TwoFactorEnabled = false,
                             UserName = "superadmin",
                             UserType = 4
