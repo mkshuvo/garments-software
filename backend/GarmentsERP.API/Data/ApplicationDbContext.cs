@@ -517,11 +517,11 @@ namespace GarmentsERP.API.Data
 
         private void SeedRoles(ModelBuilder modelBuilder)
         {
-            var adminRoleId = Guid.NewGuid();
-            var managerRoleId = Guid.NewGuid();
-            var employeeRoleId = Guid.NewGuid();
-            var vendorRoleId = Guid.NewGuid();
-            var customerRoleId = Guid.NewGuid();
+            var adminRoleId = Guid.Parse("bdd250ff-3291-4e1b-b91f-ff58384985c2");
+            var managerRoleId = Guid.Parse("0ceb3f14-ea92-4020-a414-230fc5def487");
+            var employeeRoleId = Guid.Parse("3ee591c5-b37e-49b9-9478-59ad85c92275");
+            var vendorRoleId = Guid.Parse("78e3da3d-efa1-4827-ad31-86d4d246f5af");
+            var customerRoleId = Guid.Parse("f9287304-e722-4cf5-9266-421bfab30b05");
 
             modelBuilder.Entity<ApplicationRole>().HasData(
                 new ApplicationRole
