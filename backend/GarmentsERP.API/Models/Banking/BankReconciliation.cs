@@ -33,11 +33,6 @@ namespace GarmentsERP.API.Models.Banking
 
         [MaxLength(1000)]
         public string? Notes { get; set; }
-
-        // Navigation properties
-        public virtual BankAccount BankAccount { get; set; } = null!;
-        public virtual ApplicationUser? ReconciledBy { get; set; }
-        public virtual ICollection<BankReconciliationItem> ReconciliationItems { get; set; } = new List<BankReconciliationItem>();
     }
 
     public enum ReconciliationStatus

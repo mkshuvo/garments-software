@@ -20,9 +20,5 @@ namespace GarmentsERP.API.Models.Currency
         public DateTime Date { get; set; } = DateTime.UtcNow;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-        // Navigation properties
-        public virtual Currency FromCurrency { get; set; } = null!;
-        public virtual Currency ToCurrency { get; set; } = null!;
     }
 }

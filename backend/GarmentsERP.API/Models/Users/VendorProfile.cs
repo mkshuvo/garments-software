@@ -51,8 +51,5 @@ namespace GarmentsERP.API.Models.Users
         public int QualityRating { get; set; } = 5; // 1-5 scale
         public int DeliveryRating { get; set; } = 5; // 1-5 scale
         public int ServiceRating { get; set; } = 5; // 1-5 scale
-
-        // Navigation properties
-        public virtual ICollection<PurchaseInvoice> PurchaseInvoices { get; set; } = new List<PurchaseInvoice>();
     }
 }

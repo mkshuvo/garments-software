@@ -25,10 +25,5 @@ namespace GarmentsERP.API.Models.Payments
 
         [MaxLength(200)]
         public string? Notes { get; set; }
-
-        // Navigation properties
-        public virtual Payment Payment { get; set; } = null!;
-        public virtual SalesInvoice? SalesInvoice { get; set; }
-        public virtual PurchaseInvoice? PurchaseInvoice { get; set; }
     }
 }

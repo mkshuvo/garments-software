@@ -27,9 +27,5 @@ namespace GarmentsERP.API.Models.Accounting
         public string? Reference { get; set; }
 
         public int LineOrder { get; set; }
-
-        // Navigation properties
-        public virtual JournalEntry JournalEntry { get; set; } = null!;
-        public virtual ChartOfAccount Account { get; set; } = null!;
     }
 }
