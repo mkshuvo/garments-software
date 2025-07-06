@@ -45,8 +45,7 @@ namespace GarmentsERP.API.Models.Invoicing
 
         public int LineOrder { get; set; }
 
-        // Navigation properties
-        public virtual PurchaseInvoice PurchaseInvoice { get; set; } = null!;
-        public virtual Product? Product { get; set; }
+        // SIMPLIFIED APPROACH - NO NAVIGATION PROPERTIES
+        // Relationships are handled via foreign key IDs only
     }
 }

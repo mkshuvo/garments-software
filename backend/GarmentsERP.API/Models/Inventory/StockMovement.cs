@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using GarmentsERP.API.Models.Invoicing;
 
 namespace GarmentsERP.API.Models.Inventory
 {
@@ -34,17 +33,9 @@ namespace GarmentsERP.API.Models.Inventory
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         // Related transaction references
-        [ForeignKey("SalesInvoice")]
         public Guid? SalesInvoiceId { get; set; }
 
-        [ForeignKey("PurchaseInvoice")]
         public Guid? PurchaseInvoiceId { get; set; }
-
-        // Navigation properties
-        public virtual StockItem StockItem { get; set; } = null!;
-        public virtual ApplicationUser CreatedBy { get; set; } = null!;
-        public virtual SalesInvoice? SalesInvoice { get; set; }
-        public virtual PurchaseInvoice? PurchaseInvoice { get; set; }
     }
 
     public enum MovementType

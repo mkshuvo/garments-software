@@ -11,9 +11,9 @@ namespace GarmentsERP.API.Models
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        // Navigation properties
+        // SIMPLIFIED APPROACH - KEEP ONLY ESSENTIAL IDENTITY NAVIGATION PROPERTIES
+        // Keep essential Identity navigation properties, remove custom ones
         public virtual ICollection<IdentityUserRole<Guid>> UserRoles { get; set; } = new List<IdentityUserRole<Guid>>();
-        public virtual ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();
     }
 
     public enum UserRoles

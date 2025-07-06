@@ -24,8 +24,7 @@ namespace GarmentsERP.API.Models.Currency
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        // Navigation properties
-        public virtual ICollection<ExchangeRate> FromExchangeRates { get; set; } = new List<ExchangeRate>();
-        public virtual ICollection<ExchangeRate> ToExchangeRates { get; set; } = new List<ExchangeRate>();
+        // SIMPLIFIED APPROACH - NO NAVIGATION PROPERTIES
+        // Relationships are handled via foreign key IDs only
     }
 }

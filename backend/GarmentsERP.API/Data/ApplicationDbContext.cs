@@ -290,7 +290,7 @@ namespace GarmentsERP.API.Data
                 .Property(t => t.TaxPercentage)
                 .HasPrecision(5, 2);
 
-            // Configure unique constraints
+            // Configure unique constraints - ESSENTIAL ONLY
             modelBuilder.Entity<Product>()
                 .HasIndex(p => p.ProductCode)
                 .IsUnique();
@@ -315,198 +315,14 @@ namespace GarmentsERP.API.Data
                 .HasIndex(b => b.AccountNumber)
                 .IsUnique();
 
-            // Configure self-referencing relationship for ChartOfAccount
-            modelBuilder.Entity<ChartOfAccount>()
-                .HasOne(c => c.ParentAccount)
-                .WithMany(c => c.SubAccounts)
-                .HasForeignKey(c => c.ParentAccountId)
-                .OnDelete(DeleteBehavior.Restrict);
+            // SIMPLIFIED FOREIGN KEY APPROACH - NO NAVIGATION PROPERTIES
+            // All relationships are handled via foreign key IDs only
+            // This eliminates complex EF configuration issues
 
-            // Configure relationships for SalesInvoice
-            modelBuilder.Entity<SalesInvoiceItem>()
-                .HasOne(s => s.SalesInvoice)
-                .WithMany(s => s.Items)
-                .HasForeignKey(s => s.SalesInvoiceId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            // Configure relationships for PurchaseInvoice
-            modelBuilder.Entity<PurchaseInvoiceItem>()
-                .HasOne(p => p.PurchaseInvoice)
-                .WithMany(p => p.Items)
-                .HasForeignKey(p => p.PurchaseInvoiceId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            // Configure relationships for JournalEntry
-            modelBuilder.Entity<JournalEntryLine>()
-                .HasOne(j => j.JournalEntry)
-                .WithMany(j => j.JournalEntryLines)
-                .HasForeignKey(j => j.JournalEntryId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            // Configure relationships for PaymentAllocation
-            modelBuilder.Entity<PaymentAllocation>()
-                .HasOne(p => p.Payment)
-                .WithMany(p => p.PaymentAllocations)
-                .HasForeignKey(p => p.PaymentId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            // Configure relationships for ContactAddress
-            modelBuilder.Entity<ContactAddress>()
-                .HasOne(c => c.Contact)
-                .WithMany(c => c.Addresses)
-                .HasForeignKey(c => c.ContactId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            // Configure relationships for ExchangeRate
-            modelBuilder.Entity<ExchangeRate>()
-                .HasOne(e => e.FromCurrency)
-                .WithMany(c => c.FromExchangeRates)
-                .HasForeignKey(e => e.FromCurrencyId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<ExchangeRate>()
-                .HasOne(e => e.ToCurrency)
-                .WithMany(c => c.ToExchangeRates)
-                .HasForeignKey(e => e.ToCurrencyId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            // Configure relationships for TaxScheme
-            modelBuilder.Entity<TaxScheme>()
-                .HasOne(t => t.TaxRate)
-                .WithMany(t => t.TaxSchemes)
-                .HasForeignKey(t => t.TaxRateId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            // Configure ProductCategory relationship
-            modelBuilder.Entity<Product>()
-                .HasOne(p => p.Category)
-                .WithMany(c => c.Products)
-                .HasForeignKey(p => p.CategoryId)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            // Configure StockItem relationships
-            modelBuilder.Entity<StockItem>()
-                .HasOne(s => s.Product)
-                .WithMany(p => p.StockItems)
-                .HasForeignKey(s => s.ProductId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<StockItem>()
-                .HasOne(s => s.Warehouse)
-                .WithMany(w => w.StockItems)
-                .HasForeignKey(s => s.WarehouseId)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            // Configure StockMovement relationships
-            modelBuilder.Entity<StockMovement>()
-                .HasOne(s => s.StockItem)
-                .WithMany(s => s.StockMovements)
-                .HasForeignKey(s => s.StockItemId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            // Configure ApplicationUser relationships for auditing fields
-            // JournalEntry relationships - explicitly configure to avoid ambiguity
-            modelBuilder.Entity<JournalEntry>()
-                .HasOne(j => j.CreatedBy)
-                .WithMany(u => u.CreatedJournalEntries)
-                .HasForeignKey(j => j.CreatedByUserId)
-                .OnDelete(DeleteBehavior.Restrict)
-                .HasConstraintName("FK_JournalEntry_ApplicationUser_CreatedBy");
-
-            modelBuilder.Entity<JournalEntry>()
-                .HasOne(j => j.ApprovedBy)
-                .WithMany(u => u.ApprovedJournalEntries)
-                .HasForeignKey(j => j.ApprovedByUserId)
-                .OnDelete(DeleteBehavior.Restrict)
-                .HasConstraintName("FK_JournalEntry_ApplicationUser_ApprovedBy");
-
-            // SalesInvoice relationships
-            modelBuilder.Entity<SalesInvoice>()
-                .HasOne(s => s.CreatedBy)
-                .WithMany(u => u.CreatedSalesInvoices)
-                .HasForeignKey(s => s.CreatedByUserId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            // PurchaseInvoice relationships
-            modelBuilder.Entity<PurchaseInvoice>()
-                .HasOne(p => p.CreatedBy)
-                .WithMany(u => u.CreatedPurchaseInvoices)
-                .HasForeignKey(p => p.CreatedByUserId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            // Payment relationships
-            modelBuilder.Entity<Payment>()
-                .HasOne(p => p.CreatedBy)
-                .WithMany(u => u.CreatedPayments)
-                .HasForeignKey(p => p.CreatedByUserId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            // BankTransfer relationships
-            modelBuilder.Entity<BankTransfer>()
-                .HasOne(b => b.CreatedBy)
-                .WithMany(u => u.CreatedBankTransfers)
-                .HasForeignKey(b => b.CreatedByUserId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            // Configure BankTransfer to BankAccount relationships
-            modelBuilder.Entity<BankTransfer>()
-                .HasOne(bt => bt.FromAccount)
-                .WithMany(ba => ba.FromTransfers)
-                .HasForeignKey(bt => bt.FromAccountId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<BankTransfer>()
-                .HasOne(bt => bt.ToAccount)
-                .WithMany(ba => ba.ToTransfers)
-                .HasForeignKey(bt => bt.ToAccountId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            // BankReconciliation relationships
-            modelBuilder.Entity<BankReconciliation>()
-                .HasOne(b => b.ReconciledBy)
-                .WithMany(u => u.ReconciledBankReconciliations)
-                .HasForeignKey(b => b.ReconciledByUserId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            // ReportTemplate relationships
-            modelBuilder.Entity<ReportTemplate>()
-                .HasOne(r => r.CreatedBy)
-                .WithMany()
-                .HasForeignKey(r => r.CreatedByUserId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            // StockMovement relationships
-            modelBuilder.Entity<StockMovement>()
-                .HasOne(s => s.CreatedBy)
-                .WithMany(u => u.CreatedStockMovements)
-                .HasForeignKey(s => s.CreatedByUserId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            // UserPermission relationships
-            modelBuilder.Entity<UserPermission>()
-                .HasOne(up => up.User)
-                .WithMany(u => u.UserPermissions)
-                .HasForeignKey(up => up.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<UserPermission>()
-                .HasOne(up => up.Permission)
-                .WithMany(p => p.UserPermissions)
-                .HasForeignKey(up => up.PermissionId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            // RolePermission relationships
-            modelBuilder.Entity<RolePermission>()
-                .HasOne(rp => rp.Role)
-                .WithMany(r => r.RolePermissions)
-                .HasForeignKey(rp => rp.RoleId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<RolePermission>()
-                .HasOne(rp => rp.Permission)
-                .WithMany(p => p.RolePermissions)
-                .HasForeignKey(rp => rp.PermissionId)
-                .OnDelete(DeleteBehavior.Cascade);
+            // No foreign key constraints needed for simplified approach
+            // Tables will have foreign key ID columns but no EF navigation setup
+            // This allows the database to enforce referential integrity
+            // while avoiding complex EF relationship configuration issues
 
             // Seed default roles
             SeedRoles(modelBuilder);

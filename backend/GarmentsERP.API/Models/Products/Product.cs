@@ -60,11 +60,9 @@ namespace GarmentsERP.API.Models.Products
 
         public DateTime? UpdatedAt { get; set; }
 
-        // Navigation properties
-        public virtual ProductCategory? Category { get; set; }
-        public virtual ICollection<StockItem> StockItems { get; set; } = new List<StockItem>();
-        public virtual ICollection<SalesInvoiceItem> SalesInvoiceItems { get; set; } = new List<SalesInvoiceItem>();
-        public virtual ICollection<PurchaseInvoiceItem> PurchaseInvoiceItems { get; set; } = new List<PurchaseInvoiceItem>();
+        // SIMPLIFIED APPROACH - NO NAVIGATION PROPERTIES
+        // Relationships are handled via foreign key IDs only
+        // Use services to fetch related data when needed
     }
 
     public enum ProductType

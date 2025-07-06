@@ -28,8 +28,8 @@ namespace GarmentsERP.API.Models.Tax
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        // Navigation properties
-        public virtual ICollection<TaxScheme> TaxSchemes { get; set; } = new List<TaxScheme>();
+        // SIMPLIFIED APPROACH - NO NAVIGATION PROPERTIES
+        // Relationships are handled via foreign key IDs only
     }
 
     public enum TaxType

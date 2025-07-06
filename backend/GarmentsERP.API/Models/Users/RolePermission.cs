@@ -17,8 +17,7 @@ namespace GarmentsERP.API.Models.Users
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        // Navigation properties
-        public virtual ApplicationRole Role { get; set; } = null!;
-        public virtual Permission Permission { get; set; } = null!;
+        // SIMPLIFIED APPROACH - NO NAVIGATION PROPERTIES
+        // Relationships are handled via foreign key IDs only
     }
 }
