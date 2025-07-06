@@ -18,7 +18,6 @@ namespace GarmentsERP.API.Services
         public async Task<IEnumerable<ReportTemplateDto>> GetAllReportTemplatesAsync()
         {
             return await _context.ReportTemplates
-                .Include(rt => rt.CreatedBy)
                 .Select(rt => new ReportTemplateDto
                 {
                     Id = rt.Id,
@@ -29,7 +28,7 @@ namespace GarmentsERP.API.Services
                     TemplateContent = rt.TemplateContent,
                     IsActive = rt.IsActive,
                     CreatedByUserId = rt.CreatedByUserId,
-                    CreatedByUserName = rt.CreatedBy != null ? rt.CreatedBy.FullName : null,
+                    CreatedByUserName = null, // Use joins in services if needed
                     CreatedAt = rt.CreatedAt,
                     UpdatedAt = rt.UpdatedAt
                 })
@@ -41,7 +40,6 @@ namespace GarmentsERP.API.Services
         public async Task<ReportTemplateDto?> GetReportTemplateByIdAsync(Guid id)
         {
             return await _context.ReportTemplates
-                .Include(rt => rt.CreatedBy)
                 .Where(rt => rt.Id == id)
                 .Select(rt => new ReportTemplateDto
                 {
@@ -53,7 +51,7 @@ namespace GarmentsERP.API.Services
                     TemplateContent = rt.TemplateContent,
                     IsActive = rt.IsActive,
                     CreatedByUserId = rt.CreatedByUserId,
-                    CreatedByUserName = rt.CreatedBy != null ? rt.CreatedBy.FullName : null,
+                    CreatedByUserName = null, // Use joins in services if needed
                     CreatedAt = rt.CreatedAt,
                     UpdatedAt = rt.UpdatedAt
                 })
@@ -69,21 +67,36 @@ namespace GarmentsERP.API.Services
                 Description = createDto.Description,
                 TemplateContent = createDto.TemplateContent,
                 IsActive = createDto.IsActive,
-                CreatedByUserId = userId
+                CreatedByUserId = userId,
+                CreatedAt = DateTime.UtcNow
             };
 
             _context.ReportTemplates.Add(reportTemplate);
             await _context.SaveChangesAsync();
 
-            return await GetReportTemplateByIdAsync(reportTemplate.Id) ?? 
-                   throw new InvalidOperationException("Failed to retrieve created report template");
+            return new ReportTemplateDto
+            {
+                Id = reportTemplate.Id,
+                TemplateName = reportTemplate.TemplateName,
+                ReportType = reportTemplate.ReportType,
+                ReportTypeName = reportTemplate.ReportType.ToString(),
+                Description = reportTemplate.Description,
+                TemplateContent = reportTemplate.TemplateContent,
+                IsActive = reportTemplate.IsActive,
+                CreatedByUserId = reportTemplate.CreatedByUserId,
+                CreatedByUserName = null, // Use joins in services if needed
+                CreatedAt = reportTemplate.CreatedAt,
+                UpdatedAt = reportTemplate.UpdatedAt
+            };
         }
 
         public async Task<ReportTemplateDto?> UpdateReportTemplateAsync(Guid id, UpdateReportTemplateDto updateDto)
         {
             var reportTemplate = await _context.ReportTemplates.FindAsync(id);
             if (reportTemplate == null)
+            {
                 return null;
+            }
 
             reportTemplate.TemplateName = updateDto.TemplateName;
             reportTemplate.ReportType = updateDto.ReportType;
@@ -93,24 +106,61 @@ namespace GarmentsERP.API.Services
             reportTemplate.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
-            return await GetReportTemplateByIdAsync(id);
+
+            return new ReportTemplateDto
+            {
+                Id = reportTemplate.Id,
+                TemplateName = reportTemplate.TemplateName,
+                ReportType = reportTemplate.ReportType,
+                ReportTypeName = reportTemplate.ReportType.ToString(),
+                Description = reportTemplate.Description,
+                TemplateContent = reportTemplate.TemplateContent,
+                IsActive = reportTemplate.IsActive,
+                CreatedByUserId = reportTemplate.CreatedByUserId,
+                CreatedByUserName = null, // Use joins in services if needed
+                CreatedAt = reportTemplate.CreatedAt,
+                UpdatedAt = reportTemplate.UpdatedAt
+            };
         }
 
         public async Task<bool> DeleteReportTemplateAsync(Guid id)
         {
             var reportTemplate = await _context.ReportTemplates.FindAsync(id);
             if (reportTemplate == null)
+            {
                 return false;
+            }
 
             _context.ReportTemplates.Remove(reportTemplate);
             await _context.SaveChangesAsync();
             return true;
         }
 
+        public async Task<IEnumerable<ReportTemplateDto>> GetReportTemplatesByTypeAsync(ReportType reportType)
+        {
+            return await _context.ReportTemplates
+                .Where(rt => rt.ReportType == reportType && rt.IsActive)
+                .Select(rt => new ReportTemplateDto
+                {
+                    Id = rt.Id,
+                    TemplateName = rt.TemplateName,
+                    ReportType = rt.ReportType,
+                    ReportTypeName = rt.ReportType.ToString(),
+                    Description = rt.Description,
+                    TemplateContent = rt.TemplateContent,
+                    IsActive = rt.IsActive,
+                    CreatedByUserId = rt.CreatedByUserId,
+                    CreatedByUserName = null, // Use joins in services if needed
+                    CreatedAt = rt.CreatedAt,
+                    UpdatedAt = rt.UpdatedAt
+                })
+                .OrderBy(rt => rt.TemplateName)
+                .ToListAsync();
+        }
+
         public async Task<IEnumerable<ReportTemplateDto>> GetActiveReportTemplatesAsync()
         {
             return await _context.ReportTemplates
-                .Include(rt => rt.CreatedBy)
                 .Where(rt => rt.IsActive)
                 .Select(rt => new ReportTemplateDto
                 {
@@ -122,7 +172,7 @@ namespace GarmentsERP.API.Services
                     TemplateContent = rt.TemplateContent,
                     IsActive = rt.IsActive,
                     CreatedByUserId = rt.CreatedByUserId,
-                    CreatedByUserName = rt.CreatedBy != null ? rt.CreatedBy.FullName : null,
+                    CreatedByUserName = null, // Use joins in services if needed
                     CreatedAt = rt.CreatedAt,
                     UpdatedAt = rt.UpdatedAt
                 })
@@ -131,33 +181,9 @@ namespace GarmentsERP.API.Services
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<ReportTemplateDto>> GetReportTemplatesByTypeAsync(ReportType reportType)
-        {
-            return await _context.ReportTemplates
-                .Include(rt => rt.CreatedBy)
-                .Where(rt => rt.ReportType == reportType)
-                .Select(rt => new ReportTemplateDto
-                {
-                    Id = rt.Id,
-                    TemplateName = rt.TemplateName,
-                    ReportType = rt.ReportType,
-                    ReportTypeName = rt.ReportType.ToString(),
-                    Description = rt.Description,
-                    TemplateContent = rt.TemplateContent,
-                    IsActive = rt.IsActive,
-                    CreatedByUserId = rt.CreatedByUserId,
-                    CreatedByUserName = rt.CreatedBy != null ? rt.CreatedBy.FullName : null,
-                    CreatedAt = rt.CreatedAt,
-                    UpdatedAt = rt.UpdatedAt
-                })
-                .OrderBy(rt => rt.TemplateName)
-                .ToListAsync();
-        }
-
         public async Task<IEnumerable<ReportTemplateDto>> GetReportTemplatesByUserAsync(Guid userId)
         {
             return await _context.ReportTemplates
-                .Include(rt => rt.CreatedBy)
                 .Where(rt => rt.CreatedByUserId == userId)
                 .Select(rt => new ReportTemplateDto
                 {
@@ -169,11 +195,12 @@ namespace GarmentsERP.API.Services
                     TemplateContent = rt.TemplateContent,
                     IsActive = rt.IsActive,
                     CreatedByUserId = rt.CreatedByUserId,
-                    CreatedByUserName = rt.CreatedBy != null ? rt.CreatedBy.FullName : null,
+                    CreatedByUserName = null, // Use joins in services if needed
                     CreatedAt = rt.CreatedAt,
                     UpdatedAt = rt.UpdatedAt
                 })
-                .OrderBy(rt => rt.CreatedAt)
+                .OrderBy(rt => rt.ReportType)
+                .ThenBy(rt => rt.TemplateName)
                 .ToListAsync();
         }
     }

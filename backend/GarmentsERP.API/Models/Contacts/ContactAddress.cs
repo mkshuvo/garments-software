@@ -30,9 +30,6 @@ namespace GarmentsERP.API.Models.Contacts
         public string? Country { get; set; }
 
         public bool IsDefault { get; set; } = false;
-
-        // Navigation properties
-        public virtual Contact Contact { get; set; } = null!;
     }
 
     public enum AddressType

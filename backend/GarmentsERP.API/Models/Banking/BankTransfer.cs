@@ -40,11 +40,6 @@ namespace GarmentsERP.API.Models.Banking
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public DateTime? UpdatedAt { get; set; }
-
-        // Navigation properties
-        public virtual BankAccount FromAccount { get; set; } = null!;
-        public virtual BankAccount ToAccount { get; set; } = null!;
-        public virtual ApplicationUser CreatedBy { get; set; } = null!;
     }
 
     public enum TransferStatus

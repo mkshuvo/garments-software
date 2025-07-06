@@ -29,9 +29,6 @@ namespace GarmentsERP.API.Models.Reports
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public DateTime? UpdatedAt { get; set; }
-
-        // Navigation properties
-        public virtual ApplicationUser CreatedBy { get; set; } = null!;
     }
 
     public enum ReportType

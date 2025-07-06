@@ -48,12 +48,6 @@ namespace GarmentsERP.API.Models.Payments
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public DateTime? UpdatedAt { get; set; }
-
-        // Navigation properties
-        public virtual Contact Contact { get; set; } = null!;
-        public virtual BankAccount? BankAccount { get; set; }
-        public virtual ApplicationUser CreatedBy { get; set; } = null!;
-        public virtual ICollection<PaymentAllocation> PaymentAllocations { get; set; } = new List<PaymentAllocation>();
     }
 
     public enum PaymentType

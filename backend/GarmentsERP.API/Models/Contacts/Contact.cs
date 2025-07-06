@@ -49,12 +49,6 @@ namespace GarmentsERP.API.Models.Contacts
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public DateTime? UpdatedAt { get; set; }
-
-        // Navigation properties
-        public virtual ICollection<ContactAddress> Addresses { get; set; } = new List<ContactAddress>();
-        public virtual ICollection<SalesInvoice> SalesInvoices { get; set; } = new List<SalesInvoice>();
-        public virtual ICollection<PurchaseInvoice> PurchaseInvoices { get; set; } = new List<PurchaseInvoice>();
-        public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
     }
 
     public enum ContactType

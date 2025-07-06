@@ -33,9 +33,5 @@ namespace GarmentsERP.API.Models.Banking
 
         [MaxLength(500)]
         public string? Notes { get; set; }
-
-        // Navigation properties
-        public virtual BankReconciliation BankReconciliation { get; set; } = null!;
-        public virtual Payment? Payment { get; set; }
     }
 }

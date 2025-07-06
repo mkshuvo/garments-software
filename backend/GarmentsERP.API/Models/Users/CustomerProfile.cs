@@ -41,8 +41,5 @@ namespace GarmentsERP.API.Models.Users
 
         [MaxLength(500)]
         public string? Notes { get; set; }
-
-        // Navigation properties
-        public virtual ICollection<SalesInvoice> SalesInvoices { get; set; } = new List<SalesInvoice>();
     }
 }

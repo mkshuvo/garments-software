@@ -35,9 +35,6 @@ namespace GarmentsERP.API.Models.Users
         public string? ShiftType { get; set; } // Morning, Evening, Night
 
         public bool IsManager { get; set; } = false;
-
-        // Navigation properties
-        public virtual ICollection<PayrollRecord> PayrollRecords { get; set; } = new List<PayrollRecord>();
     }
 
     public class PayrollRecord
@@ -47,9 +44,6 @@ namespace GarmentsERP.API.Models.Users
 
         [Required]
         public Guid EmployeeProfileId { get; set; }
-
-        [ForeignKey(nameof(EmployeeProfileId))]
-        public virtual EmployeeProfile Employee { get; set; } = null!;
 
         [Required]
         public DateTime PayPeriodStart { get; set; }
