@@ -44,11 +44,8 @@ namespace GarmentsERP.API.Models.Banking
 
         public DateTime? UpdatedAt { get; set; }
 
-        // Navigation properties
-        public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
-        public virtual ICollection<BankTransfer> FromTransfers { get; set; } = new List<BankTransfer>();
-        public virtual ICollection<BankTransfer> ToTransfers { get; set; } = new List<BankTransfer>();
-        public virtual ICollection<BankReconciliation> BankReconciliations { get; set; } = new List<BankReconciliation>();
+        // SIMPLIFIED APPROACH - NO NAVIGATION PROPERTIES
+        // Relationships are handled via foreign key IDs only
     }
 
     public enum BankAccountType

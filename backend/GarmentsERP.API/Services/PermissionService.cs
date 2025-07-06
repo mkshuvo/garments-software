@@ -236,11 +236,11 @@ namespace GarmentsERP.API.Services
 
             var roleGuid = role.Id;
 
-            var permissions = await _context.RolePermissions
-                .Where(rp => rp.RoleId == roleGuid)
-                .Include(rp => rp.Permission)
-                .Select(rp => rp.Permission)
-                .ToListAsync();
+            // SIMPLIFIED APPROACH - USE JOIN INSTEAD OF NAVIGATION PROPERTIES
+            var permissions = await (from rp in _context.RolePermissions
+                                   join p in _context.Permissions on rp.PermissionId equals p.Id
+                                   where rp.RoleId == roleGuid
+                                   select p).ToListAsync();
 
             return new RolePermissionsDto
             {
@@ -330,11 +330,11 @@ namespace GarmentsERP.API.Services
 
             var userGuid = user.Id;
 
-            var permissions = await _context.UserPermissions
-                .Where(up => up.UserId == userGuid)
-                .Include(up => up.Permission)
-                .Select(up => up.Permission)
-                .ToListAsync();
+            // SIMPLIFIED APPROACH - USE JOIN INSTEAD OF NAVIGATION PROPERTIES
+            var permissions = await (from up in _context.UserPermissions
+                                   join p in _context.Permissions on up.PermissionId equals p.Id
+                                   where up.UserId == userGuid
+                                   select p).ToListAsync();
 
             return new UserPermissionsDto
             {
@@ -379,12 +379,13 @@ namespace GarmentsERP.API.Services
             var userGuid = user.Id;
 
             // Check direct user permissions
-            var hasDirectPermission = await _context.UserPermissions
-                .Include(up => up.Permission)
-                .AnyAsync(up => up.UserId == userGuid && 
-                           up.Permission.Resource == resource && 
-                           up.Permission.Action == action && 
-                           up.Permission.IsActive);
+            var hasDirectPermission = await (from up in _context.UserPermissions
+                                            join p in _context.Permissions on up.PermissionId equals p.Id
+                                            where up.UserId == userGuid && 
+                                                  p.Resource == resource && 
+                                                  p.Action == action && 
+                                                  p.IsActive
+                                            select up).AnyAsync();
 
             if (hasDirectPermission)
                 return true;
@@ -396,12 +397,13 @@ namespace GarmentsERP.API.Services
                 .Select(r => r.Id)
                 .ToListAsync();
 
-            var hasRolePermission = await _context.RolePermissions
-                .Include(rp => rp.Permission)
-                .AnyAsync(rp => roleIds.Contains(rp.RoleId) && 
-                           rp.Permission.Resource == resource && 
-                           rp.Permission.Action == action && 
-                           rp.Permission.IsActive);
+            var hasRolePermission = await (from rp in _context.RolePermissions
+                                          join p in _context.Permissions on rp.PermissionId equals p.Id
+                                          where roleIds.Contains(rp.RoleId) && 
+                                                p.Resource == resource && 
+                                                p.Action == action && 
+                                                p.IsActive
+                                          select rp).AnyAsync();
 
             return hasRolePermission;
         }
@@ -415,12 +417,10 @@ namespace GarmentsERP.API.Services
             var userGuid = user.Id;
 
             // Get direct permissions
-            var directPermissions = await _context.UserPermissions
-                .Where(up => up.UserId == userGuid)
-                .Include(up => up.Permission)
-                .Select(up => up.Permission)
-                .Where(p => p.IsActive)
-                .ToListAsync();
+            var directPermissions = await (from up in _context.UserPermissions
+                                         join p in _context.Permissions on up.PermissionId equals p.Id
+                                         where up.UserId == userGuid && p.IsActive
+                                         select p).ToListAsync();
 
             // Get role-based permissions
             var userRoles = await _userManager.GetRolesAsync(user);
@@ -429,12 +429,10 @@ namespace GarmentsERP.API.Services
                 .Select(r => r.Id)
                 .ToListAsync();
 
-            var rolePermissions = await _context.RolePermissions
-                .Where(rp => roleIds.Contains(rp.RoleId))
-                .Include(rp => rp.Permission)
-                .Select(rp => rp.Permission)
-                .Where(p => p.IsActive)
-                .ToListAsync();
+            var rolePermissions = await (from rp in _context.RolePermissions
+                                        join p in _context.Permissions on rp.PermissionId equals p.Id
+                                        where roleIds.Contains(rp.RoleId) && p.IsActive
+                                        select p).ToListAsync();
 
             // Combine and deduplicate permissions
             var allPermissions = directPermissions.Concat(rolePermissions)

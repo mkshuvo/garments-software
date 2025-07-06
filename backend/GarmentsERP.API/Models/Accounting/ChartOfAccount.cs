@@ -36,10 +36,8 @@ namespace GarmentsERP.API.Models.Accounting
 
         public DateTime? UpdatedAt { get; set; }
 
-        // Navigation properties
-        public virtual ChartOfAccount? ParentAccount { get; set; }
-        public virtual ICollection<ChartOfAccount> SubAccounts { get; set; } = new List<ChartOfAccount>();
-        public virtual ICollection<JournalEntryLine> JournalEntryLines { get; set; } = new List<JournalEntryLine>();
+        // SIMPLIFIED APPROACH - NO NAVIGATION PROPERTIES
+        // Relationships are handled via foreign key IDs only
     }
 
     public enum AccountType

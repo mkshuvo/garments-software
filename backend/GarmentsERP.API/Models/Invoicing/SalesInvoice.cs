@@ -55,11 +55,8 @@ namespace GarmentsERP.API.Models.Invoicing
 
         public DateTime? UpdatedAt { get; set; }
 
-        // Navigation properties
-        public virtual Contact Contact { get; set; } = null!;
-        public virtual ApplicationUser CreatedBy { get; set; } = null!;
-        public virtual ICollection<SalesInvoiceItem> Items { get; set; } = new List<SalesInvoiceItem>();
-        public virtual ICollection<PaymentAllocation> PaymentAllocations { get; set; } = new List<PaymentAllocation>();
+        // SIMPLIFIED APPROACH - NO NAVIGATION PROPERTIES
+        // Relationships are handled via foreign key IDs only
     }
 
     public enum InvoiceStatus

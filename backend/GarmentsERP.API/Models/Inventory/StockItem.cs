@@ -29,9 +29,7 @@ namespace GarmentsERP.API.Models.Inventory
 
         public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
 
-        // Navigation properties
-        public virtual Product Product { get; set; } = null!;
-        public virtual Warehouse? Warehouse { get; set; }
-        public virtual ICollection<StockMovement> StockMovements { get; set; } = new List<StockMovement>();
+        // SIMPLIFIED APPROACH - NO NAVIGATION PROPERTIES
+        // Relationships are handled via foreign key IDs only
     }
 }

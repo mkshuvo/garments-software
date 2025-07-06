@@ -6,6 +6,7 @@ using Microsoft.OpenApi.Models;
 using System.Text;
 using GarmentsERP.API.Data;
 using GarmentsERP.API.Models;
+using GarmentsERP.API.Models.Users;
 using GarmentsERP.API.Services;
 using GarmentsERP.API.Services.Users;
 using GarmentsERP.API.Services.Auth;
@@ -186,22 +187,47 @@ using (var scope = app.Services.CreateScope())
     {
         await context.Database.MigrateAsync();
         
-        // Create default admin user if it doesn't exist
-        if (!await userManager.Users.AnyAsync())
+        // Ensure Admin role exists
+        if (!await roleManager.RoleExistsAsync("Admin"))
         {
-            var adminUser = new ApplicationUser
+            await roleManager.CreateAsync(new ApplicationRole 
+            { 
+                Name = "Admin", 
+                Description = "System Administrator with full access",
+                CreatedAt = DateTime.UtcNow
+            });
+        }
+
+        // Create superadmin user with the expected ID if it doesn't exist
+        var superAdminId = "5b6b1d3c-c143-463a-916f-735989ad3f88";
+        var existingSuperAdmin = await userManager.FindByIdAsync(superAdminId);
+        
+        if (existingSuperAdmin == null)
+        {
+            var superAdminUser = new ApplicationUser
             {
-                UserName = "admin",
-                Email = "admin@garmentsErp.com",
-                FullName = "System Administrator",
+                Id = Guid.Parse(superAdminId),
+                UserName = "superadmin", 
+                Email = "superadmin@erp.com",
+                FullName = "Super Administrator",
                 EmailConfirmed = true,
-                IsActive = true
+                IsActive = true,
+                UserType = UserType.Admin,
+                CreatedAt = DateTime.UtcNow,
+                SecurityStamp = Guid.NewGuid().ToString()
             };
 
-            var result = await userManager.CreateAsync(adminUser, "Admin@123");
+            var result = await userManager.CreateAsync(superAdminUser, "SuperAdmin@123");
             if (result.Succeeded)
             {
-                await userManager.AddToRoleAsync(adminUser, "Admin");
+                await userManager.AddToRoleAsync(superAdminUser, "Admin");
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+                logger.LogInformation("✅ Super Admin user created successfully with ID: {UserId}", superAdminId);
+            }
+            else
+            {
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+                logger.LogError("❌ Failed to create Super Admin user: {Errors}", string.Join(", ", result.Errors.Select(e => e.Description)));
             }
         }
     }

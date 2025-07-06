@@ -33,7 +33,7 @@ namespace GarmentsERP.API.Models.Inventory
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        // Navigation properties
-        public virtual ICollection<StockItem> StockItems { get; set; } = new List<StockItem>();
+        // SIMPLIFIED APPROACH - NO NAVIGATION PROPERTIES
+        // Relationships are handled via foreign key IDs only
     }
 }

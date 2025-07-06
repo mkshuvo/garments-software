@@ -24,7 +24,7 @@ namespace GarmentsERP.API.Models.Tax
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        // Navigation properties
-        public virtual TaxRate TaxRate { get; set; } = null!;
+        // SIMPLIFIED APPROACH - NO NAVIGATION PROPERTIES
+        // Relationships are handled via foreign key IDs only
     }
 }

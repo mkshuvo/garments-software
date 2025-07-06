@@ -122,9 +122,6 @@ namespace GarmentsERP.API.Services.Users
             try
             {
                 var user = await _context.Users
-                    .Include(u => u.EmployeeProfile)
-                    .Include(u => u.CustomerProfile)
-                    .Include(u => u.VendorProfile)
                     .FirstOrDefaultAsync(u => u.Id == userId);
 
                 if (user == null)
@@ -147,30 +144,8 @@ namespace GarmentsERP.API.Services.Users
                     IsActive = user.IsActive
                 };
 
-                // Map profile data based on user type
-                switch (user.UserType)
-                {
-                    case UserType.Employee:
-                        if (user.EmployeeProfile != null)
-                        {
-                            userResponse.EmployeeProfile = MapEmployeeProfile(user.EmployeeProfile);
-                        }
-                        break;
-
-                    case UserType.Customer:
-                        if (user.CustomerProfile != null)
-                        {
-                            userResponse.CustomerProfile = MapCustomerProfile(user.CustomerProfile);
-                        }
-                        break;
-
-                    case UserType.Vendor:
-                        if (user.VendorProfile != null)
-                        {
-                            userResponse.VendorProfile = MapVendorProfile(user.VendorProfile);
-                        }
-                        break;
-                }
+                // SIMPLIFIED APPROACH - NO PROFILE MAPPING
+                // Profile data can be fetched separately if needed using foreign key relationships
 
                 return (true, "User found", userResponse);
             }
@@ -186,9 +161,6 @@ namespace GarmentsERP.API.Services.Users
             try
             {
                 var query = _context.Users
-                    .Include(u => u.EmployeeProfile)
-                    .Include(u => u.CustomerProfile)
-                    .Include(u => u.VendorProfile)
                     .Where(u => u.UserType == userType)
                     .OrderBy(u => u.FullName);
 
@@ -215,30 +187,8 @@ namespace GarmentsERP.API.Services.Users
                         IsActive = user.IsActive
                     };
 
-                    // Map profile data based on user type
-                    switch (user.UserType)
-                    {
-                        case UserType.Employee:
-                            if (user.EmployeeProfile != null)
-                            {
-                                userResponse.EmployeeProfile = MapEmployeeProfile(user.EmployeeProfile);
-                            }
-                            break;
-
-                        case UserType.Customer:
-                            if (user.CustomerProfile != null)
-                            {
-                                userResponse.CustomerProfile = MapCustomerProfile(user.CustomerProfile);
-                            }
-                            break;
-
-                        case UserType.Vendor:
-                            if (user.VendorProfile != null)
-                            {
-                                userResponse.VendorProfile = MapVendorProfile(user.VendorProfile);
-                            }
-                            break;
-                    }
+                    // SIMPLIFIED APPROACH - NO PROFILE MAPPING
+                    // Profile data can be fetched separately if needed using foreign key relationships
 
                     userResponses.Add(userResponse);
                 }
