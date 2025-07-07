@@ -176,65 +176,21 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Database Migration and Seeding
+// Database Migration only
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
     
     try
     {
         await context.Database.MigrateAsync();
-        
-        // Ensure Admin role exists
-        if (!await roleManager.RoleExistsAsync("Admin"))
-        {
-            await roleManager.CreateAsync(new ApplicationRole 
-            { 
-                Name = "Admin", 
-                Description = "System Administrator with full access",
-                CreatedAt = DateTime.UtcNow
-            });
-        }
-
-        // Create superadmin user with the expected ID if it doesn't exist
-        var superAdminId = "5b6b1d3c-c143-463a-916f-735989ad3f88";
-        var existingSuperAdmin = await userManager.FindByIdAsync(superAdminId);
-        
-        if (existingSuperAdmin == null)
-        {
-            var superAdminUser = new ApplicationUser
-            {
-                Id = Guid.Parse(superAdminId),
-                UserName = "superadmin", 
-                Email = "superadmin@erp.com",
-                FullName = "Super Administrator",
-                EmailConfirmed = true,
-                IsActive = true,
-                UserType = UserType.Admin,
-                CreatedAt = DateTime.UtcNow,
-                SecurityStamp = Guid.NewGuid().ToString()
-            };
-
-            var result = await userManager.CreateAsync(superAdminUser, "SuperAdmin@123");
-            if (result.Succeeded)
-            {
-                await userManager.AddToRoleAsync(superAdminUser, "Admin");
-                var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-                logger.LogInformation("✅ Super Admin user created successfully with ID: {UserId}", superAdminId);
-            }
-            else
-            {
-                var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-                logger.LogError("❌ Failed to create Super Admin user: {Errors}", string.Join(", ", result.Errors.Select(e => e.Description)));
-            }
-        }
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogInformation("✅ Database migration completed successfully");
     }
     catch (Exception ex)
     {
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while migrating or seeding the database.");
+        logger.LogError(ex, "❌ An error occurred while migrating the database.");
     }
 }
 

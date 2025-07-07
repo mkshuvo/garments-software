@@ -9,11 +9,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace GarmentsERP.API.Data.Migrations
+namespace GarmentsERP.API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250705151623_RemoveAllHardcodedSeeding")]
-    partial class RemoveAllHardcodedSeeding
+    [Migration("20250707183132_InitialCleanSchema")]
+    partial class InitialCleanSchema
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -72,8 +72,6 @@ namespace GarmentsERP.API.Data.Migrations
                     b.HasIndex("AccountCode")
                         .IsUnique();
 
-                    b.HasIndex("ParentAccountId");
-
                     b.ToTable("ChartOfAccounts");
                 });
 
@@ -129,10 +127,6 @@ namespace GarmentsERP.API.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ApprovedByUserId");
-
-                    b.HasIndex("CreatedByUserId");
-
                     b.ToTable("JournalEntries");
                 });
 
@@ -169,10 +163,6 @@ namespace GarmentsERP.API.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AccountId");
-
-                    b.HasIndex("JournalEntryId");
-
                     b.ToTable("JournalEntryLines");
                 });
 
@@ -208,48 +198,6 @@ namespace GarmentsERP.API.Data.Migrations
                         .HasDatabaseName("RoleNameIndex");
 
                     b.ToTable("AspNetRoles", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("bdd250ff-3291-4e1b-b91f-ff58384985c2"),
-                            CreatedAt = new DateTime(2025, 7, 5, 15, 16, 23, 496, DateTimeKind.Utc).AddTicks(283),
-                            Description = "System Administrator with full access",
-                            Name = "Admin",
-                            NormalizedName = "ADMIN"
-                        },
-                        new
-                        {
-                            Id = new Guid("0ceb3f14-ea92-4020-a414-230fc5def487"),
-                            CreatedAt = new DateTime(2025, 7, 5, 15, 16, 23, 496, DateTimeKind.Utc).AddTicks(293),
-                            Description = "Manager with administrative privileges",
-                            Name = "Manager",
-                            NormalizedName = "MANAGER"
-                        },
-                        new
-                        {
-                            Id = new Guid("3ee591c5-b37e-49b9-9478-59ad85c92275"),
-                            CreatedAt = new DateTime(2025, 7, 5, 15, 16, 23, 496, DateTimeKind.Utc).AddTicks(295),
-                            Description = "Regular employee with limited access",
-                            Name = "Employee",
-                            NormalizedName = "EMPLOYEE"
-                        },
-                        new
-                        {
-                            Id = new Guid("78e3da3d-efa1-4827-ad31-86d4d246f5af"),
-                            CreatedAt = new DateTime(2025, 7, 5, 15, 16, 23, 496, DateTimeKind.Utc).AddTicks(296),
-                            Description = "External vendor/supplier",
-                            Name = "Vendor",
-                            NormalizedName = "VENDOR"
-                        },
-                        new
-                        {
-                            Id = new Guid("f9287304-e722-4cf5-9266-421bfab30b05"),
-                            CreatedAt = new DateTime(2025, 7, 5, 15, 16, 23, 496, DateTimeKind.Utc).AddTicks(297),
-                            Description = "Customer with limited access",
-                            Name = "Customer",
-                            NormalizedName = "CUSTOMER"
-                        });
                 });
 
             modelBuilder.Entity("GarmentsERP.API.Models.ApplicationUser", b =>
@@ -339,28 +287,6 @@ namespace GarmentsERP.API.Data.Migrations
                         .HasDatabaseName("UserNameIndex");
 
                     b.ToTable("AspNetUsers", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("5b6b1d3c-c143-463a-916f-735989ad3f88"),
-                            AccessFailedCount = 0,
-                            ConcurrencyStamp = "9b36f08a-1251-4631-80ee-19d5a377f53f",
-                            CreatedAt = new DateTime(2025, 7, 5, 15, 16, 23, 496, DateTimeKind.Utc).AddTicks(675),
-                            Email = "superadmin@erp.com",
-                            EmailConfirmed = true,
-                            FullName = "Super Administrator",
-                            IsActive = true,
-                            LockoutEnabled = false,
-                            NormalizedEmail = "SUPERADMIN@ERP.COM",
-                            NormalizedUserName = "SUPERADMIN",
-                            PasswordHash = "AQAAAAIAAYagAAAAEJmYwz+LFoScrx8I/UfduWRz5gxl1Vuol+wW1wWXlstvptzifbiBL2WIcWVx1ZdP9Q==",
-                            PhoneNumberConfirmed = false,
-                            SecurityStamp = "6fc542f9-5454-421b-a7d2-0cd2728f0346",
-                            TwoFactorEnabled = false,
-                            UserName = "superadmin",
-                            UserType = 4
-                        });
                 });
 
             modelBuilder.Entity("GarmentsERP.API.Models.Banking.BankAccount", b =>
@@ -463,10 +389,6 @@ namespace GarmentsERP.API.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BankAccountId");
-
-                    b.HasIndex("ReconciledByUserId");
-
                     b.ToTable("BankReconciliations");
                 });
 
@@ -508,10 +430,6 @@ namespace GarmentsERP.API.Data.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("BankReconciliationId");
-
-                    b.HasIndex("PaymentId");
 
                     b.ToTable("BankReconciliationItems");
                 });
@@ -565,12 +483,6 @@ namespace GarmentsERP.API.Data.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CreatedByUserId");
-
-                    b.HasIndex("FromAccountId");
-
-                    b.HasIndex("ToAccountId");
 
                     b.ToTable("BankTransfers");
                 });
@@ -677,8 +589,6 @@ namespace GarmentsERP.API.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ContactId");
-
                     b.ToTable("ContactAddresses");
                 });
 
@@ -743,10 +653,6 @@ namespace GarmentsERP.API.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("FromCurrencyId");
-
-                    b.HasIndex("ToCurrencyId");
-
                     b.ToTable("ExchangeRates");
                 });
 
@@ -782,10 +688,6 @@ namespace GarmentsERP.API.Data.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ProductId");
-
-                    b.HasIndex("WarehouseId");
 
                     b.ToTable("StockItems");
                 });
@@ -834,14 +736,6 @@ namespace GarmentsERP.API.Data.Migrations
                         .HasColumnType("decimal(18,4)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CreatedByUserId");
-
-                    b.HasIndex("PurchaseInvoiceId");
-
-                    b.HasIndex("SalesInvoiceId");
-
-                    b.HasIndex("StockItemId");
 
                     b.ToTable("StockMovements");
                 });
@@ -960,19 +854,10 @@ namespace GarmentsERP.API.Data.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid?>("VendorProfileId")
-                        .HasColumnType("uuid");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("ContactId");
-
-                    b.HasIndex("CreatedByUserId");
 
                     b.HasIndex("InvoiceNumber")
                         .IsUnique();
-
-                    b.HasIndex("VendorProfileId");
 
                     b.ToTable("PurchaseInvoices");
                 });
@@ -1032,10 +917,6 @@ namespace GarmentsERP.API.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ProductId");
-
-                    b.HasIndex("PurchaseInvoiceId");
-
                     b.ToTable("PurchaseInvoiceItems");
                 });
 
@@ -1056,9 +937,6 @@ namespace GarmentsERP.API.Data.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("CreatedByUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("CustomerProfileId")
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("DiscountAmount")
@@ -1107,12 +985,6 @@ namespace GarmentsERP.API.Data.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ContactId");
-
-                    b.HasIndex("CreatedByUserId");
-
-                    b.HasIndex("CustomerProfileId");
 
                     b.HasIndex("InvoiceNumber")
                         .IsUnique();
@@ -1174,10 +1046,6 @@ namespace GarmentsERP.API.Data.Migrations
                         .HasColumnType("decimal(18,4)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ProductId");
-
-                    b.HasIndex("SalesInvoiceId");
 
                     b.ToTable("SalesInvoiceItems");
                 });
@@ -1241,12 +1109,6 @@ namespace GarmentsERP.API.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BankAccountId");
-
-                    b.HasIndex("ContactId");
-
-                    b.HasIndex("CreatedByUserId");
-
                     b.ToTable("Payments");
                 });
 
@@ -1277,12 +1139,6 @@ namespace GarmentsERP.API.Data.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("PaymentId");
-
-                    b.HasIndex("PurchaseInvoiceId");
-
-                    b.HasIndex("SalesInvoiceId");
 
                     b.ToTable("PaymentAllocations");
                 });
@@ -1361,8 +1217,6 @@ namespace GarmentsERP.API.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CategoryId");
-
                     b.HasIndex("ProductCode")
                         .IsUnique();
 
@@ -1430,8 +1284,6 @@ namespace GarmentsERP.API.Data.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CreatedByUserId");
 
                     b.ToTable("ReportTemplates");
                 });
@@ -1618,8 +1470,6 @@ namespace GarmentsERP.API.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TaxRateId");
-
                     b.ToTable("TaxSchemes");
                 });
 
@@ -1714,9 +1564,6 @@ namespace GarmentsERP.API.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId")
-                        .IsUnique();
-
                     b.ToTable("CustomerProfiles");
                 });
 
@@ -1802,9 +1649,6 @@ namespace GarmentsERP.API.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId")
-                        .IsUnique();
-
                     b.ToTable("EmployeeProfiles");
                 });
 
@@ -1845,8 +1689,6 @@ namespace GarmentsERP.API.Data.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("EmployeeProfileId");
 
                     b.ToTable("PayrollRecords");
                 });
@@ -1904,10 +1746,6 @@ namespace GarmentsERP.API.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PermissionId");
-
-                    b.HasIndex("RoleId");
-
                     b.ToTable("RolePermissions");
                 });
 
@@ -1927,10 +1765,6 @@ namespace GarmentsERP.API.Data.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("PermissionId");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("UserPermissions");
                 });
@@ -2043,9 +1877,6 @@ namespace GarmentsERP.API.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId")
-                        .IsUnique();
-
                     b.ToTable("VendorProfiles");
                 });
 
@@ -2141,13 +1972,6 @@ namespace GarmentsERP.API.Data.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("AspNetUserRoles", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            UserId = new Guid("5b6b1d3c-c143-463a-916f-735989ad3f88"),
-                            RoleId = new Guid("bdd250ff-3291-4e1b-b91f-ff58384985c2")
-                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<System.Guid>", b =>
@@ -2167,438 +1991,6 @@ namespace GarmentsERP.API.Data.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("AspNetUserTokens", (string)null);
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Accounting.ChartOfAccount", b =>
-                {
-                    b.HasOne("GarmentsERP.API.Models.Accounting.ChartOfAccount", "ParentAccount")
-                        .WithMany("SubAccounts")
-                        .HasForeignKey("ParentAccountId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("ParentAccount");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Accounting.JournalEntry", b =>
-                {
-                    b.HasOne("GarmentsERP.API.Models.ApplicationUser", "ApprovedBy")
-                        .WithMany("ApprovedJournalEntries")
-                        .HasForeignKey("ApprovedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("FK_JournalEntry_ApplicationUser_ApprovedBy");
-
-                    b.HasOne("GarmentsERP.API.Models.ApplicationUser", "CreatedBy")
-                        .WithMany("CreatedJournalEntries")
-                        .HasForeignKey("CreatedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("FK_JournalEntry_ApplicationUser_CreatedBy");
-
-                    b.Navigation("ApprovedBy");
-
-                    b.Navigation("CreatedBy");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Accounting.JournalEntryLine", b =>
-                {
-                    b.HasOne("GarmentsERP.API.Models.Accounting.ChartOfAccount", "Account")
-                        .WithMany("JournalEntryLines")
-                        .HasForeignKey("AccountId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("GarmentsERP.API.Models.Accounting.JournalEntry", "JournalEntry")
-                        .WithMany("JournalEntryLines")
-                        .HasForeignKey("JournalEntryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Account");
-
-                    b.Navigation("JournalEntry");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Banking.BankReconciliation", b =>
-                {
-                    b.HasOne("GarmentsERP.API.Models.Banking.BankAccount", "BankAccount")
-                        .WithMany("BankReconciliations")
-                        .HasForeignKey("BankAccountId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("GarmentsERP.API.Models.ApplicationUser", "ReconciledBy")
-                        .WithMany("ReconciledBankReconciliations")
-                        .HasForeignKey("ReconciledByUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("BankAccount");
-
-                    b.Navigation("ReconciledBy");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Banking.BankReconciliationItem", b =>
-                {
-                    b.HasOne("GarmentsERP.API.Models.Banking.BankReconciliation", "BankReconciliation")
-                        .WithMany("ReconciliationItems")
-                        .HasForeignKey("BankReconciliationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("GarmentsERP.API.Models.Payments.Payment", "Payment")
-                        .WithMany()
-                        .HasForeignKey("PaymentId");
-
-                    b.Navigation("BankReconciliation");
-
-                    b.Navigation("Payment");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Banking.BankTransfer", b =>
-                {
-                    b.HasOne("GarmentsERP.API.Models.ApplicationUser", "CreatedBy")
-                        .WithMany("CreatedBankTransfers")
-                        .HasForeignKey("CreatedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("GarmentsERP.API.Models.Banking.BankAccount", "FromAccount")
-                        .WithMany("FromTransfers")
-                        .HasForeignKey("FromAccountId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("GarmentsERP.API.Models.Banking.BankAccount", "ToAccount")
-                        .WithMany("ToTransfers")
-                        .HasForeignKey("ToAccountId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("CreatedBy");
-
-                    b.Navigation("FromAccount");
-
-                    b.Navigation("ToAccount");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Contacts.ContactAddress", b =>
-                {
-                    b.HasOne("GarmentsERP.API.Models.Contacts.Contact", "Contact")
-                        .WithMany("Addresses")
-                        .HasForeignKey("ContactId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Contact");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Currency.ExchangeRate", b =>
-                {
-                    b.HasOne("GarmentsERP.API.Models.Currency.Currency", "FromCurrency")
-                        .WithMany("FromExchangeRates")
-                        .HasForeignKey("FromCurrencyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("GarmentsERP.API.Models.Currency.Currency", "ToCurrency")
-                        .WithMany("ToExchangeRates")
-                        .HasForeignKey("ToCurrencyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("FromCurrency");
-
-                    b.Navigation("ToCurrency");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Inventory.StockItem", b =>
-                {
-                    b.HasOne("GarmentsERP.API.Models.Products.Product", "Product")
-                        .WithMany("StockItems")
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("GarmentsERP.API.Models.Inventory.Warehouse", "Warehouse")
-                        .WithMany("StockItems")
-                        .HasForeignKey("WarehouseId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Product");
-
-                    b.Navigation("Warehouse");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Inventory.StockMovement", b =>
-                {
-                    b.HasOne("GarmentsERP.API.Models.ApplicationUser", "CreatedBy")
-                        .WithMany("CreatedStockMovements")
-                        .HasForeignKey("CreatedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("GarmentsERP.API.Models.Invoicing.PurchaseInvoice", "PurchaseInvoice")
-                        .WithMany()
-                        .HasForeignKey("PurchaseInvoiceId");
-
-                    b.HasOne("GarmentsERP.API.Models.Invoicing.SalesInvoice", "SalesInvoice")
-                        .WithMany()
-                        .HasForeignKey("SalesInvoiceId");
-
-                    b.HasOne("GarmentsERP.API.Models.Inventory.StockItem", "StockItem")
-                        .WithMany("StockMovements")
-                        .HasForeignKey("StockItemId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("CreatedBy");
-
-                    b.Navigation("PurchaseInvoice");
-
-                    b.Navigation("SalesInvoice");
-
-                    b.Navigation("StockItem");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Invoicing.PurchaseInvoice", b =>
-                {
-                    b.HasOne("GarmentsERP.API.Models.Contacts.Contact", "Contact")
-                        .WithMany("PurchaseInvoices")
-                        .HasForeignKey("ContactId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("GarmentsERP.API.Models.ApplicationUser", "CreatedBy")
-                        .WithMany("CreatedPurchaseInvoices")
-                        .HasForeignKey("CreatedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("GarmentsERP.API.Models.Users.VendorProfile", null)
-                        .WithMany("PurchaseInvoices")
-                        .HasForeignKey("VendorProfileId");
-
-                    b.Navigation("Contact");
-
-                    b.Navigation("CreatedBy");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Invoicing.PurchaseInvoiceItem", b =>
-                {
-                    b.HasOne("GarmentsERP.API.Models.Products.Product", "Product")
-                        .WithMany("PurchaseInvoiceItems")
-                        .HasForeignKey("ProductId");
-
-                    b.HasOne("GarmentsERP.API.Models.Invoicing.PurchaseInvoice", "PurchaseInvoice")
-                        .WithMany("Items")
-                        .HasForeignKey("PurchaseInvoiceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Product");
-
-                    b.Navigation("PurchaseInvoice");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Invoicing.SalesInvoice", b =>
-                {
-                    b.HasOne("GarmentsERP.API.Models.Contacts.Contact", "Contact")
-                        .WithMany("SalesInvoices")
-                        .HasForeignKey("ContactId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("GarmentsERP.API.Models.ApplicationUser", "CreatedBy")
-                        .WithMany("CreatedSalesInvoices")
-                        .HasForeignKey("CreatedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("GarmentsERP.API.Models.Users.CustomerProfile", null)
-                        .WithMany("SalesInvoices")
-                        .HasForeignKey("CustomerProfileId");
-
-                    b.Navigation("Contact");
-
-                    b.Navigation("CreatedBy");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Invoicing.SalesInvoiceItem", b =>
-                {
-                    b.HasOne("GarmentsERP.API.Models.Products.Product", "Product")
-                        .WithMany("SalesInvoiceItems")
-                        .HasForeignKey("ProductId");
-
-                    b.HasOne("GarmentsERP.API.Models.Invoicing.SalesInvoice", "SalesInvoice")
-                        .WithMany("Items")
-                        .HasForeignKey("SalesInvoiceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Product");
-
-                    b.Navigation("SalesInvoice");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Payments.Payment", b =>
-                {
-                    b.HasOne("GarmentsERP.API.Models.Banking.BankAccount", "BankAccount")
-                        .WithMany("Payments")
-                        .HasForeignKey("BankAccountId");
-
-                    b.HasOne("GarmentsERP.API.Models.Contacts.Contact", "Contact")
-                        .WithMany("Payments")
-                        .HasForeignKey("ContactId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("GarmentsERP.API.Models.ApplicationUser", "CreatedBy")
-                        .WithMany("CreatedPayments")
-                        .HasForeignKey("CreatedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("BankAccount");
-
-                    b.Navigation("Contact");
-
-                    b.Navigation("CreatedBy");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Payments.PaymentAllocation", b =>
-                {
-                    b.HasOne("GarmentsERP.API.Models.Payments.Payment", "Payment")
-                        .WithMany("PaymentAllocations")
-                        .HasForeignKey("PaymentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("GarmentsERP.API.Models.Invoicing.PurchaseInvoice", "PurchaseInvoice")
-                        .WithMany("PaymentAllocations")
-                        .HasForeignKey("PurchaseInvoiceId");
-
-                    b.HasOne("GarmentsERP.API.Models.Invoicing.SalesInvoice", "SalesInvoice")
-                        .WithMany("PaymentAllocations")
-                        .HasForeignKey("SalesInvoiceId");
-
-                    b.Navigation("Payment");
-
-                    b.Navigation("PurchaseInvoice");
-
-                    b.Navigation("SalesInvoice");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Products.Product", b =>
-                {
-                    b.HasOne("GarmentsERP.API.Models.Products.ProductCategory", "Category")
-                        .WithMany("Products")
-                        .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Category");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Reports.ReportTemplate", b =>
-                {
-                    b.HasOne("GarmentsERP.API.Models.ApplicationUser", "CreatedBy")
-                        .WithMany()
-                        .HasForeignKey("CreatedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("CreatedBy");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Tax.TaxScheme", b =>
-                {
-                    b.HasOne("GarmentsERP.API.Models.Tax.TaxRate", "TaxRate")
-                        .WithMany("TaxSchemes")
-                        .HasForeignKey("TaxRateId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("TaxRate");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Users.CustomerProfile", b =>
-                {
-                    b.HasOne("GarmentsERP.API.Models.ApplicationUser", "User")
-                        .WithOne("CustomerProfile")
-                        .HasForeignKey("GarmentsERP.API.Models.Users.CustomerProfile", "UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Users.EmployeeProfile", b =>
-                {
-                    b.HasOne("GarmentsERP.API.Models.ApplicationUser", "User")
-                        .WithOne("EmployeeProfile")
-                        .HasForeignKey("GarmentsERP.API.Models.Users.EmployeeProfile", "UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Users.PayrollRecord", b =>
-                {
-                    b.HasOne("GarmentsERP.API.Models.Users.EmployeeProfile", "Employee")
-                        .WithMany("PayrollRecords")
-                        .HasForeignKey("EmployeeProfileId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Employee");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Users.RolePermission", b =>
-                {
-                    b.HasOne("GarmentsERP.API.Models.Users.Permission", "Permission")
-                        .WithMany("RolePermissions")
-                        .HasForeignKey("PermissionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("GarmentsERP.API.Models.ApplicationRole", "Role")
-                        .WithMany("RolePermissions")
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Permission");
-
-                    b.Navigation("Role");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Users.UserPermission", b =>
-                {
-                    b.HasOne("GarmentsERP.API.Models.Users.Permission", "Permission")
-                        .WithMany("UserPermissions")
-                        .HasForeignKey("PermissionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("GarmentsERP.API.Models.ApplicationUser", "User")
-                        .WithMany("UserPermissions")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Permission");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Users.VendorProfile", b =>
-                {
-                    b.HasOne("GarmentsERP.API.Models.ApplicationUser", "User")
-                        .WithOne("VendorProfile")
-                        .HasForeignKey("GarmentsERP.API.Models.Users.VendorProfile", "UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
@@ -2660,156 +2052,14 @@ namespace GarmentsERP.API.Data.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("GarmentsERP.API.Models.Accounting.ChartOfAccount", b =>
-                {
-                    b.Navigation("JournalEntryLines");
-
-                    b.Navigation("SubAccounts");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Accounting.JournalEntry", b =>
-                {
-                    b.Navigation("JournalEntryLines");
-                });
-
             modelBuilder.Entity("GarmentsERP.API.Models.ApplicationRole", b =>
                 {
-                    b.Navigation("RolePermissions");
-
                     b.Navigation("UserRoles");
                 });
 
             modelBuilder.Entity("GarmentsERP.API.Models.ApplicationUser", b =>
                 {
-                    b.Navigation("ApprovedJournalEntries");
-
-                    b.Navigation("CreatedBankTransfers");
-
-                    b.Navigation("CreatedJournalEntries");
-
-                    b.Navigation("CreatedPayments");
-
-                    b.Navigation("CreatedPurchaseInvoices");
-
-                    b.Navigation("CreatedSalesInvoices");
-
-                    b.Navigation("CreatedStockMovements");
-
-                    b.Navigation("CustomerProfile");
-
-                    b.Navigation("EmployeeProfile");
-
-                    b.Navigation("ReconciledBankReconciliations");
-
-                    b.Navigation("UserPermissions");
-
                     b.Navigation("UserRoles");
-
-                    b.Navigation("VendorProfile");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Banking.BankAccount", b =>
-                {
-                    b.Navigation("BankReconciliations");
-
-                    b.Navigation("FromTransfers");
-
-                    b.Navigation("Payments");
-
-                    b.Navigation("ToTransfers");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Banking.BankReconciliation", b =>
-                {
-                    b.Navigation("ReconciliationItems");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Contacts.Contact", b =>
-                {
-                    b.Navigation("Addresses");
-
-                    b.Navigation("Payments");
-
-                    b.Navigation("PurchaseInvoices");
-
-                    b.Navigation("SalesInvoices");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Currency.Currency", b =>
-                {
-                    b.Navigation("FromExchangeRates");
-
-                    b.Navigation("ToExchangeRates");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Inventory.StockItem", b =>
-                {
-                    b.Navigation("StockMovements");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Inventory.Warehouse", b =>
-                {
-                    b.Navigation("StockItems");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Invoicing.PurchaseInvoice", b =>
-                {
-                    b.Navigation("Items");
-
-                    b.Navigation("PaymentAllocations");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Invoicing.SalesInvoice", b =>
-                {
-                    b.Navigation("Items");
-
-                    b.Navigation("PaymentAllocations");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Payments.Payment", b =>
-                {
-                    b.Navigation("PaymentAllocations");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Products.Product", b =>
-                {
-                    b.Navigation("PurchaseInvoiceItems");
-
-                    b.Navigation("SalesInvoiceItems");
-
-                    b.Navigation("StockItems");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Products.ProductCategory", b =>
-                {
-                    b.Navigation("Products");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Tax.TaxRate", b =>
-                {
-                    b.Navigation("TaxSchemes");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Users.CustomerProfile", b =>
-                {
-                    b.Navigation("SalesInvoices");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Users.EmployeeProfile", b =>
-                {
-                    b.Navigation("PayrollRecords");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Users.Permission", b =>
-                {
-                    b.Navigation("RolePermissions");
-
-                    b.Navigation("UserPermissions");
-                });
-
-            modelBuilder.Entity("GarmentsERP.API.Models.Users.VendorProfile", b =>
-                {
-                    b.Navigation("PurchaseInvoices");
                 });
 #pragma warning restore 612, 618
         }

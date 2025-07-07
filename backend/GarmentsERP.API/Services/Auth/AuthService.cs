@@ -262,7 +262,33 @@ namespace GarmentsERP.API.Services.Auth
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while fetching roles"); return new List<RoleInfoDto>();
+                _logger.LogError(ex, "Error occurred while fetching roles");
+                return new List<RoleInfoDto>();
+            }
+        }
+
+        public async Task<List<UserInfoDto>> GetUsersByRoleAsync(string roleName)
+        {
+            try
+            {
+                var usersInRole = await _userManager.GetUsersInRoleAsync(roleName);
+                
+                return usersInRole.Select(u => new UserInfoDto
+                {
+                    Id = u.Id,
+                    Username = u.UserName!,
+                    Email = u.Email!,
+                    FullName = u.FullName,
+                    ContactNumber = u.ContactNumber,
+                    IsActive = u.IsActive,
+                    CreatedAt = u.CreatedAt,
+                    Roles = new List<string> { roleName }
+                }).ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while fetching users by role");
+                return new List<UserInfoDto>();
             }
         }
     }

@@ -10,5 +10,6 @@ namespace GarmentsERP.API.Services.Interfaces
         Task<DTOs.AuthResult> UpdateProfileAsync(string userId, UpdateProfileDto updateDto);
         Task<DTOs.AuthResult> ChangePasswordAsync(string userId, ChangePasswordDto changePasswordDto);
         Task<List<RoleInfoDto>> GetRolesAsync();
+        Task<List<UserInfoDto>> GetUsersByRoleAsync(string roleName);
     }
 }
