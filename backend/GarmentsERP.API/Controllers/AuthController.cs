@@ -20,7 +20,34 @@ namespace GarmentsERP.API.Controllers
         {
             _authService = authService;
             _logger = logger;
-        }        [HttpPost("register")]
+        }        [HttpPost("setup-admin")]
+        public async Task<IActionResult> SetupAdmin(RegisterDto registerDto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            // Check if any admin users already exist
+            var existingAdmins = await _authService.GetUsersByRoleAsync("Admin");
+            if (existingAdmins.Any())
+            {
+                return BadRequest(new { message = "Admin user already exists. Use regular registration." });
+            }
+
+            // Force admin role for first admin setup
+            registerDto.Role = "Admin";
+            var result = await _authService.RegisterAsync(registerDto);
+
+            if (result.IsSuccess)
+            {
+                return Ok(new { message = "First admin user created successfully. You can now login." });
+            }
+
+            return BadRequest(new { message = result.Message });
+        }
+
+        [HttpPost("register")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Register(RegisterDto registerDto)
         {

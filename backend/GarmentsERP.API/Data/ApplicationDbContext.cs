@@ -324,58 +324,8 @@ namespace GarmentsERP.API.Data
             // This allows the database to enforce referential integrity
             // while avoiding complex EF relationship configuration issues
 
-            // Seed default roles
-            SeedRoles(modelBuilder);
-            // Seed admin user
-            modelBuilder.ApplyConfiguration(new AdminUserSeeder());
-            modelBuilder.ApplyConfiguration(new AdminUserRoleSeeder());
-        }
-
-        private void SeedRoles(ModelBuilder modelBuilder)
-        {
-            var adminRoleId = Guid.Parse("bdd250ff-3291-4e1b-b91f-ff58384985c2");
-            var managerRoleId = Guid.Parse("0ceb3f14-ea92-4020-a414-230fc5def487");
-            var employeeRoleId = Guid.Parse("3ee591c5-b37e-49b9-9478-59ad85c92275");
-            var vendorRoleId = Guid.Parse("78e3da3d-efa1-4827-ad31-86d4d246f5af");
-            var customerRoleId = Guid.Parse("f9287304-e722-4cf5-9266-421bfab30b05");
-
-            modelBuilder.Entity<ApplicationRole>().HasData(
-                new ApplicationRole
-                {
-                    Id = adminRoleId,
-                    Name = "Admin",
-                    NormalizedName = "ADMIN",
-                    Description = "System Administrator with full access"
-                },
-                new ApplicationRole
-                {
-                    Id = managerRoleId,
-                    Name = "Manager",
-                    NormalizedName = "MANAGER",
-                    Description = "Manager with administrative privileges"
-                },
-                new ApplicationRole
-                {
-                    Id = employeeRoleId,
-                    Name = "Employee",
-                    NormalizedName = "EMPLOYEE",
-                    Description = "Regular employee with limited access"
-                },
-                new ApplicationRole
-                {
-                    Id = vendorRoleId,
-                    Name = "Vendor",
-                    NormalizedName = "VENDOR",
-                    Description = "External vendor/supplier"
-                },
-                new ApplicationRole
-                {
-                    Id = customerRoleId,
-                    Name = "Customer",
-                    NormalizedName = "CUSTOMER",
-                    Description = "Customer with limited access"
-                }
-            );
+            // REMOVED ALL SEEDING - Use setup endpoints for initial data
+            // No hardcoded users or roles - all data created via API endpoints
         }
     }
 }
