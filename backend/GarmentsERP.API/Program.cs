@@ -6,7 +6,6 @@ using Microsoft.OpenApi.Models;
 using System.Text;
 using GarmentsERP.API.Data;
 using GarmentsERP.API.Models;
-using GarmentsERP.API.Models.Users;
 using GarmentsERP.API.Services;
 using GarmentsERP.API.Services.Users;
 using GarmentsERP.API.Services.Auth;
