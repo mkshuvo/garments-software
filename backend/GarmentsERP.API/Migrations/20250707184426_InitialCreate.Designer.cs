@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GarmentsERP.API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250707183132_InitialCleanSchema")]
-    partial class InitialCleanSchema
+    [Migration("20250707184426_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
