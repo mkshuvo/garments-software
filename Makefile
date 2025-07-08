@@ -51,6 +51,8 @@ ifeq ($(OS),Windows_NT)
 	RMDIR := rmdir /S /Q
 	MKDIR := mkdir
 	NULL := NUL
+	# Use a different check for Windows as [ -z ... ] is not available
+	CHECK_VARS = if "$(USERNAME)" == "" (exit 1) else if "$(PASSWORD)" == "" (exit 1)
 else
 	DETECTED_OS := $(shell uname -s)
 	DOTNET := dotnet
@@ -58,6 +60,7 @@ else
 	RMDIR := rm -rf
 	MKDIR := mkdir -p
 	NULL := /dev/null
+	CHECK_VARS = if [ -z "$(USERNAME)" ] || [ -z "$(PASSWORD)" ]; then exit 1; fi
 endif
 
 # Project paths
@@ -71,14 +74,9 @@ $(SCRIPTS_DIR):
 
 # Create super admin user
 superuser: $(SCRIPTS_DIR)
-	@if [ -z "$(USERNAME)" ] || [ -z "$(PASSWORD)" ]; then \
-		echo "Error: Username and password are required."; \
-		echo "Usage: make superuser USERNAME=<username> PASSWORD=<password>"; \
-		echo "   or: make superuser -u <username> -p <password>"; \
-		exit 1; \
-	fi
+	$(CHECK_VARS)
 	@echo "Creating super admin user: $(USERNAME)"
-	@cd $(BACKEND_DIR) && $(DOTNET) run --project cli/AdminSetup.csproj -- --username "$(USERNAME)" --password "$(PASSWORD)" || \
+	@cd $(BACKEND_DIR) && $(DOTNET) run --project GarmentsERP.API.csproj -- --username "$(USERNAME)" --password "$(PASSWORD)" || \
 	echo "Error: Failed to create admin user. Ensure the backend is built and database is accessible."
 
 # Build the entire application

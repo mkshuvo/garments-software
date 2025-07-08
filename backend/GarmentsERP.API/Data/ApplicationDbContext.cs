@@ -1,9 +1,7 @@
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using GarmentsERP.API.Models;
 using GarmentsERP.API.Models.Users;
-using GarmentsERP.API.Data.Seed;
 using GarmentsERP.API.Models.Accounting;
 using GarmentsERP.API.Models.Banking;
 using GarmentsERP.API.Models.Contacts;

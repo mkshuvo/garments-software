@@ -1,7 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using GarmentsERP.API.Models.Banking;
-using GarmentsERP.API.Models.Contacts;
 
 namespace GarmentsERP.API.Models.Payments
 {
