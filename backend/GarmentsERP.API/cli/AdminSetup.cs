@@ -1,8 +1,5 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using GarmentsERP.API.Data;
 using GarmentsERP.API.Models;
 using GarmentsERP.API.Models.Users;
@@ -15,6 +12,7 @@ namespace GarmentsERP.API.CLI
     /// </summary>
     public class AdminSetup
     {
+        // Removed Main method. Use RunAsync from Program.cs when needed.
         public static async Task<int> RunAsync(string[] args)
         {
             try

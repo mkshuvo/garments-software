@@ -1,6 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using GarmentsERP.API.Models;
 
 namespace GarmentsERP.API.Models.Users
 {

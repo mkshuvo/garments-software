@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using GarmentsERP.API.Models.Products;
 
 namespace GarmentsERP.API.Models.Invoicing
 {

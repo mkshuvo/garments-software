@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
 using GarmentsERP.API.DTOs.Settings;
 using GarmentsERP.API.Interfaces;
 using GarmentsERP.API.Models.Settings;
