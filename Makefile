@@ -1,7 +1,7 @@
 # GarmentsERP Makefile
 # Professional admin creation and development utilities
 
-.PHONY: help superuser build run clean test migrate restore
+.PHONY: help superuser build run clean test migrate restore docker-build docker-up docker-down docker-dev
 
 # Default target
 help:
@@ -23,6 +23,7 @@ help:
 	@echo "  make docker-build                            Build Docker images"
 	@echo "  make docker-up                               Start with Docker Compose"
 	@echo "  make docker-down                             Stop Docker services"
+	@echo "  make docker-dev                              Build and start development environment"
 	@echo ""
 	@echo "Examples:"
 	@echo "  make superuser USERNAME=admin PASSWORD=secretpassword"
@@ -72,12 +73,19 @@ SCRIPTS_DIR := scripts
 $(SCRIPTS_DIR):
 	$(MKDIR) $(SCRIPTS_DIR)
 
-# Create super admin user
+# Create super admin user via API endpoint
 superuser: $(SCRIPTS_DIR)
 	$(CHECK_VARS)
 	@echo "Creating super admin user: $(USERNAME)"
-	@cd $(BACKEND_DIR) && $(DOTNET) run --project GarmentsERP.API.csproj -- --username "$(USERNAME)" --password "$(PASSWORD)" || \
-	echo "Error: Failed to create admin user. Ensure the backend is built and database is accessible."
+	@echo "Checking if application is running..."
+ifeq ($(OS),Windows_NT)
+	@powershell -Command "$$response = try { Invoke-RestMethod -Uri 'http://localhost:8080/api/AdminSetup/create-admin' -Method POST -ContentType 'application/json' -Body (ConvertTo-Json @{Username='$(USERNAME)'; Password='$(PASSWORD)'}) -ErrorAction Stop } catch { $$_.Exception.Response }; if ($$response.GetType().Name -eq 'HttpWebResponse') { Write-Host 'Error:' $$response.StatusCode $$response.StatusDescription } else { Write-Host 'Success: Admin user created' }"
+else
+	@curl -s -X POST "http://localhost:8080/api/AdminSetup/create-admin" \
+		-H "Content-Type: application/json" \
+		-d '{"Username":"$(USERNAME)","Password":"$(PASSWORD)"}' \
+		|| echo "Error: Failed to create admin user. Ensure the application is running on http://localhost:8080"
+endif
 
 # Build the entire application
 build:
@@ -129,6 +137,10 @@ docker-up:
 docker-down:
 	@echo "Stopping Docker services..."
 	@docker-compose down
+
+docker-dev:
+	@echo "Building and starting development environment..."
+	@docker compose -f docker-compose.dev.yml up --build -d
 
 # Prevent make from trying to create files for these targets
 %:
