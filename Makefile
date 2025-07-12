@@ -79,12 +79,13 @@ superuser: $(SCRIPTS_DIR)
 	@echo "Creating super admin user: $(USERNAME)"
 	@echo "Checking if application is running..."
 ifeq ($(OS),Windows_NT)
-	@powershell -Command "$$response = try { Invoke-RestMethod -Uri 'http://localhost:8080/api/AdminSetup/create-admin' -Method POST -ContentType 'application/json' -Body (ConvertTo-Json @{Username='$(USERNAME)'; Password='$(PASSWORD)'}) -ErrorAction Stop } catch { $$_.Exception.Response }; if ($$response.GetType().Name -eq 'HttpWebResponse') { Write-Host 'Error:' $$response.StatusCode $$response.StatusDescription } else { Write-Host 'Success: Admin user created' }"
+	@powershell -Command "try { $$response = Invoke-RestMethod -Uri 'http://localhost:8080/api/AdminSetup/create-admin' -Method POST -ContentType 'application/json' -Body (ConvertTo-Json @{Username='$(USERNAME)'; Password='$(PASSWORD)'}) -ErrorAction Stop; Write-Host '✅ Success: Admin user created successfully'; Write-Host 'Username:' $$response.username; Write-Host 'Email:' $$response.email; Write-Host 'User ID:' $$response.userId } catch { if ($$_.Exception.Response) { $$result = $$_.Exception.Response.GetResponseStream(); $$reader = New-Object System.IO.StreamReader($$result); $$responseBody = $$reader.ReadToEnd(); Write-Host '❌ Error:' $$_.Exception.Response.StatusCode $$_.Exception.Response.StatusDescription; Write-Host 'Details:' $$responseBody } else { Write-Host '❌ Error: Could not connect to the application. Make sure it is running on http://localhost:8080' } }"
 else
 	@curl -s -X POST "http://localhost:8080/api/AdminSetup/create-admin" \
 		-H "Content-Type: application/json" \
 		-d '{"Username":"$(USERNAME)","Password":"$(PASSWORD)"}' \
-		|| echo "Error: Failed to create admin user. Ensure the application is running on http://localhost:8080"
+		-w "\nHTTP Status: %{http_code}\n" \
+		|| echo "❌ Error: Failed to create admin user. Ensure the application is running on http://localhost:8080"
 endif
 
 # Build the entire application

@@ -38,11 +38,25 @@ namespace GarmentsERP.API.Controllers
                     return BadRequest(new { error = "Username and password are required" });
                 }
 
-                // Check if admin users already exist
-                var existingAdmins = await _userManager.GetUsersInRoleAsync("Admin");
-                if (existingAdmins.Any())
+                // Validate password requirements
+                if (request.Password.Length < 6)
                 {
-                    return BadRequest(new { error = "Admin users already exist. This endpoint is for initial setup only." });
+                    return BadRequest(new { error = "Password must be at least 6 characters long" });
+                }
+
+                if (!request.Password.Any(char.IsUpper) || !request.Password.Any(char.IsLower) || !request.Password.Any(char.IsDigit))
+                {
+                    return BadRequest(new { error = "Password must contain at least one uppercase letter, one lowercase letter, and one digit" });
+                }
+
+                // Check if Admin role exists first, then check for existing admin users
+                if (await _roleManager.RoleExistsAsync("Admin"))
+                {
+                    var existingAdmins = await _userManager.GetUsersInRoleAsync("Admin");
+                    if (existingAdmins.Any())
+                    {
+                        return BadRequest(new { error = "Admin users already exist. This endpoint is for initial setup only." });
+                    }
                 }
 
                 // Check if username/email already exists
@@ -88,14 +102,16 @@ namespace GarmentsERP.API.Controllers
                 var userResult = await _userManager.CreateAsync(adminUser, request.Password);
                 if (!userResult.Succeeded)
                 {
-                    return BadRequest(new { error = "Failed to create user", details = userResult.Errors });
+                    var errors = string.Join(", ", userResult.Errors.Select(e => e.Description));
+                    return BadRequest(new { error = "Failed to create user", details = errors });
                 }
 
                 // Add user to Admin role
                 var roleAssignResult = await _userManager.AddToRoleAsync(adminUser, "Admin");
                 if (!roleAssignResult.Succeeded)
                 {
-                    return BadRequest(new { error = "Failed to assign Admin role", details = roleAssignResult.Errors });
+                    var errors = string.Join(", ", roleAssignResult.Errors.Select(e => e.Description));
+                    return BadRequest(new { error = "Failed to assign Admin role", details = errors });
                 }
 
                 _logger.LogInformation("Admin user '{Username}' created successfully", request.Username);
