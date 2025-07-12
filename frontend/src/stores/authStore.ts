@@ -28,25 +28,48 @@ export const useAuthStore = create<AuthState>()(
       error: null,
 
       login: async (loginData: LoginDto) => {
-        set({ isLoading: true, error: null })
+        console.log('Auth store: Starting login process')
+        set((state) => ({ ...state, isLoading: true })) // Preserve existing error state
         try {
           const response: LoginResponseDto = await authService.login(loginData)
+          console.log('Auth store: Login successful')
           set({
             isAuthenticated: true,
             user: response.user,
             token: response.token,
             isLoading: false,
-            error: null,
+            error: null, // Only clear error on successful login
           })
-        } catch (error) {
+        } catch (error: unknown) {
+          // Extract error message from API response
+          let errorMessage = 'Login failed'
+          
+          if (error && typeof error === 'object') {
+            const err = error as {
+              message?: string
+              response?: { data?: { message?: string } }
+              data?: { message?: string }
+            }
+            if (err.message) {
+              errorMessage = err.message
+            } else if (err.response?.data?.message) {
+              errorMessage = err.response.data.message
+            } else if (err.data?.message) {
+              errorMessage = err.data.message
+            }
+          }
+          
+          console.log('Auth store: Login failed, setting error:', errorMessage)
           set({
             isAuthenticated: false,
             user: null,
             token: null,
             isLoading: false,
-            error: (error as { message?: string }).message || 'Login failed',
+            error: errorMessage,
           })
-          throw error
+          console.log('Auth store: Error state set, throwing error')
+          // Throw the error so the form can handle it
+          throw new Error(errorMessage)
         }
       },
 
@@ -64,7 +87,8 @@ export const useAuthStore = create<AuthState>()(
       },
 
       clearError: () => {
-        set((state) => ({ ...state }))
+        console.log('Auth store: clearError called')
+        set({ error: null })
       },
 
       setLoading: (loading: boolean) => {
@@ -72,10 +96,13 @@ export const useAuthStore = create<AuthState>()(
       },
 
       checkAuth: async () => {
+        console.log('Auth store: checkAuth called')
         if (!authService.isAuthenticated()) {
-          set({ isAuthenticated: false, user: null, token: null, error: null })
+          console.log('Auth store: Not authenticated, skipping checkAuth')
+          set((state) => ({ ...state, isAuthenticated: false, user: null, token: null }))
           return
         }
+        console.log('Auth store: Checking auth for authenticated user')
         set({ isLoading: true })
         try {
           const user = await authService.getProfile()
