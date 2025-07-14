@@ -84,6 +84,7 @@ builder.Services.AddScoped<IWarehouseService, WarehouseService>();
 builder.Services.AddScoped<ICompanyService, CompanyService>();
 builder.Services.AddScoped<IBusinessSettingService, BusinessSettingService>();
 builder.Services.AddScoped<IReportTemplateService, ReportTemplateService>();
+builder.Services.AddScoped<CashBookImportService>();
 
 // Redis Configuration
 builder.Services.AddSingleton<IConnectionMultiplexer>(provider =>

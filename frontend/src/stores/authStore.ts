@@ -112,7 +112,7 @@ export const useAuthStore = create<AuthState>()(
             user,
             token,
             isLoading: false,
-            error: null,
+            // Don't clear error here - only clear it on successful login or explicit clearError
           })
         } catch {
           // Token might be expired or invalid
@@ -122,7 +122,7 @@ export const useAuthStore = create<AuthState>()(
             user: null,
             token: null,
             isLoading: false,
-            error: null,
+            // Don't clear error here - only clear it on successful login or explicit clearError
           })
         }
       },
@@ -133,6 +133,7 @@ export const useAuthStore = create<AuthState>()(
         user: state.user,
         token: state.token,
         isAuthenticated: state.isAuthenticated,
+        // Don't persist errors - they should be transient
       }),
     }
   )

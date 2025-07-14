@@ -67,7 +67,7 @@ services:  # PostgreSQL Database - Latest stable LTS (17.5, supported until Nov 
       - HTTP_USER=admin
       - HTTP_PASSWORD=admin123
     ports:
-      - "8081:8081"
+      - "9081:8081"
     depends_on:
       redis:
         condition: service_healthy

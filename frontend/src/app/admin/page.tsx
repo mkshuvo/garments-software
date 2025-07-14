@@ -19,6 +19,7 @@ import PercentIcon from '@mui/icons-material/Percent';
 import WarehouseIcon from '@mui/icons-material/Warehouse';
 import DescriptionIcon from '@mui/icons-material/Description';
 import SettingsIcon from '@mui/icons-material/Settings';
+import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 
 const adminMenuItems = [
   // User Management - Permissions
@@ -67,6 +68,16 @@ const adminMenuItems = [
     color: 'success.main'
   },
   
+  // Accounting Module
+  {
+    title: 'Accounting',
+    description: 'Chart of accounts, journal entries, and cash book import',
+    icon: <AccountBalanceIcon sx={{ fontSize: 48 }} color="error" />, 
+    href: '/admin/accounting',
+    category: 'Accounting',
+    color: 'error.main'
+  },
+  
   // Inventory & Products
   {
     title: 'Product Categories',
@@ -97,7 +108,7 @@ const adminMenuItems = [
 ];
 
 const AdminPage = () => {
-  const categories = ['Administration', 'Business', 'Financial', 'Inventory', 'Reports'];
+  const categories = ['Administration', 'Business', 'Financial', 'Accounting', 'Inventory', 'Reports'];
 
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default' }}>
