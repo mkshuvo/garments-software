@@ -1,89 +1,4 @@
-services:  # PostgreSQL Database - Latest stable LTS (17.5, supported until Nov 2029)
-  postgres:
-    image: postgres:17.5-alpine3.21
-    container_name: garments-postgres-dev
-    environment:
-      POSTGRES_DB: GarmentsERP_Dev
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres123
-      PGDATA: /var/lib/postgresql/data/pgdata
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_dev_data:/var/lib/postgresql/data
-      - ./init-scripts:/docker-entrypoint-initdb.d
-    networks:
-      - garments-dev-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d GarmentsERP_Dev"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
-  # Redis Cache - Latest stable 8.x (widely used in production)
-  redis:
-    image: redis:8.0.2
-    container_name: garments-redis-dev
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_dev_data:/data
-    networks:
-      - garments-dev-network
-    restart: unless-stopped
-    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 5  
-  # pgAdmin for database management - Latest
-  pgadmin:
-    image: dpage/pgadmin4:9.4.0
-    container_name: garments-pgadmin-dev
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@garmentserp.com
-      PGADMIN_DEFAULT_PASSWORD: admin123
-      PGADMIN_CONFIG_SERVER_MODE: 'False'
-      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
-    ports:
-      - "5050:80"
-    volumes:
-      - pgadmin_dev_data:/var/lib/pgadmin
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - garments-dev-network
-    restart: unless-stopped
-
-  # Redis Commander for Redis management - Latest
-  redis-commander:
-    image: rediscommander/redis-commander:latest
-    container_name: garments-redis-commander-dev
-    environment:
-      - REDIS_HOSTS=local:redis:6379
-      - HTTP_USER=admin
-      - HTTP_PASSWORD=admin123
-    ports:
-      - "9081:8081"
-    depends_on:
-      redis:
-        condition: service_healthy
-    networks:
-      - garments-dev-network
-    restart: unless-stopped
-  # Mailhog for email testing - Latest
-  mailhog:
-    image: mailhog/mailhog:v1.0.1
-    container_name: garments-mailhog-dev
-    ports:
-      - "1025:1025"  # SMTP server
-      - "8025:8025"  # Web UI
-    networks:
-      - garments-dev-network
-    restart: unless-stopped  # Backend API - Development
+services:  
   backend:
     build:
       context: ./backend
@@ -122,7 +37,7 @@ services:  # PostgreSQL Database - Latest stable LTS (17.5, supported until Nov 
     container_name: garments-frontend-dev
     environment:
       - NODE_ENV=development
-      - NEXT_PUBLIC_API_URL=http://localhost:8080/api
+      - NEXT_PUBLIC_API_URL=http://localhost
     ports:
       - "3000:3000"    
     depends_on:
@@ -136,6 +51,111 @@ services:  # PostgreSQL Database - Latest stable LTS (17.5, supported until Nov 
       timeout: 10s
       retries: 5
       start_period: 40s
+  postgres:
+    image: postgres:17.5-alpine3.21
+    container_name: garments-postgres-dev
+    environment:
+      POSTGRES_DB: GarmentsERP_Dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - garments-dev-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d GarmentsERP_Dev"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+  # Redis Cache - Latest stable 8.x (widely used in production)
+  redis:
+    image: redis:8.0.3-alpine3.21
+    container_name: garments-redis-dev
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_dev_data:/data
+    networks:
+      - garments-dev-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5  
+  # pgAdmin for database management - Latest
+  pgadmin:
+    image: dpage/pgadmin4:9.5.0
+    container_name: garments-pgadmin-dev
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@garmentserp.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_dev_data:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - garments-dev-network
+    restart: unless-stopped
+
+  # Redis Commander for Redis management - Latest
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: garments-redis-commander-dev
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+      - HTTP_USER=admin
+      - HTTP_PASSWORD=admin123
+    ports:
+      - "8082:8081"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - garments-dev-network
+    restart: unless-stopped
+  # Mailhog for email testing - Latest
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: garments-mailhog-dev
+    ports:
+      - "1025:1025"  # SMTP server
+      - "8025:8025"  # Web UI
+    networks:
+      - garments-dev-network
+    restart: unless-stopped
+
+  # Nginx Reverse Proxy - Development
+  nginx:
+    image: nginx:1.29.0-alpine3.22
+    container_name: garments-nginx-dev
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - garments-dev-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
   postgres_dev_data:

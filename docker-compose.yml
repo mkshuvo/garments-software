@@ -1,86 +1,10 @@
-services:  # PostgreSQL Database - Latest stable LTS (17.5, supported until Nov 2029)
-  postgres:
-    image: postgres:17.5-alpine3.21
-    container_name: garments-postgres
-    environment:
-      POSTGRES_DB: GarmentsERP
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres123
-      PGDATA: /var/lib/postgresql/data/pgdata
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init-scripts:/docker-entrypoint-initdb.d
-    networks:
-      - garments-network
-    restart: unless-stopped    
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d GarmentsERP"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
-  # Redis Cache - Latest stable 8.x (widely used in production)
-  redis:
-    image: redis:8.0.2
-    container_name: garments-redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    networks:
-      - garments-network
-    restart: unless-stopped
-    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 5  
-  # pgAdmin for database management - Production with security
-  pgadmin:
-    image: dpage/pgadmin4:9.4.0
-    container_name: garments-pgadmin
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@garmentserp.com
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-SecureAdminPassword123!}
-      PGADMIN_CONFIG_SERVER_MODE: 'True'
-      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'True'
-    ports:
-      - "5050:80"
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - garments-network
-    restart: unless-stopped
-
-  # Redis Commander for Redis management - Production with security
-  redis-commander:
-    image: rediscommander/redis-commander:latest
-    container_name: garments-redis-commander
-    environment:
-      - REDIS_HOSTS=production:redis:6379
-      - HTTP_USER=${REDIS_COMMANDER_USER:-admin}
-      - HTTP_PASSWORD=${REDIS_COMMANDER_PASSWORD:-SecureRedisPassword123!}
-      - URL_PREFIX=/redis-admin
-    ports:
-      - "8081:8081"
-    depends_on:
-      redis:
-        condition: service_healthy
-    networks:
-      - garments-network
-    restart: unless-stopped
+services:  
   # Backend API
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: garments-backend
+    container_name: garments-backend-prod
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=GarmentsERP;Username=postgres;Password=postgres123
@@ -111,7 +35,7 @@ services:  # PostgreSQL Database - Latest stable LTS (17.5, supported until Nov 
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: garments-frontend
+    container_name: garments-frontend-prod
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_API_URL=http://nginx:80/api
@@ -129,10 +53,87 @@ services:  # PostgreSQL Database - Latest stable LTS (17.5, supported until Nov 
       timeout: 10s
       retries: 5
       start_period: 40s
+  # PostgreSQL Database
+  postgres:
+    image: postgres:17.5-alpine3.21
+    container_name: garments-postgres-prod
+    environment:
+      POSTGRES_DB: GarmentsERP
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - garments-network
+    restart: unless-stopped    
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d GarmentsERP"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+  # Redis Cache - Latest stable 8.x (widely used in production)
+  redis:
+    image: redis:8.0.3-alpine3.21
+    container_name: garments-redis-prod
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - garments-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5  
+  # pgAdmin for database management - Production with security
+  pgadmin:
+    image: dpage/pgadmin4:9.4.0
+    container_name: garments-pgadmin-prod
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@garmentserp.com
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-SecureAdminPassword123!}
+      PGADMIN_CONFIG_SERVER_MODE: 'True'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'True'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - garments-network
+    restart: unless-stopped
+
+  # Redis Commander for Redis management - Production with security
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: garments-redis-commander-prod
+    environment:
+      - REDIS_HOSTS=production:redis:6379
+      - HTTP_USER=${REDIS_COMMANDER_USER:-admin}
+      - HTTP_PASSWORD=${REDIS_COMMANDER_PASSWORD:-SecureRedisPassword123!}
+      - URL_PREFIX=/redis-admin
+    ports:
+      - "8081:8081"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - garments-network
+    restart: unless-stopped
   # Nginx Reverse Proxy - Latest stable
   nginx:
-    image: nginx:1.27.3-alpine3.21
-    container_name: garments-nginx
+    image: nginx:1.29.0-alpine3.22
+    container_name: garments-nginx-prod
     ports:
       - "80:80"
       - "443:443"
