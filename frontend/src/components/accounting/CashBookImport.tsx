@@ -14,7 +14,9 @@ import {
   ListItemText,
   Divider,
   IconButton,
-  Collapse
+  Collapse,
+  Breadcrumbs,
+  Link
 } from '@mui/material';
 import {
   CloudUpload,
@@ -22,8 +24,13 @@ import {
   CheckCircle,
   Error,
   ExpandMore,
-  ExpandLess
+  ExpandLess,
+  ArrowBack as ArrowBackIcon,
+  Home as HomeIcon,
+  AccountBalance as AccountBalanceIcon,
+  Upload as UploadIcon
 } from '@mui/icons-material';
+import { useRouter } from 'next/navigation';
 
 interface ImportResult {
   isSuccess: boolean;
@@ -42,6 +49,7 @@ interface SampleFormat {
 }
 
 export default function CashBookImportPage() {
+  const router = useRouter();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
@@ -109,12 +117,49 @@ export default function CashBookImportPage() {
 
   return (
     <Box sx={{ p: 3, maxWidth: 1200, mx: 'auto' }}>
-      <Typography variant="h4" fontWeight="bold" gutterBottom>
-        Cash Book Import
-      </Typography>
-      <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-        Import MM Fashion cash book data from CSV files into the accounting system
-      </Typography>
+      {/* Navigation Breadcrumbs */}
+      <Breadcrumbs sx={{ mb: 3 }}>
+        <Link 
+          color="inherit" 
+          href="/" 
+          sx={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}
+        >
+          <HomeIcon sx={{ mr: 0.5 }} fontSize="inherit" />
+          Home
+        </Link>
+        <Link 
+          color="inherit" 
+          href="/admin/accounting" 
+          sx={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}
+        >
+          <AccountBalanceIcon sx={{ mr: 0.5 }} fontSize="inherit" />
+          Accounting
+        </Link>
+        <Typography color="text.primary" sx={{ display: 'flex', alignItems: 'center' }}>
+          <UploadIcon sx={{ mr: 0.5 }} fontSize="inherit" />
+          Cash Book Import
+        </Typography>
+      </Breadcrumbs>
+
+      {/* Header with Navigation */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Box>
+          <Typography variant="h4" fontWeight="bold" gutterBottom>
+            📊 Cash Book Import
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Import MM Fashion cash book data from CSV files into the accounting system
+          </Typography>
+        </Box>
+        <Button
+          variant="outlined"
+          startIcon={<ArrowBackIcon />}
+          onClick={() => router.push('/admin/accounting')}
+          sx={{ minWidth: 120 }}
+        >
+          Back to Accounting
+        </Button>
+      </Box>
 
       <Stack spacing={3}>
         {/* File Upload Section */}

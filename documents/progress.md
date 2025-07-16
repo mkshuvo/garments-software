@@ -132,6 +132,69 @@ Building a comprehensive Garments ERP system with ASP.NET Core Web API backend a
 - [x] **Build Success**: Project compiles without errors after navigation properties removal
 - [x] **Identity Navigation Properties**: Preserved essential ASP.NET Core Identity navigation properties
 
+### Phase 15: Accounting System
+- [ ] **Chart of Accounts**: Complete accounting structure
+- [ ] **General Ledger**: Double-entry bookkeeping
+- [ ] **Financial Reports**: Balance sheet, P&L, cash flow
+- [ ] **Audit Trail**: Complete transaction history
+
+### Phase 16: Hot Reload Development Setup (✅ COMPLETED - January 2025)
+- [x] **Development Dockerfiles**: Created hot reload capable containers
+  - [x] `frontend/Dockerfile.dev` - Next.js development server with hot reload
+  - [x] `backend/Dockerfile.dev` - .NET watch with hot reload support
+- [x] **Volume Mounting Configuration**: Enabled source code hot reload
+  - [x] Frontend: Source code, node_modules, and .next cache mounting
+  - [x] Backend: Source code with obj/bin cache optimization
+- [x] **Enhanced docker-compose.dev.yml**: Updated for development efficiency
+  - [x] Development Dockerfiles integration
+  - [x] Volume mounting for real-time code changes
+  - [x] Maintained all existing service configurations
+- [x] **Makefile Enhancement**: Added development workflow commands
+  - [x] `make docker-dev-hot` - Start with hot reload (no rebuild)
+  - [x] `make docker-dev-rebuild` - Rebuild when dependencies change
+  - [x] Updated help documentation and .PHONY targets
+- [x] **Development Optimization**: Improved developer experience
+  - [x] .dockerignore files for optimal build context
+  - [x] Eliminated need for constant container rebuilds
+  - [x] Maintained production Docker configuration integrity
+
+### Phase 17: Cashbook Functionality Planning (✅ COMPLETED - January 2025)
+- [x] **Sample CSV Analysis**: Analyzed MM Fashion cash book format
+  - [x] Categories mapping structure (Credit/Debit Categories, Suppliers, Buyers)
+  - [x] Main transaction format (double-entry structure with dates and amounts)
+  - [x] Trial balance format (Dr./Cr. columns with totals)
+- [x] **Database Schema Design**: Enterprise-level accounting structure
+  - [x] Chart of Accounts with hierarchical structure
+  - [x] Trading Partners management (suppliers and buyers)
+  - [x] Double-entry transaction system with validation
+  - [x] MM Fashion categories mapping table
+- [x] **API Endpoints Architecture**: RESTful accounting API design
+  - [x] CRUD operations for all accounting entities
+  - [x] CSV import/export functionality endpoints
+  - [x] Comprehensive reporting endpoints
+- [x] **Frontend Components Plan**: Complete UI architecture
+  - [x] Enhanced cash book entry with navigation
+  - [x] Chart of accounts management interface
+  - [x] Trading partners management system
+  - [x] CSV operations interface with import/export
+  - [x] Financial reports and trial balance views
+- [x] **Implementation Roadmap**: 8-week development timeline
+  - [x] Phase 1: Core setup (Chart of Accounts, Trading Partners)
+  - [x] Phase 2: Transaction management with double-entry validation
+  - [x] Phase 3: MM Fashion format support with CSV operations
+  - [x] Phase 4: Reporting and trial balance generation
+- [x] **Business Rules Documentation**: Accounting compliance requirements
+  - [x] Double-entry validation rules
+  - [x] Account type classifications
+  - [x] MM Fashion format specifications
+  - [x] Error handling and user feedback guidelines
+- [x] **Comprehensive Documentation**: Complete functionality plan created
+  - [x] `docs/cashbook-functionality-plan.md` - 200+ line detailed plan
+  - [x] Database schema with SQL examples
+  - [x] API endpoints with C# examples
+  - [x] Frontend components architecture
+  - [x] Performance and security considerations
+
 ## 🚧 In Progress
 
 ### Phase 6: Service & Controller Updates
@@ -210,86 +273,1067 @@ Building a comprehensive Garments ERP system with ASP.NET Core Web API backend a
 - [ ] **Financial Reports**: Balance sheet, P&L, cash flow
 - [ ] **Audit Trail**: Complete transaction history
 
-### Phase 4: Enterprise Accounting Architecture (MAJOR RESTRUCTURE - COMPLETED)
-- [x] **Complete Model Restructure**: Removed old basic models and implemented Sage-level enterprise accounting structure
-  - [x] **Removed Legacy Models**: Accounting.cs, Invoice.cs, Order.cs, Product.cs, Purchasing.cs, Production.cs, Inventory.cs
-  - [x] **Enterprise Accounting Models** (Each model in individual files following best practices):
-    - [x] `ChartOfAccount` - Hierarchical chart of accounts with account codes, types, and balances
-    - [x] `JournalEntry` - Double-entry bookkeeping with journal types and approval workflow
-    - [x] `JournalEntryLine` - Individual transaction lines with debit/credit entries
-  - [x] **Contact Management** (Customer/Supplier unified):
-    - [x] `Contact` - Unified customer/supplier management with contact types
-    - [x] `ContactAddress` - Multiple addresses per contact (billing/shipping)
-  - [x] **Advanced Invoicing System**:
-    - [x] `SalesInvoice` - Comprehensive sales invoice with payment tracking
-    - [x] `SalesInvoiceItem` - Line items with tax, discount, and pricing details
-    - [x] `PurchaseInvoice` - Purchase invoice management
-    - [x] `PurchaseInvoiceItem` - Purchase line items with cost tracking
-  - [x] **Payment Management**:
-    - [x] `Payment` - Multi-method payment processing (cash, cheque, bank transfer, etc.)
-    - [x] `PaymentAllocation` - Payment allocation to invoices for proper tracking
-  - [x] **Banking Module**:
-    - [x] `BankAccount` - Multiple bank account management with real-time balances
-    - [x] `BankTransfer` - Inter-account transfers with fees and status tracking
-    - [x] `BankReconciliation` - Bank statement reconciliation
-    - [x] `BankReconciliationItem` - Individual reconciliation line items
-  - [x] **Product & Inventory System**:
-    - [x] `Product` - Garment-specific product management (color, size, fabric, style, season)
-    - [x] `ProductCategory` - Product categorization
-    - [x] `StockItem` - Multi-warehouse inventory tracking with reorder levels
-    - [x] `StockMovement` - Detailed stock movement history with multiple movement types
-    - [x] `Warehouse` - Multi-location inventory management
-  - [x] **Tax Management**:
-    - [x] `TaxRate` - Flexible tax rate management (GST, VAT, Sales Tax, etc.)
-    - [x] `TaxScheme` - Tax scheme configuration for different scenarios
-  - [x] **Multi-Currency Support**:
-    - [x] `Currency` - Currency master with base currency designation
-    - [x] `ExchangeRate` - Historical exchange rate tracking
-  - [x] **Business Configuration**:
-    - [x] `Company` - Multi-tenant company setup with financial year management
-    - [x] `BusinessSetting` - Configurable business settings by category
-    - [x] `ReportTemplate` - Custom report template management
-- [x] **Model Integration**: Updated ApplicationUser with comprehensive navigation properties for all accounting modules
-- [x] **Namespace Organization**: Organized models into logical namespaces (Accounting, Banking, Contacts, etc.)
-- [x] **Cross-Model Relationships**: Established proper foreign key relationships and navigation properties across all models
+### Phase 16: Hot Reload Development Setup (✅ COMPLETED - January 2025)
+- [x] **Development Dockerfiles**: Created hot reload capable containers
+  - [x] `frontend/Dockerfile.dev` - Next.js development server with hot reload
+  - [x] `backend/Dockerfile.dev` - .NET watch with hot reload support
+- [x] **Volume Mounting Configuration**: Enabled source code hot reload
+  - [x] Frontend: Source code, node_modules, and .next cache mounting
+  - [x] Backend: Source code with obj/bin cache optimization
+- [x] **Enhanced docker-compose.dev.yml**: Updated for development efficiency
+  - [x] Development Dockerfiles integration
+  - [x] Volume mounting for real-time code changes
+  - [x] Maintained all existing service configurations
+- [x] **Makefile Enhancement**: Added development workflow commands
+  - [x] `make docker-dev-hot` - Start with hot reload (no rebuild)
+  - [x] `make docker-dev-rebuild` - Rebuild when dependencies change
+  - [x] Updated help documentation and .PHONY targets
+- [x] **Development Optimization**: Improved developer experience
+  - [x] .dockerignore files for optimal build context
+  - [x] Eliminated need for constant container rebuilds
+  - [x] Maintained production Docker configuration integrity
 
-## 🎯 Enterprise Accounting Capabilities Achieved
-✅ **Sage-Level Features Now Available**:
-- **Double-Entry Bookkeeping**: Complete journal entry system with automatic balance validation
-- **Comprehensive Chart of Accounts**: Hierarchical account structure with unlimited sub-accounts
-- **Multi-Currency Operations**: Full currency management with exchange rate tracking
-- **Advanced Invoicing**: Professional sales/purchase invoicing with tax and discount calculations
-- **Payment Processing**: Multi-method payment handling with automatic allocation
-- **Bank Management**: Complete banking module with reconciliation capabilities
-- **Inventory Control**: Multi-warehouse stock management with movement tracking
-- **Tax Compliance**: Flexible tax management for various tax types and jurisdictions
-- **Multi-Company Support**: Tenant-ready architecture for multiple business entities
-- **Comprehensive Reporting**: Foundation for trial balance, P&L, balance sheet, and custom reports
-- **Audit Trail**: Complete transaction history and user activity tracking
-- **Garment Industry Focus**: Specialized fields for color, size, fabric, style, and seasonal management
+### Phase 17: Cashbook Functionality Planning (✅ COMPLETED - January 2025)
+- [x] **Sample CSV Analysis**: Analyzed MM Fashion cash book format
+  - [x] Categories mapping structure (Credit/Debit Categories, Suppliers, Buyers)
+  - [x] Main transaction format (double-entry structure with dates and amounts)
+  - [x] Trial balance format (Dr./Cr. columns with totals)
+- [x] **Database Schema Design**: Enterprise-level accounting structure
+  - [x] Chart of Accounts with hierarchical structure
+  - [x] Trading Partners management (suppliers and buyers)
+  - [x] Double-entry transaction system with validation
+  - [x] MM Fashion categories mapping table
+- [x] **API Endpoints Architecture**: RESTful accounting API design
+  - [x] CRUD operations for all accounting entities
+  - [x] CSV import/export functionality endpoints
+  - [x] Comprehensive reporting endpoints
+- [x] **Frontend Components Plan**: Complete UI architecture
+  - [x] Enhanced cash book entry with navigation
+  - [x] Chart of accounts management interface
+  - [x] Trading partners management system
+  - [x] CSV operations interface with import/export
+  - [x] Financial reports and trial balance views
+- [x] **Implementation Roadmap**: 8-week development timeline
+  - [x] Phase 1: Core setup (Chart of Accounts, Trading Partners)
+  - [x] Phase 2: Transaction management with double-entry validation
+  - [x] Phase 3: MM Fashion format support with CSV operations
+  - [x] Phase 4: Reporting and trial balance generation
+- [x] **Business Rules Documentation**: Accounting compliance requirements
+  - [x] Double-entry validation rules
+  - [x] Account type classifications
+  - [x] MM Fashion format specifications
+  - [x] Error handling and user feedback guidelines
+- [x] **Comprehensive Documentation**: Complete functionality plan created
+  - [x] `docs/cashbook-functionality-plan.md` - 200+ line detailed plan
+  - [x] Database schema with SQL examples
+  - [x] API endpoints with C# examples
+  - [x] Frontend components architecture
+  - [x] Performance and security considerations
 
-## 🛠️ Technical Debt & Improvements
-- [ ] **Unit Tests**: Comprehensive test coverage
-- [ ] **Integration Tests**: API endpoint testing
-- [ ] **Performance Optimization**: Query optimization and caching
-- [ ] **Security Hardening**: Security audit and improvements
-- [ ] **Documentation**: API documentation and user guides
-- [ ] **Monitoring**: Application performance monitoring
-- [ ] **Backup Strategy**: Database backup and recovery
+## 🚧 In Progress
 
-## 🐛 Known Issues
-- None currently identified
+### Phase 6: Service & Controller Updates
+- [ ] **Remaining Services Review**: Check all services for navigation property usage
+- [ ] **Controller Updates**: Remove Include() statements from all controllers
+- [ ] **DTO Updates**: Remove navigation property mappings from DTOs
+- [ ] **Test Creation**: Build comprehensive test suite for controllers
 
-## 📊 Statistics
-- **Backend Controllers**: 2 (Auth, Health)
-- **Frontend Components**: 5 (AuthProvider, Layout, LoginPage, RegisterPage, CreateUserPage)
-- **Database Models**: 12 entities
-- **Docker Services**: 6 (postgres, redis, backend, frontend, nginx, dev tools)
-- **API Endpoints**: 4 (register, login, health, health/detailed)
-- **Frontend Pages**: 4 (Home, Login, Register, Admin/Create-User)
+### Phase 7: User Management System Enhancement
+- [x] **User Authentication**: Login/logout functionality 
+  - [x] Frontend login form implementation with form validation
+  - [x] Register page for account creation with validation
+  - [x] User authentication state management using Zustand
+  - [x] JWT token handling and storage
+  - [x] Protected routes based on authentication status
+  - [x] Logout functionality
+- [x] **User Registration**: Admin-only user creation with role assignment
+  - [x] Beautiful, modern Create User page with gradient design
+  - [x] Role-based form with Admin, Manager, Employee options
+  - [x] Password visibility toggles and form validation
+  - [x] Responsive layout with sectioned form design
+  - [x] Authentication loading state to prevent access denied flicker
+  - [x] Professional access denied page for non-admin users
+  - [x] Integration with navigation menu structure
+  - [x] Success/error handling with styled alerts
+- [ ] **Role Management**: Admin, Manager, Employee, Customer roles
+- [ ] **User Profile**: User information management
 
----
+## 📋 Next Up
 
-**Last Updated**: January 7, 2025  
-**Current Phase**: Service & Controller Updates (Post-Navigation Properties Cleanup)  
-**Next Milestone**: Complete remaining services review and controller updates, then create comprehensive test suite
+### Phase 8: Complete Testing & Validation
+- [ ] **Controller Testing**: Create comprehensive tests for all controllers
+- [ ] **Service Testing**: Unit tests for all business logic services
+- [ ] **Integration Testing**: End-to-end API testing
+- [ ] **Performance Testing**: Database query optimization and caching
+
+### Phase 9: Inventory Management
+- [ ] **Product Catalog**: Product creation and management
+- [ ] **Category Management**: Product categorization
+- [ ] **Stock Tracking**: Inventory levels and movements
+- [ ] **Reorder Management**: Low stock alerts and reorder points
+
+### Phase 10: Sales Management
+- [ ] **Customer Management**: Customer information and history
+- [ ] **Sales Orders**: Order creation and processing
+- [ ] **Order Tracking**: Status updates and fulfillment
+- [ ] **Sales Analytics**: Reports and dashboards
+
+### Phase 11: Production Management
+- [ ] **Work Orders**: Production planning and scheduling
+- [ ] **Production Lines**: Manufacturing resource management
+- [ ] **Quality Control**: Production quality tracking
+- [ ] **Material Requirements**: Bill of materials and planning
+
+### Phase 12: Order Management
+- [ ] **Order Processing**: End-to-end order lifecycle
+- [ ] **Order Fulfillment**: Shipping and delivery tracking
+- [ ] **Order History**: Complete audit trail
+- [ ] **Customer Notifications**: Order status communications
+
+### Phase 13: Invoicing System
+- [ ] **Invoice Generation**: Automated invoice creation
+- [ ] **Payment Tracking**: Payment status and history
+- [ ] **Tax Calculations**: Multi-tax support
+- [ ] **Invoice Templates**: Customizable invoice formats
+
+### Phase 14: HR & Payroll
+- [ ] **Employee Management**: Employee information system
+- [ ] **Attendance Tracking**: Time and attendance management
+- [ ] **Payroll Processing**: Automated payroll calculations
+- [ ] **Leave Management**: Vacation and sick leave tracking
+
+### Phase 15: Accounting System
+- [ ] **Chart of Accounts**: Complete accounting structure
+- [ ] **General Ledger**: Double-entry bookkeeping
+- [ ] **Financial Reports**: Balance sheet, P&L, cash flow
+- [ ] **Audit Trail**: Complete transaction history
+
+### Phase 16: Hot Reload Development Setup (✅ COMPLETED - January 2025)
+- [x] **Development Dockerfiles**: Created hot reload capable containers
+  - [x] `frontend/Dockerfile.dev` - Next.js development server with hot reload
+  - [x] `backend/Dockerfile.dev` - .NET watch with hot reload support
+- [x] **Volume Mounting Configuration**: Enabled source code hot reload
+  - [x] Frontend: Source code, node_modules, and .next cache mounting
+  - [x] Backend: Source code with obj/bin cache optimization
+- [x] **Enhanced docker-compose.dev.yml**: Updated for development efficiency
+  - [x] Development Dockerfiles integration
+  - [x] Volume mounting for real-time code changes
+  - [x] Maintained all existing service configurations
+- [x] **Makefile Enhancement**: Added development workflow commands
+  - [x] `make docker-dev-hot` - Start with hot reload (no rebuild)
+  - [x] `make docker-dev-rebuild` - Rebuild when dependencies change
+  - [x] Updated help documentation and .PHONY targets
+- [x] **Development Optimization**: Improved developer experience
+  - [x] .dockerignore files for optimal build context
+  - [x] Eliminated need for constant container rebuilds
+  - [x] Maintained production Docker configuration integrity
+
+### Phase 17: Cashbook Functionality Planning (✅ COMPLETED - January 2025)
+- [x] **Sample CSV Analysis**: Analyzed MM Fashion cash book format
+  - [x] Categories mapping structure (Credit/Debit Categories, Suppliers, Buyers)
+  - [x] Main transaction format (double-entry structure with dates and amounts)
+  - [x] Trial balance format (Dr./Cr. columns with totals)
+- [x] **Database Schema Design**: Enterprise-level accounting structure
+  - [x] Chart of Accounts with hierarchical structure
+  - [x] Trading Partners management (suppliers and buyers)
+  - [x] Double-entry transaction system with validation
+  - [x] MM Fashion categories mapping table
+- [x] **API Endpoints Architecture**: RESTful accounting API design
+  - [x] CRUD operations for all accounting entities
+  - [x] CSV import/export functionality endpoints
+  - [x] Comprehensive reporting endpoints
+- [x] **Frontend Components Plan**: Complete UI architecture
+  - [x] Enhanced cash book entry with navigation
+  - [x] Chart of accounts management interface
+  - [x] Trading partners management system
+  - [x] CSV operations interface with import/export
+  - [x] Financial reports and trial balance views
+- [x] **Implementation Roadmap**: 8-week development timeline
+  - [x] Phase 1: Core setup (Chart of Accounts, Trading Partners)
+  - [x] Phase 2: Transaction management with double-entry validation
+  - [x] Phase 3: MM Fashion format support with CSV operations
+  - [x] Phase 4: Reporting and trial balance generation
+- [x] **Business Rules Documentation**: Accounting compliance requirements
+  - [x] Double-entry validation rules
+  - [x] Account type classifications
+  - [x] MM Fashion format specifications
+  - [x] Error handling and user feedback guidelines
+- [x] **Comprehensive Documentation**: Complete functionality plan created
+  - [x] `docs/cashbook-functionality-plan.md` - 200+ line detailed plan
+  - [x] Database schema with SQL examples
+  - [x] API endpoints with C# examples
+  - [x] Frontend components architecture
+  - [x] Performance and security considerations
+
+## 🚧 In Progress
+
+### Phase 6: Service & Controller Updates
+- [ ] **Remaining Services Review**: Check all services for navigation property usage
+- [ ] **Controller Updates**: Remove Include() statements from all controllers
+- [ ] **DTO Updates**: Remove navigation property mappings from DTOs
+- [ ] **Test Creation**: Build comprehensive test suite for controllers
+
+### Phase 7: User Management System Enhancement
+- [x] **User Authentication**: Login/logout functionality 
+  - [x] Frontend login form implementation with form validation
+  - [x] Register page for account creation with validation
+  - [x] User authentication state management using Zustand
+  - [x] JWT token handling and storage
+  - [x] Protected routes based on authentication status
+  - [x] Logout functionality
+- [x] **User Registration**: Admin-only user creation with role assignment
+  - [x] Beautiful, modern Create User page with gradient design
+  - [x] Role-based form with Admin, Manager, Employee options
+  - [x] Password visibility toggles and form validation
+  - [x] Responsive layout with sectioned form design
+  - [x] Authentication loading state to prevent access denied flicker
+  - [x] Professional access denied page for non-admin users
+  - [x] Integration with navigation menu structure
+  - [x] Success/error handling with styled alerts
+- [ ] **Role Management**: Admin, Manager, Employee, Customer roles
+- [ ] **User Profile**: User information management
+
+## 📋 Next Up
+
+### Phase 8: Complete Testing & Validation
+- [ ] **Controller Testing**: Create comprehensive tests for all controllers
+- [ ] **Service Testing**: Unit tests for all business logic services
+- [ ] **Integration Testing**: End-to-end API testing
+- [ ] **Performance Testing**: Database query optimization and caching
+
+### Phase 9: Inventory Management
+- [ ] **Product Catalog**: Product creation and management
+- [ ] **Category Management**: Product categorization
+- [ ] **Stock Tracking**: Inventory levels and movements
+- [ ] **Reorder Management**: Low stock alerts and reorder points
+
+### Phase 10: Sales Management
+- [ ] **Customer Management**: Customer information and history
+- [ ] **Sales Orders**: Order creation and processing
+- [ ] **Order Tracking**: Status updates and fulfillment
+- [ ] **Sales Analytics**: Reports and dashboards
+
+### Phase 11: Production Management
+- [ ] **Work Orders**: Production planning and scheduling
+- [ ] **Production Lines**: Manufacturing resource management
+- [ ] **Quality Control**: Production quality tracking
+- [ ] **Material Requirements**: Bill of materials and planning
+
+### Phase 12: Order Management
+- [ ] **Order Processing**: End-to-end order lifecycle
+- [ ] **Order Fulfillment**: Shipping and delivery tracking
+- [ ] **Order History**: Complete audit trail
+- [ ] **Customer Notifications**: Order status communications
+
+### Phase 13: Invoicing System
+- [ ] **Invoice Generation**: Automated invoice creation
+- [ ] **Payment Tracking**: Payment status and history
+- [ ] **Tax Calculations**: Multi-tax support
+- [ ] **Invoice Templates**: Customizable invoice formats
+
+### Phase 14: HR & Payroll
+- [ ] **Employee Management**: Employee information system
+- [ ] **Attendance Tracking**: Time and attendance management
+- [ ] **Payroll Processing**: Automated payroll calculations
+- [ ] **Leave Management**: Vacation and sick leave tracking
+
+### Phase 15: Accounting System
+- [ ] **Chart of Accounts**: Complete accounting structure
+- [ ] **General Ledger**: Double-entry bookkeeping
+- [ ] **Financial Reports**: Balance sheet, P&L, cash flow
+- [ ] **Audit Trail**: Complete transaction history
+
+### Phase 16: Hot Reload Development Setup (✅ COMPLETED - January 2025)
+- [x] **Development Dockerfiles**: Created hot reload capable containers
+  - [x] `frontend/Dockerfile.dev` - Next.js development server with hot reload
+  - [x] `backend/Dockerfile.dev` - .NET watch with hot reload support
+- [x] **Volume Mounting Configuration**: Enabled source code hot reload
+  - [x] Frontend: Source code, node_modules, and .next cache mounting
+  - [x] Backend: Source code with obj/bin cache optimization
+- [x] **Enhanced docker-compose.dev.yml**: Updated for development efficiency
+  - [x] Development Dockerfiles integration
+  - [x] Volume mounting for real-time code changes
+  - [x] Maintained all existing service configurations
+- [x] **Makefile Enhancement**: Added development workflow commands
+  - [x] `make docker-dev-hot` - Start with hot reload (no rebuild)
+  - [x] `make docker-dev-rebuild` - Rebuild when dependencies change
+  - [x] Updated help documentation and .PHONY targets
+- [x] **Development Optimization**: Improved developer experience
+  - [x] .dockerignore files for optimal build context
+  - [x] Eliminated need for constant container rebuilds
+  - [x] Maintained production Docker configuration integrity
+
+### Phase 17: Cashbook Functionality Planning (✅ COMPLETED - January 2025)
+- [x] **Sample CSV Analysis**: Analyzed MM Fashion cash book format
+  - [x] Categories mapping structure (Credit/Debit Categories, Suppliers, Buyers)
+  - [x] Main transaction format (double-entry structure with dates and amounts)
+  - [x] Trial balance format (Dr./Cr. columns with totals)
+- [x] **Database Schema Design**: Enterprise-level accounting structure
+  - [x] Chart of Accounts with hierarchical structure
+  - [x] Trading Partners management (suppliers and buyers)
+  - [x] Double-entry transaction system with validation
+  - [x] MM Fashion categories mapping table
+- [x] **API Endpoints Architecture**: RESTful accounting API design
+  - [x] CRUD operations for all accounting entities
+  - [x] CSV import/export functionality endpoints
+  - [x] Comprehensive reporting endpoints
+- [x] **Frontend Components Plan**: Complete UI architecture
+  - [x] Enhanced cash book entry with navigation
+  - [x] Chart of accounts management interface
+  - [x] Trading partners management system
+  - [x] CSV operations interface with import/export
+  - [x] Financial reports and trial balance views
+- [x] **Implementation Roadmap**: 8-week development timeline
+  - [x] Phase 1: Core setup (Chart of Accounts, Trading Partners)
+  - [x] Phase 2: Transaction management with double-entry validation
+  - [x] Phase 3: MM Fashion format support with CSV operations
+  - [x] Phase 4: Reporting and trial balance generation
+- [x] **Business Rules Documentation**: Accounting compliance requirements
+  - [x] Double-entry validation rules
+  - [x] Account type classifications
+  - [x] MM Fashion format specifications
+  - [x] Error handling and user feedback guidelines
+- [x] **Comprehensive Documentation**: Complete functionality plan created
+  - [x] `docs/cashbook-functionality-plan.md` - 200+ line detailed plan
+  - [x] Database schema with SQL examples
+  - [x] API endpoints with C# examples
+  - [x] Frontend components architecture
+  - [x] Performance and security considerations
+
+## 🚧 In Progress
+
+### Phase 6: Service & Controller Updates
+- [ ] **Remaining Services Review**: Check all services for navigation property usage
+- [ ] **Controller Updates**: Remove Include() statements from all controllers
+- [ ] **DTO Updates**: Remove navigation property mappings from DTOs
+- [ ] **Test Creation**: Build comprehensive test suite for controllers
+
+### Phase 7: User Management System Enhancement
+- [x] **User Authentication**: Login/logout functionality 
+  - [x] Frontend login form implementation with form validation
+  - [x] Register page for account creation with validation
+  - [x] User authentication state management using Zustand
+  - [x] JWT token handling and storage
+  - [x] Protected routes based on authentication status
+  - [x] Logout functionality
+- [x] **User Registration**: Admin-only user creation with role assignment
+  - [x] Beautiful, modern Create User page with gradient design
+  - [x] Role-based form with Admin, Manager, Employee options
+  - [x] Password visibility toggles and form validation
+  - [x] Responsive layout with sectioned form design
+  - [x] Authentication loading state to prevent access denied flicker
+  - [x] Professional access denied page for non-admin users
+  - [x] Integration with navigation menu structure
+  - [x] Success/error handling with styled alerts
+- [ ] **Role Management**: Admin, Manager, Employee, Customer roles
+- [ ] **User Profile**: User information management
+
+## 📋 Next Up
+
+### Phase 8: Complete Testing & Validation
+- [ ] **Controller Testing**: Create comprehensive tests for all controllers
+- [ ] **Service Testing**: Unit tests for all business logic services
+- [ ] **Integration Testing**: End-to-end API testing
+- [ ] **Performance Testing**: Database query optimization and caching
+
+### Phase 9: Inventory Management
+- [ ] **Product Catalog**: Product creation and management
+- [ ] **Category Management**: Product categorization
+- [ ] **Stock Tracking**: Inventory levels and movements
+- [ ] **Reorder Management**: Low stock alerts and reorder points
+
+### Phase 10: Sales Management
+- [ ] **Customer Management**: Customer information and history
+- [ ] **Sales Orders**: Order creation and processing
+- [ ] **Order Tracking**: Status updates and fulfillment
+- [ ] **Sales Analytics**: Reports and dashboards
+
+### Phase 11: Production Management
+- [ ] **Work Orders**: Production planning and scheduling
+- [ ] **Production Lines**: Manufacturing resource management
+- [ ] **Quality Control**: Production quality tracking
+- [ ] **Material Requirements**: Bill of materials and planning
+
+### Phase 12: Order Management
+- [ ] **Order Processing**: End-to-end order lifecycle
+- [ ] **Order Fulfillment**: Shipping and delivery tracking
+- [ ] **Order History**: Complete audit trail
+- [ ] **Customer Notifications**: Order status communications
+
+### Phase 13: Invoicing System
+- [ ] **Invoice Generation**: Automated invoice creation
+- [ ] **Payment Tracking**: Payment status and history
+- [ ] **Tax Calculations**: Multi-tax support
+- [ ] **Invoice Templates**: Customizable invoice formats
+
+### Phase 14: HR & Payroll
+- [ ] **Employee Management**: Employee information system
+- [ ] **Attendance Tracking**: Time and attendance management
+- [ ] **Payroll Processing**: Automated payroll calculations
+- [ ] **Leave Management**: Vacation and sick leave tracking
+
+### Phase 15: Accounting System
+- [ ] **Chart of Accounts**: Complete accounting structure
+- [ ] **General Ledger**: Double-entry bookkeeping
+- [ ] **Financial Reports**: Balance sheet, P&L, cash flow
+- [ ] **Audit Trail**: Complete transaction history
+
+### Phase 16: Hot Reload Development Setup (✅ COMPLETED - January 2025)
+- [x] **Development Dockerfiles**: Created hot reload capable containers
+  - [x] `frontend/Dockerfile.dev` - Next.js development server with hot reload
+  - [x] `backend/Dockerfile.dev` - .NET watch with hot reload support
+- [x] **Volume Mounting Configuration**: Enabled source code hot reload
+  - [x] Frontend: Source code, node_modules, and .next cache mounting
+  - [x] Backend: Source code with obj/bin cache optimization
+- [x] **Enhanced docker-compose.dev.yml**: Updated for development efficiency
+  - [x] Development Dockerfiles integration
+  - [x] Volume mounting for real-time code changes
+  - [x] Maintained all existing service configurations
+- [x] **Makefile Enhancement**: Added development workflow commands
+  - [x] `make docker-dev-hot` - Start with hot reload (no rebuild)
+  - [x] `make docker-dev-rebuild` - Rebuild when dependencies change
+  - [x] Updated help documentation and .PHONY targets
+- [x] **Development Optimization**: Improved developer experience
+  - [x] .dockerignore files for optimal build context
+  - [x] Eliminated need for constant container rebuilds
+  - [x] Maintained production Docker configuration integrity
+
+### Phase 17: Cashbook Functionality Planning (✅ COMPLETED - January 2025)
+- [x] **Sample CSV Analysis**: Analyzed MM Fashion cash book format
+  - [x] Categories mapping structure (Credit/Debit Categories, Suppliers, Buyers)
+  - [x] Main transaction format (double-entry structure with dates and amounts)
+  - [x] Trial balance format (Dr./Cr. columns with totals)
+- [x] **Database Schema Design**: Enterprise-level accounting structure
+  - [x] Chart of Accounts with hierarchical structure
+  - [x] Trading Partners management (suppliers and buyers)
+  - [x] Double-entry transaction system with validation
+  - [x] MM Fashion categories mapping table
+- [x] **API Endpoints Architecture**: RESTful accounting API design
+  - [x] CRUD operations for all accounting entities
+  - [x] CSV import/export functionality endpoints
+  - [x] Comprehensive reporting endpoints
+- [x] **Frontend Components Plan**: Complete UI architecture
+  - [x] Enhanced cash book entry with navigation
+  - [x] Chart of accounts management interface
+  - [x] Trading partners management system
+  - [x] CSV operations interface with import/export
+  - [x] Financial reports and trial balance views
+- [x] **Implementation Roadmap**: 8-week development timeline
+  - [x] Phase 1: Core setup (Chart of Accounts, Trading Partners)
+  - [x] Phase 2: Transaction management with double-entry validation
+  - [x] Phase 3: MM Fashion format support with CSV operations
+  - [x] Phase 4: Reporting and trial balance generation
+- [x] **Business Rules Documentation**: Accounting compliance requirements
+  - [x] Double-entry validation rules
+  - [x] Account type classifications
+  - [x] MM Fashion format specifications
+  - [x] Error handling and user feedback guidelines
+- [x] **Comprehensive Documentation**: Complete functionality plan created
+  - [x] `docs/cashbook-functionality-plan.md` - 200+ line detailed plan
+  - [x] Database schema with SQL examples
+  - [x] API endpoints with C# examples
+  - [x] Frontend components architecture
+  - [x] Performance and security considerations
+
+## 🚧 In Progress
+
+### Phase 6: Service & Controller Updates
+- [ ] **Remaining Services Review**: Check all services for navigation property usage
+- [ ] **Controller Updates**: Remove Include() statements from all controllers
+- [ ] **DTO Updates**: Remove navigation property mappings from DTOs
+- [ ] **Test Creation**: Build comprehensive test suite for controllers
+
+### Phase 7: User Management System Enhancement
+- [x] **User Authentication**: Login/logout functionality 
+  - [x] Frontend login form implementation with form validation
+  - [x] Register page for account creation with validation
+  - [x] User authentication state management using Zustand
+  - [x] JWT token handling and storage
+  - [x] Protected routes based on authentication status
+  - [x] Logout functionality
+- [x] **User Registration**: Admin-only user creation with role assignment
+  - [x] Beautiful, modern Create User page with gradient design
+  - [x] Role-based form with Admin, Manager, Employee options
+  - [x] Password visibility toggles and form validation
+  - [x] Responsive layout with sectioned form design
+  - [x] Authentication loading state to prevent access denied flicker
+  - [x] Professional access denied page for non-admin users
+  - [x] Integration with navigation menu structure
+  - [x] Success/error handling with styled alerts
+- [ ] **Role Management**: Admin, Manager, Employee, Customer roles
+- [ ] **User Profile**: User information management
+
+## 📋 Next Up
+
+### Phase 8: Complete Testing & Validation
+- [ ] **Controller Testing**: Create comprehensive tests for all controllers
+- [ ] **Service Testing**: Unit tests for all business logic services
+- [ ] **Integration Testing**: End-to-end API testing
+- [ ] **Performance Testing**: Database query optimization and caching
+
+### Phase 9: Inventory Management
+- [ ] **Product Catalog**: Product creation and management
+- [ ] **Category Management**: Product categorization
+- [ ] **Stock Tracking**: Inventory levels and movements
+- [ ] **Reorder Management**: Low stock alerts and reorder points
+
+### Phase 10: Sales Management
+- [ ] **Customer Management**: Customer information and history
+- [ ] **Sales Orders**: Order creation and processing
+- [ ] **Order Tracking**: Status updates and fulfillment
+- [ ] **Sales Analytics**: Reports and dashboards
+
+### Phase 11: Production Management
+- [ ] **Work Orders**: Production planning and scheduling
+- [ ] **Production Lines**: Manufacturing resource management
+- [ ] **Quality Control**: Production quality tracking
+- [ ] **Material Requirements**: Bill of materials and planning
+
+### Phase 12: Order Management
+- [ ] **Order Processing**: End-to-end order lifecycle
+- [ ] **Order Fulfillment**: Shipping and delivery tracking
+- [ ] **Order History**: Complete audit trail
+- [ ] **Customer Notifications**: Order status communications
+
+### Phase 13: Invoicing System
+- [ ] **Invoice Generation**: Automated invoice creation
+- [ ] **Payment Tracking**: Payment status and history
+- [ ] **Tax Calculations**: Multi-tax support
+- [ ] **Invoice Templates**: Customizable invoice formats
+
+### Phase 14: HR & Payroll
+- [ ] **Employee Management**: Employee information system
+- [ ] **Attendance Tracking**: Time and attendance management
+- [ ] **Payroll Processing**: Automated payroll calculations
+- [ ] **Leave Management**: Vacation and sick leave tracking
+
+### Phase 15: Accounting System
+- [ ] **Chart of Accounts**: Complete accounting structure
+- [ ] **General Ledger**: Double-entry bookkeeping
+- [ ] **Financial Reports**: Balance sheet, P&L, cash flow
+- [ ] **Audit Trail**: Complete transaction history
+
+### Phase 16: Hot Reload Development Setup (✅ COMPLETED - January 2025)
+- [x] **Development Dockerfiles**: Created hot reload capable containers
+  - [x] `frontend/Dockerfile.dev` - Next.js development server with hot reload
+  - [x] `backend/Dockerfile.dev` - .NET watch with hot reload support
+- [x] **Volume Mounting Configuration**: Enabled source code hot reload
+  - [x] Frontend: Source code, node_modules, and .next cache mounting
+  - [x] Backend: Source code with obj/bin cache optimization
+- [x] **Enhanced docker-compose.dev.yml**: Updated for development efficiency
+  - [x] Development Dockerfiles integration
+  - [x] Volume mounting for real-time code changes
+  - [x] Maintained all existing service configurations
+- [x] **Makefile Enhancement**: Added development workflow commands
+  - [x] `make docker-dev-hot` - Start with hot reload (no rebuild)
+  - [x] `make docker-dev-rebuild` - Rebuild when dependencies change
+  - [x] Updated help documentation and .PHONY targets
+- [x] **Development Optimization**: Improved developer experience
+  - [x] .dockerignore files for optimal build context
+  - [x] Eliminated need for constant container rebuilds
+  - [x] Maintained production Docker configuration integrity
+
+### Phase 17: Cashbook Functionality Planning (✅ COMPLETED - January 2025)
+- [x] **Sample CSV Analysis**: Analyzed MM Fashion cash book format
+  - [x] Categories mapping structure (Credit/Debit Categories, Suppliers, Buyers)
+  - [x] Main transaction format (double-entry structure with dates and amounts)
+  - [x] Trial balance format (Dr./Cr. columns with totals)
+- [x] **Database Schema Design**: Enterprise-level accounting structure
+  - [x] Chart of Accounts with hierarchical structure
+  - [x] Trading Partners management (suppliers and buyers)
+  - [x] Double-entry transaction system with validation
+  - [x] MM Fashion categories mapping table
+- [x] **API Endpoints Architecture**: RESTful accounting API design
+  - [x] CRUD operations for all accounting entities
+  - [x] CSV import/export functionality endpoints
+  - [x] Comprehensive reporting endpoints
+- [x] **Frontend Components Plan**: Complete UI architecture
+  - [x] Enhanced cash book entry with navigation
+  - [x] Chart of accounts management interface
+  - [x] Trading partners management system
+  - [x] CSV operations interface with import/export
+  - [x] Financial reports and trial balance views
+- [x] **Implementation Roadmap**: 8-week development timeline
+  - [x] Phase 1: Core setup (Chart of Accounts, Trading Partners)
+  - [x] Phase 2: Transaction management with double-entry validation
+  - [x] Phase 3: MM Fashion format support with CSV operations
+  - [x] Phase 4: Reporting and trial balance generation
+- [x] **Business Rules Documentation**: Accounting compliance requirements
+  - [x] Double-entry validation rules
+  - [x] Account type classifications
+  - [x] MM Fashion format specifications
+  - [x] Error handling and user feedback guidelines
+- [x] **Comprehensive Documentation**: Complete functionality plan created
+  - [x] `docs/cashbook-functionality-plan.md` - 200+ line detailed plan
+  - [x] Database schema with SQL examples
+  - [x] API endpoints with C# examples
+  - [x] Frontend components architecture
+  - [x] Performance and security considerations
+
+## 🚧 In Progress
+
+### Phase 6: Service & Controller Updates
+- [ ] **Remaining Services Review**: Check all services for navigation property usage
+- [ ] **Controller Updates**: Remove Include() statements from all controllers
+- [ ] **DTO Updates**: Remove navigation property mappings from DTOs
+- [ ] **Test Creation**: Build comprehensive test suite for controllers
+
+### Phase 7: User Management System Enhancement
+- [x] **User Authentication**: Login/logout functionality 
+  - [x] Frontend login form implementation with form validation
+  - [x] Register page for account creation with validation
+  - [x] User authentication state management using Zustand
+  - [x] JWT token handling and storage
+  - [x] Protected routes based on authentication status
+  - [x] Logout functionality
+- [x] **User Registration**: Admin-only user creation with role assignment
+  - [x] Beautiful, modern Create User page with gradient design
+  - [x] Role-based form with Admin, Manager, Employee options
+  - [x] Password visibility toggles and form validation
+  - [x] Responsive layout with sectioned form design
+  - [x] Authentication loading state to prevent access denied flicker
+  - [x] Professional access denied page for non-admin users
+  - [x] Integration with navigation menu structure
+  - [x] Success/error handling with styled alerts
+- [ ] **Role Management**: Admin, Manager, Employee, Customer roles
+- [ ] **User Profile**: User information management
+
+## 📋 Next Up
+
+### Phase 8: Complete Testing & Validation
+- [ ] **Controller Testing**: Create comprehensive tests for all controllers
+- [ ] **Service Testing**: Unit tests for all business logic services
+- [ ] **Integration Testing**: End-to-end API testing
+- [ ] **Performance Testing**: Database query optimization and caching
+
+### Phase 9: Inventory Management
+- [ ] **Product Catalog**: Product creation and management
+- [ ] **Category Management**: Product categorization
+- [ ] **Stock Tracking**: Inventory levels and movements
+- [ ] **Reorder Management**: Low stock alerts and reorder points
+
+### Phase 10: Sales Management
+- [ ] **Customer Management**: Customer information and history
+- [ ] **Sales Orders**: Order creation and processing
+- [ ] **Order Tracking**: Status updates and fulfillment
+- [ ] **Sales Analytics**: Reports and dashboards
+
+### Phase 11: Production Management
+- [ ] **Work Orders**: Production planning and scheduling
+- [ ] **Production Lines**: Manufacturing resource management
+- [ ] **Quality Control**: Production quality tracking
+- [ ] **Material Requirements**: Bill of materials and planning
+
+### Phase 12: Order Management
+- [ ] **Order Processing**: End-to-end order lifecycle
+- [ ] **Order Fulfillment**: Shipping and delivery tracking
+- [ ] **Order History**: Complete audit trail
+- [ ] **Customer Notifications**: Order status communications
+
+### Phase 13: Invoicing System
+- [ ] **Invoice Generation**: Automated invoice creation
+- [ ] **Payment Tracking**: Payment status and history
+- [ ] **Tax Calculations**: Multi-tax support
+- [ ] **Invoice Templates**: Customizable invoice formats
+
+### Phase 14: HR & Payroll
+- [ ] **Employee Management**: Employee information system
+- [ ] **Attendance Tracking**: Time and attendance management
+- [ ] **Payroll Processing**: Automated payroll calculations
+- [ ] **Leave Management**: Vacation and sick leave tracking
+
+### Phase 15: Accounting System
+- [ ] **Chart of Accounts**: Complete accounting structure
+- [ ] **General Ledger**: Double-entry bookkeeping
+- [ ] **Financial Reports**: Balance sheet, P&L, cash flow
+- [ ] **Audit Trail**: Complete transaction history
+
+### Phase 16: Hot Reload Development Setup (✅ COMPLETED - January 2025)
+- [x] **Development Dockerfiles**: Created hot reload capable containers
+  - [x] `frontend/Dockerfile.dev` - Next.js development server with hot reload
+  - [x] `backend/Dockerfile.dev` - .NET watch with hot reload support
+- [x] **Volume Mounting Configuration**: Enabled source code hot reload
+  - [x] Frontend: Source code, node_modules, and .next cache mounting
+  - [x] Backend: Source code with obj/bin cache optimization
+- [x] **Enhanced docker-compose.dev.yml**: Updated for development efficiency
+  - [x] Development Dockerfiles integration
+  - [x] Volume mounting for real-time code changes
+  - [x] Maintained all existing service configurations
+- [x] **Makefile Enhancement**: Added development workflow commands
+  - [x] `make docker-dev-hot` - Start with hot reload (no rebuild)
+  - [x] `make docker-dev-rebuild` - Rebuild when dependencies change
+  - [x] Updated help documentation and .PHONY targets
+- [x] **Development Optimization**: Improved developer experience
+  - [x] .dockerignore files for optimal build context
+  - [x] Eliminated need for constant container rebuilds
+  - [x] Maintained production Docker configuration integrity
+
+### Phase 17: Cashbook Functionality Planning (✅ COMPLETED - January 2025)
+- [x] **Sample CSV Analysis**: Analyzed MM Fashion cash book format
+  - [x] Categories mapping structure (Credit/Debit Categories, Suppliers, Buyers)
+  - [x] Main transaction format (double-entry structure with dates and amounts)
+  - [x] Trial balance format (Dr./Cr. columns with totals)
+- [x] **Database Schema Design**: Enterprise-level accounting structure
+  - [x] Chart of Accounts with hierarchical structure
+  - [x] Trading Partners management (suppliers and buyers)
+  - [x] Double-entry transaction system with validation
+  - [x] MM Fashion categories mapping table
+- [x] **API Endpoints Architecture**: RESTful accounting API design
+  - [x] CRUD operations for all accounting entities
+  - [x] CSV import/export functionality endpoints
+  - [x] Comprehensive reporting endpoints
+- [x] **Frontend Components Plan**: Complete UI architecture
+  - [x] Enhanced cash book entry with navigation
+  - [x] Chart of accounts management interface
+  - [x] Trading partners management system
+  - [x] CSV operations interface with import/export
+  - [x] Financial reports and trial balance views
+- [x] **Implementation Roadmap**: 8-week development timeline
+  - [x] Phase 1: Core setup (Chart of Accounts, Trading Partners)
+  - [x] Phase 2: Transaction management with double-entry validation
+  - [x] Phase 3: MM Fashion format support with CSV operations
+  - [x] Phase 4: Reporting and trial balance generation
+- [x] **Business Rules Documentation**: Accounting compliance requirements
+  - [x] Double-entry validation rules
+  - [x] Account type classifications
+  - [x] MM Fashion format specifications
+  - [x] Error handling and user feedback guidelines
+- [x] **Comprehensive Documentation**: Complete functionality plan created
+  - [x] `docs/cashbook-functionality-plan.md` - 200+ line detailed plan
+  - [x] Database schema with SQL examples
+  - [x] API endpoints with C# examples
+  - [x] Frontend components architecture
+  - [x] Performance and security considerations
+
+## 🚧 In Progress
+
+### Phase 6: Service & Controller Updates
+- [ ] **Remaining Services Review**: Check all services for navigation property usage
+- [ ] **Controller Updates**: Remove Include() statements from all controllers
+- [ ] **DTO Updates**: Remove navigation property mappings from DTOs
+- [ ] **Test Creation**: Build comprehensive test suite for controllers
+
+### Phase 7: User Management System Enhancement
+- [x] **User Authentication**: Login/logout functionality 
+  - [x] Frontend login form implementation with form validation
+  - [x] Register page for account creation with validation
+  - [x] User authentication state management using Zustand
+  - [x] JWT token handling and storage
+  - [x] Protected routes based on authentication status
+  - [x] Logout functionality
+- [x] **User Registration**: Admin-only user creation with role assignment
+  - [x] Beautiful, modern Create User page with gradient design
+  - [x] Role-based form with Admin, Manager, Employee options
+  - [x] Password visibility toggles and form validation
+  - [x] Responsive layout with sectioned form design
+  - [x] Authentication loading state to prevent access denied flicker
+  - [x] Professional access denied page for non-admin users
+  - [x] Integration with navigation menu structure
+  - [x] Success/error handling with styled alerts
+- [ ] **Role Management**: Admin, Manager, Employee, Customer roles
+- [ ] **User Profile**: User information management
+
+## 📋 Next Up
+
+### Phase 8: Complete Testing & Validation
+- [ ] **Controller Testing**: Create comprehensive tests for all controllers
+- [ ] **Service Testing**: Unit tests for all business logic services
+- [ ] **Integration Testing**: End-to-end API testing
+- [ ] **Performance Testing**: Database query optimization and caching
+
+### Phase 9: Inventory Management
+- [ ] **Product Catalog**: Product creation and management
+- [ ] **Category Management**: Product categorization
+- [ ] **Stock Tracking**: Inventory levels and movements
+- [ ] **Reorder Management**: Low stock alerts and reorder points
+
+### Phase 10: Sales Management
+- [ ] **Customer Management**: Customer information and history
+- [ ] **Sales Orders**: Order creation and processing
+- [ ] **Order Tracking**: Status updates and fulfillment
+- [ ] **Sales Analytics**: Reports and dashboards
+
+### Phase 11: Production Management
+- [ ] **Work Orders**: Production planning and scheduling
+- [ ] **Production Lines**: Manufacturing resource management
+- [ ] **Quality Control**: Production quality tracking
+- [ ] **Material Requirements**: Bill of materials and planning
+
+### Phase 12: Order Management
+- [ ] **Order Processing**: End-to-end order lifecycle
+- [ ] **Order Fulfillment**: Shipping and delivery tracking
+- [ ] **Order History**: Complete audit trail
+- [ ] **Customer Notifications**: Order status communications
+
+### Phase 13: Invoicing System
+- [ ] **Invoice Generation**: Automated invoice creation
+- [ ] **Payment Tracking**: Payment status and history
+- [ ] **Tax Calculations**: Multi-tax support
+- [ ] **Invoice Templates**: Customizable invoice formats
+
+### Phase 14: HR & Payroll
+- [ ] **Employee Management**: Employee information system
+- [ ] **Attendance Tracking**: Time and attendance management
+- [ ] **Payroll Processing**: Automated payroll calculations
+- [ ] **Leave Management**: Vacation and sick leave tracking
+
+### Phase 15: Accounting System
+- [ ] **Chart of Accounts**: Complete accounting structure
+- [ ] **General Ledger**: Double-entry bookkeeping
+- [ ] **Financial Reports**: Balance sheet, P&L, cash flow
+- [ ] **Audit Trail**: Complete transaction history
+
+### Phase 16: Hot Reload Development Setup (✅ COMPLETED - January 2025)
+- [x] **Development Dockerfiles**: Created hot reload capable containers
+  - [x] `frontend/Dockerfile.dev` - Next.js development server with hot reload
+  - [x] `backend/Dockerfile.dev` - .NET watch with hot reload support
+- [x] **Volume Mounting Configuration**: Enabled source code hot reload
+  - [x] Frontend: Source code, node_modules, and .next cache mounting
+  - [x] Backend: Source code with obj/bin cache optimization
+- [x] **Enhanced docker-compose.dev.yml**: Updated for development efficiency
+  - [x] Development Dockerfiles integration
+  - [x] Volume mounting for real-time code changes
+  - [x] Maintained all existing service configurations
+- [x] **Makefile Enhancement**: Added development workflow commands
+  - [x] `make docker-dev-hot` - Start with hot reload (no rebuild)
+  - [x] `make docker-dev-rebuild` - Rebuild when dependencies change
+  - [x] Updated help documentation and .PHONY targets
+- [x] **Development Optimization**: Improved developer experience
+  - [x] .dockerignore files for optimal build context
+  - [x] Eliminated need for constant container rebuilds
+  - [x] Maintained production Docker configuration integrity
+
+### Phase 17: Cashbook Functionality Planning (✅ COMPLETED - January 2025)
+- [x] **Sample CSV Analysis**: Analyzed MM Fashion cash book format
+  - [x] Categories mapping structure (Credit/Debit Categories, Suppliers, Buyers)
+  - [x] Main transaction format (double-entry structure with dates and amounts)
+  - [x] Trial balance format (Dr./Cr. columns with totals)
+- [x] **Database Schema Design**: Enterprise-level accounting structure
+  - [x] Chart of Accounts with hierarchical structure
+  - [x] Trading Partners management (suppliers and buyers)
+  - [x] Double-entry transaction system with validation
+  - [x] MM Fashion categories mapping table
+- [x] **API Endpoints Architecture**: RESTful accounting API design
+  - [x] CRUD operations for all accounting entities
+  - [x] CSV import/export functionality endpoints
+  - [x] Comprehensive reporting endpoints
+- [x] **Frontend Components Plan**: Complete UI architecture
+  - [x] Enhanced cash book entry with navigation
+  - [x] Chart of accounts management interface
+  - [x] Trading partners management system
+  - [x] CSV operations interface with import/export
+  - [x] Financial reports and trial balance views
+- [x] **Implementation Roadmap**: 8-week development timeline
+  - [x] Phase 1: Core setup (Chart of Accounts, Trading Partners)
+  - [x] Phase 2: Transaction management with double-entry validation
+  - [x] Phase 3: MM Fashion format support with CSV operations
+  - [x] Phase 4: Reporting and trial balance generation
+- [x] **Business Rules Documentation**: Accounting compliance requirements
+  - [x] Double-entry validation rules
+  - [x] Account type classifications
+  - [x] MM Fashion format specifications
+  - [x] Error handling and user feedback guidelines
+- [x] **Comprehensive Documentation**: Complete functionality plan created
+  - [x] `docs/cashbook-functionality-plan.md` - 200+ line detailed plan
+  - [x] Database schema with SQL examples
+  - [x] API endpoints with C# examples
+  - [x] Frontend components architecture
+  - [x] Performance and security considerations
+
+## 🚧 In Progress
+
+### Phase 6: Service & Controller Updates
+- [ ] **Remaining Services Review**: Check all services for navigation property usage
+- [ ] **Controller Updates**: Remove Include() statements from all controllers
+- [ ] **DTO Updates**: Remove navigation property mappings from DTOs
+- [ ] **Test Creation**: Build comprehensive test suite for controllers
+
+### Phase 7: User Management System Enhancement
+- [x] **User Authentication**: Login/logout functionality 
+  - [x] Frontend login form implementation with form validation
+  - [x] Register page for account creation with validation
+  - [x] User authentication state management using Zustand
+  - [x] JWT token handling and storage
+  - [x] Protected routes based on authentication status
+  - [x] Logout functionality
+- [x] **User Registration**: Admin-only user creation with role assignment
+  - [x] Beautiful, modern Create User page with gradient design
+  - [x] Role-based form with Admin, Manager, Employee options
+  - [x] Password visibility toggles and form validation
+  - [x] Responsive layout with sectioned form design
+  - [x] Authentication loading state to prevent access denied flicker
+  - [x] Professional access denied page for non-admin users
+  - [x] Integration with navigation menu structure
+  - [x] Success/error handling with styled alerts
+- [ ] **Role Management**: Admin, Manager, Employee, Customer roles
+- [ ] **User Profile**: User information management
+
+## 📋 Next Up
+
+### Phase 8: Complete Testing & Validation
+- [ ] **Controller Testing**: Create comprehensive tests for all controllers
+- [ ] **Service Testing**: Unit tests for all business logic services
+- [ ] **Integration Testing**: End-to-end API testing
+- [ ] **Performance Testing**: Database query optimization and caching
+
+### Phase 9: Inventory Management
+- [ ] **Product Catalog**: Product creation and management
+- [ ] **Category Management**: Product categorization
+- [ ] **Stock Tracking**: Inventory levels and movements
+- [ ] **Reorder Management**: Low stock alerts and reorder points
+
+### Phase 10: Sales Management
+- [ ] **Customer Management**: Customer information and history
+- [ ] **Sales Orders**: Order creation and processing
+- [ ] **Order Tracking**: Status updates and fulfillment
+- [ ] **Sales Analytics**: Reports and dashboards
+
+### Phase 11: Production Management
+- [ ] **Work Orders**: Production planning and scheduling
+- [ ] **Production Lines**: Manufacturing resource management
+- [ ] **Quality Control**: Production quality tracking
+- [ ] **Material Requirements**: Bill of materials and planning
+
+### Phase 12: Order Management
+- [ ] **Order Processing**: End-to-end order lifecycle
+- [ ] **Order Fulfillment**: Shipping and delivery tracking
+- [ ] **Order History**: Complete audit trail
+- [ ] **Customer Notifications**: Order status communications
+
+### Phase 13: Invoicing System
+- [ ] **Invoice Generation**: Automated invoice creation
+- [ ] **Payment Tracking**: Payment status and history
+- [ ] **Tax Calculations**: Multi-tax support
+- [ ] **Invoice Templates**: Customizable invoice formats
+
+### Phase 14: HR & Payroll
+- [ ] **Employee Management**: Employee information system
+- [ ] **Attendance Tracking**: Time and attendance management
+- [ ] **Payroll Processing**: Automated payroll calculations
+- [ ] **Leave Management**: Vacation and sick leave tracking
+
+### Phase 15: Accounting System
+- [ ] **Chart of Accounts**: Complete accounting structure
+- [ ] **General Ledger**: Double-entry bookkeeping
+- [ ] **Financial Reports**: Balance sheet, P&L, cash flow
+- [ ] **Audit Trail**: Complete transaction history
+
+### Phase 16: Hot Reload Development Setup (✅ COMPLETED - January 2025)
+- [x] **Development Dockerfiles**: Created hot reload capable containers
+  - [x] `frontend/Dockerfile.dev` - Next.js development server with hot reload
+  - [x] `backend/Dockerfile.dev` - .NET watch with hot reload support
+- [x] **Volume Mounting Configuration**: Enabled source code hot reload
+  - [x] Frontend: Source code, node_modules, and .next cache mounting
+  - [x] Backend: Source code with obj/bin cache optimization
+- [x] **Enhanced docker-compose.dev.yml**: Updated for development efficiency
+  - [x] Development Dockerfiles integration
+  - [x] Volume mounting for real-time code changes
+  - [x] Maintained all existing service configurations
+- [x] **Makefile Enhancement**: Added development workflow commands
+  - [x] `make docker-dev-hot` - Start with hot reload (no rebuild)
+  - [x] `make docker-dev-rebuild` - Rebuild when dependencies change
+  - [x] Updated help documentation and .PHONY targets
+- [x] **Development Optimization**: Improved developer experience
+  - [x] .dockerignore files for optimal build context
+  - [x] Eliminated need for constant container rebuilds
+  - [x] Maintained production Docker configuration integrity
+
+### Phase 17: Cashbook Functionality Planning (✅ COMPLETED - January 2025)
+- [x] **Sample CSV Analysis**: Analyzed MM Fashion cash book format
+  - [x] Categories mapping structure (Credit/Debit Categories, Suppliers, Buyers)
+  - [x] Main transaction format (double-entry structure with dates and amounts)
+  - [x] Trial balance format (Dr./Cr. columns with totals)
+- [x] **Database Schema Design**: Enterprise-level accounting structure
+  - [x] Chart of Accounts with hierarchical structure
+  - [x] Trading Partners management (suppliers and buyers)
+  - [x] Double-entry transaction system with validation
+  - [x] MM Fashion categories mapping table
+- [x] **API Endpoints Architecture**: RESTful accounting API design
+  - [x] CRUD operations for all accounting entities
+  - [x] CSV import/export functionality endpoints
+  - [x] Comprehensive reporting endpoints
+- [x] **Frontend Components Plan**: Complete UI architecture
+  - [x] Enhanced cash book entry with navigation
+  - [x] Chart of accounts management interface
+  - [x] Trading partners management system
+  - [x] CSV operations interface with import/export
+  - [x] Financial reports and trial balance views
+- [x] **Implementation Roadmap**: 8-week development timeline
+  - [x] Phase 1: Core setup (Chart of Accounts, Trading Partners)
+  - [x] Phase 2: Transaction management with double-entry validation
+  - [x] Phase 3: MM Fashion format support with CSV operations
+  - [x] Phase 4: Reporting and trial balance generation
+- [x] **Business Rules Documentation**: Accounting compliance requirements
+  - [x] Double-entry validation rules
+  - [x] Account type classifications
+  - [x] MM Fashion format specifications
+  - [x] Error handling and user feedback guidelines
+- [x] **Comprehensive Documentation**: Complete functionality plan created
+  - [x] `docs/cashbook-functionality-plan.md` - 200+ line detailed plan
+  - [x] Database schema with SQL examples
+  - [x] API endpoints with C# examples
+  - [x] Frontend components architecture
+  - [x] Performance and security considerations
+
+## 🚧 In Progress
+
+### Phase 6: Service & Controller Updates
+- [ ] **Remaining Services Review**: Check all services for navigation property usage
+- [ ] **Controller Updates**: Remove Include() statements from all controllers
+- [ ] **DTO Updates**: Remove navigation property mappings from DTOs
+- [ ] **Test Creation**: Build comprehensive test suite for controllers
+
+### Phase 7: User Management System Enhancement
+- [x] **User Authentication**: Login/logout functionality 
+  - [x] Frontend login form implementation with form validation
+  - [x] Register page for account creation with validation
+  - [x] User authentication state management using Zustand
+  - [x] JWT token handling and storage
+  - [x] Protected routes based on authentication status
+  - [x] Logout functionality
+- [x] **User Registration**: Admin-only user creation with role assignment
+  - [x] Beautiful, modern Create User page with gradient design
+  - [x] Role-based form with Admin, Manager, Employee options
+  - [x] Password visibility toggles and form validation
+  - [x] Responsive layout with sectioned form design
+  - [x] Authentication loading state to prevent access denied flicker
+  - [x] Professional access denied page for non-admin users
+  - [x] Integration with navigation menu structure
+  - [x] Success/error handling with styled alerts
+- [ ] **Role Management**: Admin, Manager, Employee, Customer roles
+- [ ] **User Profile**: User information management
+
+## 📋 Next Up
+
+### Phase 8: Complete Testing & Validation
+- [ ] **Controller Testing**: Create comprehensive tests for all controllers
+- [ ] **Service Testing**: Unit tests for all business logic services
+- [ ] **Integration Testing**: End-to-end API testing
+- [ ] **Performance Testing**: Database query optimization and caching
+
+### Phase 9: Inventory Management
+- [ ] **Product Catalog**: Product creation and management
+- [ ] **Category Management**: Product categorization
+- [ ] **Stock Tracking**: Inventory levels and movements
+- [ ] **Reorder Management**: Low stock alerts and reorder points
+
+### Phase 10: Sales Management
+- [ ] **Customer Management**: Customer information and history
+- [ ] **Sales Orders**: Order creation and processing
+- [ ] **Order Tracking**: Status updates and fulfillment
+- [ ] **Sales Analytics**: Reports and dashboards
+
+### Phase 11: Production Management
+- [ ] **Work Orders**: Production planning and scheduling
+- [ ] **Production Lines**: Manufacturing resource management
+- [ ] **Quality Control**: Production quality tracking
+- [ ] **Material Requirements**: Bill of materials and planning
+
+### Phase 12: Order Management
+- [ ] **Order Processing**: End-to-end order lifecycle
+- [ ] **Order Fulfillment**: Shipping and delivery tracking
+- [ ] **Order History**: Complete audit trail
+- [ ] **Customer Notifications**: Order status communications
+
+### Phase 13: Invoicing System
+- [ ] **Invoice Generation
