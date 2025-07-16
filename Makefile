@@ -1,7 +1,7 @@
 # GarmentsERP Makefile
 # Professional admin creation and development utilities
 
-.PHONY: help superuser build run clean test migrate restore docker-build docker-up docker-down docker-dev
+.PHONY: help superuser build run clean test migrate restore docker-build docker-up docker-down docker-dev docker-dev-hot docker-dev-rebuild
 
 # Default target
 help:
@@ -24,6 +24,8 @@ help:
 	@echo "  make docker-up                               Start with Docker Compose"
 	@echo "  make docker-down                             Stop Docker services"
 	@echo "  make docker-dev                              Build and start development environment"
+	@echo "  make docker-dev-hot                          Start development with hot reload (no rebuild)"
+	@echo "  make docker-dev-rebuild                      Rebuild development environment"
 	@echo ""
 	@echo "Examples:"
 	@echo "  make superuser USERNAME=admin PASSWORD=secretpassword"
@@ -141,6 +143,17 @@ docker-down:
 
 docker-dev:
 	@echo "Building and starting development environment..."
+	@docker compose -f docker-compose.dev.yml up --build -d
+
+# Hot reload development (no rebuild)
+docker-dev-hot:
+	@echo "Starting development environment with hot reload..."
+	@docker compose -f docker-compose.dev.yml up -d
+
+# Rebuild development environment
+docker-dev-rebuild:
+	@echo "Rebuilding development environment..."
+	@docker compose -f docker-compose.dev.yml down
 	@docker compose -f docker-compose.dev.yml up --build -d
 
 # Prevent make from trying to create files for these targets

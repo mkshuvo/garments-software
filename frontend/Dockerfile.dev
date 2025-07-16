@@ -1,0 +1,42 @@
+# Development Dockerfile with hot reload support
+FROM node:22-alpine3.21
+
+# Install dumb-init for proper signal handling
+RUN apk add --no-cache dumb-init
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install ALL dependencies (including devDependencies)
+RUN npm ci
+
+# Copy source code
+COPY . .
+
+# Create nextjs user
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+# Create .next directory with proper permissions
+RUN mkdir -p /app/.next && chown nextjs:nodejs /app/.next
+
+# Switch to nextjs user
+USER nextjs
+
+# Set environment variables
+ENV NODE_ENV=development
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+# Expose port
+EXPOSE 3000
+
+# Use dumb-init to handle signals properly
+ENTRYPOINT ["dumb-init", "--"]
+
+# Start the development server with hot reload
+CMD ["npm", "run", "dev"]

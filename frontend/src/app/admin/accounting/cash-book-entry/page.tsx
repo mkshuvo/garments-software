@@ -13,15 +13,21 @@ import {
   IconButton,
   Paper,
   Chip,
-  Stack
+  Stack,
+  Breadcrumbs,
+  Link
 } from '@mui/material';
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
   Save as SaveIcon,
   Cancel as CancelIcon,
-  AccountBalance as AccountBalanceIcon
+  AccountBalance as AccountBalanceIcon,
+  ArrowBack as ArrowBackIcon,
+  Home as HomeIcon,
+  AccountBalanceWallet as AccountBalanceWalletIcon
 } from '@mui/icons-material';
+import { useRouter } from 'next/navigation';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -86,6 +92,7 @@ const SAMPLE_CONTACTS: Contact[] = [
 ];
 
 export default function CashBookEntryPage() {
+  const router = useRouter();
   const [entry, setEntry] = useState<CashBookEntry>({
     id: '',
     transactionDate: new Date(),
@@ -240,16 +247,78 @@ export default function CashBookEntryPage() {
 
   const { totalCredits, totalDebits, difference } = calculateTotals();
   const isBalanced = difference < 0.01;
+  const hasTransactions = entry.creditTransactions.length > 0 || entry.debitTransactions.length > 0;
+  const isFormValid = entry.referenceNumber.trim() && hasTransactions && isBalanced;
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box sx={{ p: 3 }}>
-        <Typography variant="h4" fontWeight="bold" gutterBottom>
-          📚 Manual Cash Book Entry
-        </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-          Enter accounting transactions manually in MM Fashion cash book format
-        </Typography>
+        {/* Navigation Breadcrumbs */}
+        <Breadcrumbs sx={{ mb: 3 }}>
+          <Link 
+            color="inherit" 
+            href="/" 
+            sx={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}
+          >
+            <HomeIcon sx={{ mr: 0.5 }} fontSize="inherit" />
+            Home
+          </Link>
+          <Link 
+            color="inherit" 
+            href="/admin/accounting" 
+            sx={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}
+          >
+            <AccountBalanceIcon sx={{ mr: 0.5 }} fontSize="inherit" />
+            Accounting
+          </Link>
+          <Typography color="text.primary" sx={{ display: 'flex', alignItems: 'center' }}>
+            <AccountBalanceWalletIcon sx={{ mr: 0.5 }} fontSize="inherit" />
+            Cash Book Entry
+          </Typography>
+        </Breadcrumbs>
+
+        {/* Header with Navigation */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Box>
+            <Typography variant="h4" fontWeight="bold" gutterBottom>
+              📚 Manual Cash Book Entry
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              Enter accounting transactions manually in MM Fashion cash book format
+            </Typography>
+          </Box>
+          <Button
+            variant="outlined"
+            startIcon={<ArrowBackIcon />}
+            onClick={() => router.push('/admin/accounting')}
+            sx={{ minWidth: 120 }}
+          >
+            Back to Accounting
+          </Button>
+        </Box>
+
+        {/* Balance Status Alert */}
+        {hasTransactions && (
+          <Alert 
+            severity={isBalanced ? 'success' : 'warning'} 
+            sx={{ mb: 3 }}
+            icon={<AccountBalanceIcon />}
+          >
+            <Typography variant="subtitle2">
+              {isBalanced ? '✅ Entry is Balanced' : '⚠️ Entry Not Balanced'}
+            </Typography>
+            <Typography variant="body2">
+              Credits: ৳{totalCredits.toFixed(2)} | Debits: ৳{totalDebits.toFixed(2)} | 
+              Difference: ৳{difference.toFixed(2)}
+            </Typography>
+            {!isBalanced && (
+              <Typography variant="body2" sx={{ mt: 1 }}>
+                💡 <strong>Tip:</strong> Add matching debit and credit transactions to balance the entry. 
+                Total credits must equal total debits for proper double-entry bookkeeping.
+              </Typography>
+            )}
+          </Alert>
+        )}
 
         {/* Header Information */}
         <Card sx={{ mb: 3 }}>
@@ -284,6 +353,24 @@ export default function CashBookEntryPage() {
                 />
               </Box>
             </Stack>
+          </CardContent>
+        </Card>
+
+        {/* Quick Help - Double Entry Bookkeeping */}
+        <Card sx={{ mb: 3, backgroundColor: 'info.light', color: 'info.dark' }}>
+          <CardContent>
+            <Typography variant="h6" gutterBottom>
+              💡 Double-Entry Bookkeeping Guide
+            </Typography>
+            <Typography variant="body2" sx={{ mb: 2 }}>
+              <strong>Credit Transactions (Money In):</strong> Money received, income, or liability increases
+            </Typography>
+            <Typography variant="body2" sx={{ mb: 2 }}>
+              <strong>Debit Transactions (Money Out):</strong> Money paid, expenses, or asset increases
+            </Typography>
+            <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+              ⚖️ <strong>Balance Rule:</strong> Total Credits must equal Total Debits for the entry to be saved
+            </Typography>
           </CardContent>
         </Card>
 
@@ -573,8 +660,15 @@ export default function CashBookEntryPage() {
                 variant="contained"
                 startIcon={<SaveIcon />}
                 onClick={handleSave}
-                disabled={loading || !isBalanced || errors.length > 0}
+                disabled={loading || !isFormValid}
                 size="large"
+                sx={{ 
+                  minWidth: 200,
+                  backgroundColor: isFormValid ? 'primary.main' : 'grey.400',
+                  '&:hover': {
+                    backgroundColor: isFormValid ? 'primary.dark' : 'grey.400',
+                  }
+                }}
               >
                 {loading ? 'Saving...' : 'Save Cash Book Entry'}
               </Button>
@@ -586,6 +680,15 @@ export default function CashBookEntryPage() {
                 size="large"
               >
                 Reset Form
+              </Button>
+              <Button
+                variant="text"
+                startIcon={<ArrowBackIcon />}
+                onClick={() => router.push('/admin/accounting')}
+                disabled={loading}
+                size="large"
+              >
+                Back to Accounting
               </Button>
             </Box>
           </CardContent>
