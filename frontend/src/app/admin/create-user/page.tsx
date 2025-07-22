@@ -33,7 +33,7 @@ import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { useAuthStore } from "@/stores/authStore";
-import { registerUser } from "@/services/authService";
+import { authService } from "@/services/authService";
 
 const schema = yup.object({
   username: yup.string().required("Username is required").min(3),
@@ -97,7 +97,7 @@ export default function CreateUserPage() {
     setSuccess(null);
     setLoading(true);
     try {
-      await registerUser(data);
+      await authService.registerUser(data);
       setSuccess("User created successfully!");
       reset();
     } catch (err) {

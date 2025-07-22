@@ -129,7 +129,7 @@ const CompaniesPage = () => {
 
     setLoading(true);
     try {
-      const data = await companyService.getAll();
+      const data = await companyService.getCompanies();
       setCompanies(data);
       setError(null);
     } catch (error) {
@@ -232,10 +232,10 @@ const CompaniesPage = () => {
       };
 
       if (editingCompany) {
-        await companyService.update(editingCompany.id, submitData);
+        await companyService.updateCompany(editingCompany.id, submitData);
         setSuccess('Company updated successfully');
       } else {
-        await companyService.create(submitData);
+        await companyService.createCompany(submitData);
         setSuccess('Company created successfully');
       }
       
@@ -258,7 +258,7 @@ const CompaniesPage = () => {
     }
 
     try {
-      await companyService.delete(id);
+      await companyService.deleteCompany(id);
       setSuccess('Company deleted successfully');
       loadCompanies();
     } catch (error) {

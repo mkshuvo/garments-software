@@ -31,20 +31,8 @@ help:
 	@echo "  make superuser USERNAME=admin PASSWORD=secretpassword"
 	@echo "  make superuser -u admin -p secretpassword"
 
-# Extract parameters from command line arguments
-USERNAME := $(filter-out $@,$(MAKECMDGOALS))
-PASSWORD := $(filter-out $@,$(MAKECMDGOALS))
-
-# Parse -u and -p flags
-ifneq ($(filter -u,$(MAKECMDGOALS)),)
-	USERNAME_INDEX := $(shell echo $(MAKECMDGOALS) | tr ' ' '\n' | grep -n "\-u" | cut -d: -f1)
-	USERNAME := $(word $(shell expr $(USERNAME_INDEX) + 1),$(MAKECMDGOALS))
-endif
-
-ifneq ($(filter -p,$(MAKECMDGOALS)),)
-	PASSWORD_INDEX := $(shell echo $(MAKECMDGOALS) | tr ' ' '\n' | grep -n "\-p" | cut -d: -f1)
-	PASSWORD := $(word $(shell expr $(PASSWORD_INDEX) + 1),$(MAKECMDGOALS))
-endif
+# Parameters can be passed as USERNAME=value PASSWORD=value
+# No complex parsing needed - Make handles this automatically
 
 # Cross-platform detection
 ifeq ($(OS),Windows_NT)
@@ -55,7 +43,7 @@ ifeq ($(OS),Windows_NT)
 	MKDIR := mkdir
 	NULL := NUL
 	# Use a different check for Windows as [ -z ... ] is not available
-	CHECK_VARS = if "$(USERNAME)" == "" (exit 1) else if "$(PASSWORD)" == "" (exit 1)
+	CHECK_VARS = @if "$(USERNAME)" == "" (echo Error: USERNAME is required && exit 1) else if "$(PASSWORD)" == "" (echo Error: PASSWORD is required && exit 1)
 else
 	DETECTED_OS := $(shell uname -s)
 	DOTNET := dotnet

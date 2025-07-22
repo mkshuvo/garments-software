@@ -1,6 +1,6 @@
 import { apiService } from './apiService';
 
-export interface Company {
+interface Company {
   id: string;
   companyName: string;
   legalName: string;
@@ -17,22 +17,7 @@ export interface Company {
   createdAt: string;
 }
 
-export interface CreateCompanyDto {
-  companyName: string;
-  legalName: string;
-  taxId?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  postalCode?: string;
-  country?: string;
-  phone?: string;
-  email?: string;
-  website?: string;
-  isActive: boolean;
-}
-
-export interface UpdateCompanyDto {
+interface CreateCompanyData {
   companyName: string;
   legalName: string;
   taxId?: string;
@@ -48,27 +33,23 @@ export interface UpdateCompanyDto {
 }
 
 export const companyService = {
-  async getAll(): Promise<Company[]> {
-    return await apiService.get<Company[]>('/api/company');
+  getCompanies: async (): Promise<Company[]> => {
+    return await apiService.get<Company[]>('/api/Company');
   },
-
-  async getById(id: string): Promise<Company> {
-    return await apiService.get<Company>(`/api/company/${id}`);
+  
+  getCompany: async (id: string): Promise<Company> => {
+    return await apiService.get<Company>(`/api/Company/${id}`);
   },
-
-  async create(data: CreateCompanyDto): Promise<Company> {
-    return await apiService.post<Company>('/api/company', data);
+  
+  createCompany: async (company: CreateCompanyData): Promise<Company> => {
+    return await apiService.post<Company>('/api/Company', company);
   },
-
-  async update(id: string, data: UpdateCompanyDto): Promise<Company> {
-    return await apiService.put<Company>(`/api/company/${id}`, data);
+  
+  updateCompany: async (id: string, company: Partial<Company>): Promise<Company> => {
+    return await apiService.put<Company>(`/api/Company/${id}`, company);
   },
-
-  async delete(id: string): Promise<void> {
-    await apiService.delete(`/api/company/${id}`);
-  },
-
-  async getActive(): Promise<Company[]> {
-    return await apiService.get<Company[]>('/api/company/active');
-  },
+  
+  deleteCompany: async (id: string): Promise<void> => {
+    return await apiService.delete<void>(`/api/Company/${id}`);
+  }
 };

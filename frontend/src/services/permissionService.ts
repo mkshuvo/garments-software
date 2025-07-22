@@ -7,7 +7,6 @@ export interface Permission {
   action: string;
   description?: string;
   isActive: boolean;
-  createdAt: string;
 }
 
 export interface CreatePermissionDto {
@@ -15,97 +14,52 @@ export interface CreatePermissionDto {
   resource: string;
   action: string;
   description?: string;
-  isActive: boolean;
+  isActive?: boolean;
 }
 
 export interface UpdatePermissionDto {
-  name: string;
-  resource: string;
-  action: string;
+  name?: string;
+  resource?: string;
+  action?: string;
   description?: string;
-  isActive: boolean;
+  isActive?: boolean;
 }
 
-export interface UserPermissionsDto {
-  userId: string;
-  userName: string;
-  permissions: Permission[];
-}
-
-export interface RolePermissionsDto {
-  roleId: string;
-  roleName: string;
-  permissions: Permission[];
-}
-
-export interface AssignRolePermissionDto {
-  roleId: string;
-  permissionIds: string[];
-}
-
-export interface AssignUserPermissionDto {
-  userId: string;
-  permissionIds: string[];
+interface PermissionCheckResponse {
+  hasPermission: boolean;
 }
 
 export const permissionService = {
-  // Permission CRUD
-  async getAllPermissions(): Promise<Permission[]> {
-    return await apiService.get<Permission[]>('/api/permission');
+  getUserPermissions: async (userId: string): Promise<Permission[]> => {
+    return await apiService.get<Permission[]>(`/api/permissions/user/${userId}`);
   },
-
-  async getPermissionById(id: string): Promise<Permission> {
-    return await apiService.get<Permission>(`/api/permission/${id}`);
+  
+  checkPermission: async (userId: string, resource: string, action: string): Promise<boolean> => {
+    const response = await apiService.get<PermissionCheckResponse>(`/api/permissions/check/${userId}/${resource}/${action}`);
+    return response.hasPermission;
   },
-
-  async createPermission(data: CreatePermissionDto): Promise<Permission> {
-    return await apiService.post<Permission>('/api/permission', data);
+  
+  getAllPermissions: async (): Promise<Permission[]> => {
+    return await apiService.get<Permission[]>('/api/permissions');
   },
-
-  async updatePermission(id: string, data: UpdatePermissionDto): Promise<Permission> {
-    return await apiService.put<Permission>(`/api/permission/${id}`, data);
+  
+  createPermission: async (permission: CreatePermissionDto): Promise<Permission> => {
+    return await apiService.post<Permission>('/api/permissions', permission);
   },
-
-  async deletePermission(id: string): Promise<void> {
-    await apiService.delete(`/api/permission/${id}`);
+  
+  updatePermission: async (id: string, permission: UpdatePermissionDto): Promise<Permission> => {
+    return await apiService.put<Permission>(`/api/permissions/${id}`, permission);
   },
-
-  async getActivePermissions(): Promise<Permission[]> {
-    return await apiService.get<Permission[]>('/api/permission/active');
+  
+  deletePermission: async (id: string): Promise<void> => {
+    return await apiService.delete<void>(`/api/permissions/${id}`);
   },
-
-  // Role permissions
-  async assignPermissionsToRole(data: AssignRolePermissionDto): Promise<void> {
-    await apiService.post('/api/permission/role-permissions', data);
+  
+  assignPermission: async (userId: string, permission: string) => {
+    return await apiService.post('/api/permissions/assign', { userId, permission });
   },
-
-  async getRolePermissions(roleId: string): Promise<RolePermissionsDto> {
-    return await apiService.get<RolePermissionsDto>(`/api/permission/role/${roleId}`);
-  },
-
-  async getAllRolePermissions(): Promise<RolePermissionsDto[]> {
-    return await apiService.get<RolePermissionsDto[]>('/api/permission/role-permissions');
-  },
-
-  // User permissions
-  async assignPermissionsToUser(data: AssignUserPermissionDto): Promise<void> {
-    await apiService.post('/api/permission/user-permissions', data);
-  },
-
-  async getUserPermissions(userId: string): Promise<UserPermissionsDto> {
-    return await apiService.get<UserPermissionsDto>(`/api/permission/user/${userId}`);
-  },
-
-  async getAllUserPermissions(): Promise<UserPermissionsDto[]> {
-    return await apiService.get<UserPermissionsDto[]>('/api/permission/user-permissions');
-  },
-
-  // Permission checking
-  async checkPermission(userId: string, resource: string, action: string): Promise<boolean> {
-    return await apiService.get<boolean>(`/api/permission/check/${userId}/${resource}/${action}`);
-  },
-
-  async getUserEffectivePermissions(userId: string): Promise<Permission[]> {
-    return await apiService.get<Permission[]>(`/api/permission/effective/${userId}`);
-  },
+  
+  revokePermission: async (userId: string, permission: string) => {
+    return await apiService.delete(`/api/permissions/revoke/${userId}/${permission}`);
+  }
 };

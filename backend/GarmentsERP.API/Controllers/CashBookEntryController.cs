@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using GarmentsERP.API.Data;
 using GarmentsERP.API.Models.Accounting;
 using GarmentsERP.API.Models.Contacts;
+using GarmentsERP.API.Interfaces;
 using System.ComponentModel.DataAnnotations;
 
 namespace GarmentsERP.API.Controllers
@@ -12,16 +13,295 @@ namespace GarmentsERP.API.Controllers
     public class CashBookEntryController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly IEnhancedCashBookService _enhancedCashBookService;
         private readonly ILogger<CashBookEntryController> _logger;
 
-        public CashBookEntryController(ApplicationDbContext context, ILogger<CashBookEntryController> logger)
+        public CashBookEntryController(
+            ApplicationDbContext context, 
+            IEnhancedCashBookService enhancedCashBookService,
+            ILogger<CashBookEntryController> logger)
         {
             _context = context;
+            _enhancedCashBookService = enhancedCashBookService;
             _logger = logger;
         }
 
+        /// <summary>
+        /// Create a new cash book entry (enhanced version)
+        /// </summary>
+        [HttpPost]
+        public async Task<IActionResult> CreateCashBookEntry([FromBody] CreateCashBookEntryRequest request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                var result = await _enhancedCashBookService.CreateCashBookEntryAsync(request);
+                
+                if (!result.Success)
+                {
+                    return BadRequest(new { Success = false, Message = result.Message, Errors = result.Errors });
+                }
+
+                return CreatedAtAction(nameof(GetCashBookEntry), new { id = result.Entry!.Id }, result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating cash book entry");
+                return StatusCode(500, new { Success = false, Message = "Internal server error" });
+            }
+        }
+
+        /// <summary>
+        /// Save cash book entry as draft
+        /// </summary>
+        [HttpPost("draft")]
+        public async Task<IActionResult> SaveDraft([FromBody] CreateCashBookEntryRequest request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                request.SaveAsDraft = true;
+                var result = await _enhancedCashBookService.SaveDraftAsync(request);
+                
+                if (!result.Success)
+                {
+                    return BadRequest(new { Success = false, Message = result.Message, Errors = result.Errors });
+                }
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error saving cash book entry draft");
+                return StatusCode(500, new { Success = false, Message = "Internal server error" });
+            }
+        }
+
+        /// <summary>
+        /// Get cash book entries with filtering and pagination
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetCashBookEntries([FromQuery] CashBookFilterRequest filter)
+        {
+            try
+            {
+                var result = await _enhancedCashBookService.GetCashBookEntriesAsync(filter);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving cash book entries");
+                return StatusCode(500, new { Success = false, Message = "Internal server error" });
+            }
+        }
+
+        /// <summary>
+        /// Get cash book entry by ID
+        /// </summary>
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetCashBookEntry(Guid id)
+        {
+            try
+            {
+                var entry = await _enhancedCashBookService.GetCashBookEntryByIdAsync(id);
+                
+                if (entry == null)
+                {
+                    return NotFound(new { Success = false, Message = "Cash book entry not found" });
+                }
+
+                return Ok(entry);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving cash book entry with ID: {Id}", id);
+                return StatusCode(500, new { Success = false, Message = "Internal server error" });
+            }
+        }
+
+        /// <summary>
+        /// Update cash book entry
+        /// </summary>
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateCashBookEntry(Guid id, [FromBody] UpdateCashBookEntryRequest request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                var result = await _enhancedCashBookService.UpdateCashBookEntryAsync(id, request);
+                
+                if (!result.Success)
+                {
+                    return BadRequest(new { Success = false, Message = result.Message, Errors = result.Errors });
+                }
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating cash book entry with ID: {Id}", id);
+                return StatusCode(500, new { Success = false, Message = "Internal server error" });
+            }
+        }
+
+        /// <summary>
+        /// Complete cash book entry (lock for editing)
+        /// </summary>
+        [HttpPatch("{id}/complete")]
+        public async Task<IActionResult> CompleteEntry(Guid id)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                var result = await _enhancedCashBookService.CompleteEntryAsync(id, userId);
+                
+                if (!result.Success)
+                {
+                    return BadRequest(new { Success = false, Message = result.Message, Errors = result.Errors });
+                }
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error completing cash book entry with ID: {Id}", id);
+                return StatusCode(500, new { Success = false, Message = "Internal server error" });
+            }
+        }
+
+        /// <summary>
+        /// Approve cash book entry
+        /// </summary>
+        [HttpPatch("{id}/approve")]
+        public async Task<IActionResult> ApproveEntry(Guid id, [FromBody] ApprovalRequest request)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                var result = await _enhancedCashBookService.ApproveEntryAsync(id, userId, request.Notes);
+                
+                if (!result.Success)
+                {
+                    return BadRequest(new { Success = false, Message = result.Message, Errors = result.Errors });
+                }
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error approving cash book entry with ID: {Id}", id);
+                return StatusCode(500, new { Success = false, Message = "Internal server error" });
+            }
+        }
+
+        /// <summary>
+        /// Reject cash book entry
+        /// </summary>
+        [HttpPatch("{id}/reject")]
+        public async Task<IActionResult> RejectEntry(Guid id, [FromBody] RejectionRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.Reason))
+                {
+                    return BadRequest(new { Success = false, Message = "Rejection reason is required" });
+                }
+
+                var userId = GetCurrentUserId();
+                var result = await _enhancedCashBookService.RejectEntryAsync(id, userId, request.Reason);
+                
+                if (!result.Success)
+                {
+                    return BadRequest(new { Success = false, Message = result.Message, Errors = result.Errors });
+                }
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error rejecting cash book entry with ID: {Id}", id);
+                return StatusCode(500, new { Success = false, Message = "Internal server error" });
+            }
+        }
+
+        /// <summary>
+        /// Create reversing entry for completed transaction
+        /// </summary>
+        [HttpPost("{id}/reverse")]
+        public async Task<IActionResult> ReverseEntry(Guid id, [FromBody] ReversalRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.Reason))
+                {
+                    return BadRequest(new { Success = false, Message = "Reversal reason is required" });
+                }
+
+                var userId = GetCurrentUserId();
+                var result = await _enhancedCashBookService.CreateReversingEntryAsync(id, userId, request.Reason);
+                
+                if (!result.Success)
+                {
+                    return BadRequest(new { Success = false, Message = result.Message, Errors = result.Errors });
+                }
+
+                return CreatedAtAction(nameof(GetCashBookEntry), new { id = result.Entry!.Id }, result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating reversing entry for ID: {Id}", id);
+                return StatusCode(500, new { Success = false, Message = "Internal server error" });
+            }
+        }
+
+        /// <summary>
+        /// Search cash book entries (autocomplete)
+        /// </summary>
+        [HttpGet("search")]
+        public async Task<IActionResult> SearchEntries([FromQuery] string? query, [FromQuery] int limit = 10)
+        {
+            try
+            {
+                var filter = new CashBookFilterRequest
+                {
+                    Description = query,
+                    ReferenceNumber = query,
+                    PageSize = limit,
+                    Page = 1
+                };
+
+                var result = await _enhancedCashBookService.GetCashBookEntriesAsync(filter);
+                
+                var searchResults = result.Items.Select(e => new
+                {
+                    e.Id,
+                    e.JournalNumber,
+                    e.ReferenceNumber,
+                    e.Description,
+                    e.TransactionDate,
+                    e.TotalDebit,
+                    e.TotalCredit,
+                    e.Status,
+                    e.TransactionStatus
+                }).ToList();
+
+                return Ok(searchResults);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching cash book entries");
+                return StatusCode(500, new { Success = false, Message = "Internal server error" });
+            }
+        }
+
         [HttpPost("create-entry")]
-        public async Task<IActionResult> CreateCashBookEntry([FromBody] CashBookEntryDto request)
+        public async Task<IActionResult> CreateCashBookEntryLegacy([FromBody] CashBookEntryDto request)
         {
             try
             {
@@ -463,5 +743,23 @@ namespace GarmentsERP.API.Controllers
         public int AccountsCreated { get; set; }
         public int ContactsCreated { get; set; }
         public int TransactionsProcessed { get; set; }
+    }
+
+    // Additional DTOs for lifecycle management
+    public class ApprovalRequest
+    {
+        public string? Notes { get; set; }
+    }
+
+    public class RejectionRequest
+    {
+        [Required]
+        public string Reason { get; set; } = string.Empty;
+    }
+
+    public class ReversalRequest
+    {
+        [Required]
+        public string Reason { get; set; } = string.Empty;
     }
 }

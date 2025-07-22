@@ -122,11 +122,11 @@ export default function HomePage() {
                 <Stack direction="row" spacing={3} alignItems="center">
                   <Stack direction="row" spacing={2} alignItems="center">
                     <Avatar sx={{ bgcolor: 'white', color: 'primary.main' }}>
-                      {user?.fullName?.charAt(0) || 'U'}
+                      {user?.name?.charAt(0) || 'U'}
                     </Avatar>
                     <Box>
                       <Typography variant="body1" fontWeight="medium">
-                        {user?.fullName}
+                        {user?.name}
                       </Typography>
                       <Chip 
                         label={user?.roles?.[0] || 'User'} 

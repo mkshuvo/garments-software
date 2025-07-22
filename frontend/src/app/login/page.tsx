@@ -21,6 +21,7 @@ import {
   ArrowBack,
 } from '@mui/icons-material'
 import { useAuthStore } from '@/stores/authStore'
+import { authService } from '@/services/authService'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -60,10 +61,13 @@ export default function LoginPage() {
     setIsLoading(true)
     
     try {
-      await login({
-        emailOrUsername: email.trim(),
+      const response = await authService.login({
+        email: email.trim(),
         password: password
       })
+      
+      // Assuming the response contains user and token
+      login(response.user, response.token)
       // Success - redirect handled by useEffect
     } catch (err: unknown) {
       if (err instanceof Error) {

@@ -86,6 +86,13 @@ builder.Services.AddScoped<IBusinessSettingService, BusinessSettingService>();
 builder.Services.AddScoped<IReportTemplateService, ReportTemplateService>();
 builder.Services.AddScoped<CashBookImportService>();
 
+// Enhanced Dynamic Accounting Services
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<IContactService, ContactService>();
+builder.Services.AddScoped<ITransactionValidator, TransactionValidator>();
+builder.Services.AddScoped<IBusinessRuleValidator, BusinessRuleValidator>();
+builder.Services.AddScoped<ITrialBalanceService, TrialBalanceService>();
+
 // Redis Configuration
 builder.Services.AddSingleton<IConnectionMultiplexer>(provider =>
 {
