@@ -1,5 +1,5 @@
 # Use Alpine Linux with Node.js 22 (Current LTS)
-FROM node:22-alpine3.21 AS base
+FROM node:22.17.1-alpine3.22 AS base
 
 # Install dependencies only when needed
 FROM base AS deps
@@ -8,7 +8,7 @@ WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci && npm cache clean --force
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -31,8 +31,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Install dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init
+# Install dumb-init and curl for proper signal handling and health checks
+RUN apk add --no-cache dumb-init curl
 
 # Create nextjs user
 RUN addgroup --system --gid 1001 nodejs
@@ -55,6 +55,6 @@ EXPOSE 3000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
+    CMD curl -f http://localhost:3000/ || exit 1
 
 CMD ["dumb-init", "node", "server.js"]

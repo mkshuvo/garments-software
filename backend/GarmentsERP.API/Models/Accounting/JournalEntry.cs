@@ -31,6 +31,8 @@ namespace GarmentsERP.API.Models.Accounting
 
         public JournalStatus Status { get; set; } = JournalStatus.Draft;
 
+        public TransactionStatus TransactionStatus { get; set; } = TransactionStatus.Draft;
+
         [ForeignKey("CreatedBy")]
         public Guid CreatedByUserId { get; set; }
 
@@ -62,6 +64,15 @@ namespace GarmentsERP.API.Models.Accounting
         Draft,
         Posted,
         Approved,
+        Reversed
+    }
+
+    public enum TransactionStatus
+    {
+        Draft,
+        Pending,
+        Completed,
+        Locked,
         Reversed
     }
 }

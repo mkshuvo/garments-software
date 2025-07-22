@@ -32,6 +32,16 @@ namespace GarmentsERP.API.Models.Accounting
 
         public bool IsActive { get; set; } = true;
 
+        // Enhanced Dynamic Accounting Properties
+        public bool IsDynamic { get; set; } = true; // User-created vs system
+
+        [MaxLength(100)]
+        public string? CategoryGroup { get; set; } // MM Fashion category grouping
+
+        public int SortOrder { get; set; } = 0; // Display order
+
+        public bool AllowTransactions { get; set; } = true; // Can have transactions
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public DateTime? UpdatedAt { get; set; }

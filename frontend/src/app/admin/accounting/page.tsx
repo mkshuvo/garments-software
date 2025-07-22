@@ -42,7 +42,7 @@ export default function AccountingPage() {
     },
     {
       title: 'Chart of Accounts',
-      description: 'Manage your chart of accounts structure',
+      description: 'Create, edit, and manage your accounting categories',
       icon: <AccountBalance />,
       path: '/admin/accounting/chart-of-accounts',
       color: 'success.main',

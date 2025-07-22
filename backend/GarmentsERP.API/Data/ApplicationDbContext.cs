@@ -38,6 +38,9 @@ namespace GarmentsERP.API.Data
         public DbSet<ChartOfAccount> ChartOfAccounts { get; set; }
         public DbSet<JournalEntry> JournalEntries { get; set; }
         public DbSet<JournalEntryLine> JournalEntryLines { get; set; }
+        public DbSet<CategoryContact> CategoryContacts { get; set; }
+        public DbSet<TrialBalance> TrialBalances { get; set; }
+        public DbSet<TrialBalanceEntry> TrialBalanceEntries { get; set; }
 
         // Banking
         public DbSet<BankAccount> BankAccounts { get; set; }
@@ -269,6 +272,19 @@ namespace GarmentsERP.API.Data
                 .Property(c => c.OpeningBalance)
                 .HasPrecision(18, 2);
 
+            modelBuilder.Entity<ChartOfAccount>()
+                .Property(c => c.CurrentBalance)
+                .HasPrecision(18, 2);
+
+            // Journal Entry decimal precision
+            modelBuilder.Entity<JournalEntry>()
+                .Property(j => j.TotalDebit)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<JournalEntry>()
+                .Property(j => j.TotalCredit)
+                .HasPrecision(18, 2);
+
             // Journal Entry Line decimal precision
             modelBuilder.Entity<JournalEntryLine>()
                 .Property(j => j.Debit)
@@ -276,6 +292,32 @@ namespace GarmentsERP.API.Data
 
             modelBuilder.Entity<JournalEntryLine>()
                 .Property(j => j.Credit)
+                .HasPrecision(18, 2);
+
+            // Trial Balance decimal precision
+            modelBuilder.Entity<TrialBalance>()
+                .Property(t => t.TotalDebits)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<TrialBalance>()
+                .Property(t => t.TotalCredits)
+                .HasPrecision(18, 2);
+
+            // Trial Balance Entry decimal precision
+            modelBuilder.Entity<TrialBalanceEntry>()
+                .Property(t => t.OpeningBalance)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<TrialBalanceEntry>()
+                .Property(t => t.DebitMovements)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<TrialBalanceEntry>()
+                .Property(t => t.CreditMovements)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<TrialBalanceEntry>()
+                .Property(t => t.ClosingBalance)
                 .HasPrecision(18, 2);
 
             // Exchange Rate decimal precision
@@ -311,6 +353,15 @@ namespace GarmentsERP.API.Data
 
             modelBuilder.Entity<BankAccount>()
                 .HasIndex(b => b.AccountNumber)
+                .IsUnique();
+
+            // Enhanced Accounting constraints
+            modelBuilder.Entity<TrialBalance>()
+                .HasIndex(t => new { t.Year, t.Month })
+                .IsUnique();
+
+            modelBuilder.Entity<CategoryContact>()
+                .HasIndex(cc => new { cc.CategoryId, cc.ContactId })
                 .IsUnique();
 
             // SIMPLIFIED FOREIGN KEY APPROACH - NO NAVIGATION PROPERTIES
