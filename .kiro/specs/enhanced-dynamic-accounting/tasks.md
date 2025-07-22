@@ -106,12 +106,7 @@
 
 
 - [ ] 5. Transaction Validation and Business Rules Engine
-  - [x] 5.1 Create ITransactionValidator interface and implementation
-
-
-
-
-
+  - [ ] 5.1 Create ITransactionValidator interface and implementation
     - Implement double-entry balance validation
     - Implement account type validation for debit/credit rules
 
