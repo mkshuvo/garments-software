@@ -16,13 +16,13 @@ namespace GarmentsERP.API.Services
             _logger = logger;
         }
 
-        public async Task<ValidationResult> ValidateDoubleEntryAsync(List<TransactionLineDto> lines)
+        public Task<ValidationResult> ValidateDoubleEntryAsync(List<TransactionLineDto> lines)
         {
             try
             {
                 if (lines == null || !lines.Any())
                 {
-                    return ValidationResult.Failure("Transaction must have at least one line");
+                    return Task.FromResult(ValidationResult.Failure("Transaction must have at least one line"));
                 }
 
                 var totalDebits = lines.Sum(l => l.Debit);
@@ -72,12 +72,12 @@ namespace GarmentsERP.API.Services
                         "DUPLICATE_ACCOUNTS");
                 }
 
-                return result;
+                return Task.FromResult(result);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error validating double entry");
-                return ValidationResult.Failure("Error validating transaction balance");
+                return Task.FromResult(ValidationResult.Failure("Error validating transaction balance"));
             }
         }
 

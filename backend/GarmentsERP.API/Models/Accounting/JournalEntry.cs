@@ -44,6 +44,12 @@ namespace GarmentsERP.API.Models.Accounting
         public Guid? ApprovedByUserId { get; set; }
 
         public DateTime? ApprovedAt { get; set; }
+
+        // Navigation properties
+        public virtual ICollection<JournalEntryLine> JournalEntryLines { get; set; } = new List<JournalEntryLine>();
+
+        // Additional properties for compatibility
+        public DateTime CreatedDate => CreatedAt;
     }
 
     public enum JournalType

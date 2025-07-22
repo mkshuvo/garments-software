@@ -27,5 +27,14 @@ namespace GarmentsERP.API.Models.Accounting
         public string? Reference { get; set; }
 
         public int LineOrder { get; set; }
+
+        // Additional properties for compatibility
+        public Guid? ContactId { get; set; }
+        public decimal DebitAmount => Debit;
+        public decimal CreditAmount => Credit;
+
+        // Navigation properties
+        public virtual JournalEntry JournalEntry { get; set; } = null!;
+        public virtual ChartOfAccount Account { get; set; } = null!;
     }
 }

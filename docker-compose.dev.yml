@@ -3,6 +3,10 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.dev
+      target: development
+      cache_from:
+        - mcr.microsoft.com/dotnet/sdk:8.0
+    image: garments-backend-dev:latest
     container_name: garments-backend-dev
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
@@ -31,7 +35,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 40s
+      start_period: 60s
 
   # Frontend - Development
   frontend:
