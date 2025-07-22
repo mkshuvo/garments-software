@@ -10,10 +10,10 @@ import {
   Chip,
   Divider,
   Box,
-  Grid,
   CircularProgress,
   Alert
 } from '@mui/material';
+import Grid from '@mui/material/Grid';
 import {
   Refresh as RefreshIcon,
   AccountBalance as DollarIcon,
@@ -90,7 +90,7 @@ export default function BalancePage() {
       }
     } catch (error) {
       console.error('Error fetching balance data:', error);
-      toast.error('Failed to load balance data');
+      // TODO: Add proper error handling with Material-UI Snackbar
     } finally {
       setLoading(false);
     }
@@ -107,14 +107,14 @@ export default function BalancePage() {
       });
       
       if (response.ok) {
-        toast.success('Balance cache refreshed successfully');
+        // TODO: Add success notification with Material-UI Snackbar
         await fetchBalanceData();
       } else {
-        toast.error('Failed to refresh cache');
+        // TODO: Add error notification with Material-UI Snackbar
       }
     } catch (error) {
       console.error('Error refreshing cache:', error);
-      toast.error('Failed to refresh cache');
+      // TODO: Add error notification with Material-UI Snackbar
     } finally {
       setRefreshing(false);
     }
@@ -142,203 +142,256 @@ export default function BalancePage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
-          <RefreshCw className="h-8 w-8 animate-spin" />
-          <span className="ml-2">Loading balance data...</span>
-        </div>
-      </div>
+      <Box sx={{ p: 3, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <CircularProgress />
+          <Typography>Loading balance data...</Typography>
+        </Box>
+      </Box>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Balance Overview</h1>
-          <p className="text-muted-foreground">Real-time financial position and account balances</p>
-        </div>
+    <Box sx={{ p: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Box>
+          <Typography variant="h4" fontWeight="bold" gutterBottom>
+            Balance Overview
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Real-time financial position and account balances
+          </Typography>
+        </Box>
         <Button 
           onClick={refreshCache} 
           disabled={refreshing}
-          variant="outline"
+          variant="outlined"
+          startIcon={refreshing ? <CircularProgress size={16} /> : <RefreshIcon />}
         >
-          <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
           Refresh Cache
         </Button>
-      </div>
+      </Box>
 
       {/* Quick Balance Cards */}
       {dashboardBalance && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Bank Balance</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">
-                {formatCurrency(dashboardBalance.bankBalance)}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Last updated: {formatDateTime(dashboardBalance.lastUpdated)}
-              </p>
-            </CardContent>
-          </Card>
+        <Grid container spacing={3} sx={{ mb: 3 }}>
+          <Grid component="div" size={{ xs: 12, md: 4 }}>
+            <Card>
+              <CardHeader>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Bank Balance
+                  </Typography>
+                  <DollarIcon color="action" />
+                </Box>
+              </CardHeader>
+              <CardContent>
+                <Typography variant="h4" fontWeight="bold" color="primary.main">
+                  {formatCurrency(dashboardBalance.bankBalance)}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Last updated: {formatDateTime(dashboardBalance.lastUpdated)}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Cash on Hand</CardTitle>
-              <Wallet className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                {formatCurrency(dashboardBalance.cashOnHand)}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Physical cash available
-              </p>
-            </CardContent>
-          </Card>
+          <Grid component="div" size={{ xs: 12, md: 4 }}>
+            <Card>
+              <CardHeader>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Cash on Hand
+                  </Typography>
+                  <WalletIcon color="action" />
+                </Box>
+              </CardHeader>
+              <CardContent>
+                <Typography variant="h4" fontWeight="bold" color="success.main">
+                  {formatCurrency(dashboardBalance.cashOnHand)}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Physical cash available
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Liquid Assets</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-purple-600">
-                {formatCurrency(dashboardBalance.totalLiquidAssets)}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Bank + Cash combined
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+          <Grid component="div" size={{ xs: 12, md: 4 }}>
+            <Card>
+              <CardHeader>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Total Liquid Assets
+                  </Typography>
+                  <TrendingUp color="action" />
+                </Box>
+              </CardHeader>
+              <CardContent>
+                <Typography variant="h4" fontWeight="bold" color="secondary.main">
+                  {formatCurrency(dashboardBalance.totalLiquidAssets)}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Bank + Cash combined
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
       )}
 
       {/* Comprehensive Balance Summary */}
       {balanceSummary && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Grid container spacing={3} sx={{ mb: 3 }}>
           {/* Financial Position Summary */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                Financial Position
-                {balanceSummary.isFromCache && (
-                  <Badge variant="secondary" className="ml-2">Cached</Badge>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Assets</p>
-                  <p className="text-lg font-semibold text-blue-600">
-                    {formatCurrency(balanceSummary.totalAssets)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Liabilities</p>
-                  <p className="text-lg font-semibold text-red-600">
-                    {formatCurrency(balanceSummary.totalLiabilities)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Equity</p>
-                  <p className="text-lg font-semibold text-green-600">
-                    {formatCurrency(balanceSummary.totalEquity)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Net Income</p>
-                  <p className={`text-lg font-semibold ${balanceSummary.netIncome >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {formatCurrency(balanceSummary.netIncome)}
-                  </p>
-                </div>
-              </div>
-              
-              <Separator />
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Revenue</p>
-                  <p className="text-lg font-semibold text-green-600">
-                    {formatCurrency(balanceSummary.totalRevenue)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Expenses</p>
-                  <p className="text-lg font-semibold text-red-600">
-                    {formatCurrency(balanceSummary.totalExpenses)}
-                  </p>
-                </div>
-              </div>
-              
-              <p className="text-xs text-muted-foreground">
-                Last updated: {formatDateTime(balanceSummary.lastUpdated)}
-              </p>
-            </CardContent>
-          </Card>
+          <Grid component="div" size={{ xs: 12, lg: 6 }}>
+            <Card>
+              <CardHeader>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="h6">Financial Position</Typography>
+                  {balanceSummary.isFromCache && (
+                    <Chip label="Cached" size="small" variant="outlined" />
+                  )}
+                </Box>
+              </CardHeader>
+              <CardContent>
+                <Grid container spacing={2} sx={{ mb: 2 }}>
+                  <Grid component="div" size={{ xs: 6 }}>
+                    <Typography variant="body2" color="text.secondary">Total Assets</Typography>
+                    <Typography variant="h6" color="primary.main" fontWeight="bold">
+                      {formatCurrency(balanceSummary.totalAssets)}
+                    </Typography>
+                  </Grid>
+                  <Grid component="div" size={{ xs: 6 }}>
+                    <Typography variant="body2" color="text.secondary">Total Liabilities</Typography>
+                    <Typography variant="h6" color="error.main" fontWeight="bold">
+                      {formatCurrency(balanceSummary.totalLiabilities)}
+                    </Typography>
+                  </Grid>
+                  <Grid component="div" size={{ xs: 6 }}>
+                    <Typography variant="body2" color="text.secondary">Total Equity</Typography>
+                    <Typography variant="h6" color="success.main" fontWeight="bold">
+                      {formatCurrency(balanceSummary.totalEquity)}
+                    </Typography>
+                  </Grid>
+                  <Grid component="div" size={{ xs: 6 }}>
+                    <Typography variant="body2" color="text.secondary">Net Income</Typography>
+                    <Typography 
+                      variant="h6" 
+                      fontWeight="bold"
+                      color={balanceSummary.netIncome >= 0 ? 'success.main' : 'error.main'}
+                    >
+                      {formatCurrency(balanceSummary.netIncome)}
+                    </Typography>
+                  </Grid>
+                </Grid>
+                
+                <Divider sx={{ my: 2 }} />
+                
+                <Grid container spacing={2} sx={{ mb: 2 }}>
+                  <Grid component="div" size={{ xs: 6 }}>
+                    <Typography variant="body2" color="text.secondary">Total Revenue</Typography>
+                    <Typography variant="h6" color="success.main" fontWeight="bold">
+                      {formatCurrency(balanceSummary.totalRevenue)}
+                    </Typography>
+                  </Grid>
+                  <Grid component="div" size={{ xs: 6 }}>
+                    <Typography variant="body2" color="text.secondary">Total Expenses</Typography>
+                    <Typography variant="h6" color="error.main" fontWeight="bold">
+                      {formatCurrency(balanceSummary.totalExpenses)}
+                    </Typography>
+                  </Grid>
+                </Grid>
+                
+                <Typography variant="caption" color="text.secondary">
+                  Last updated: {formatDateTime(balanceSummary.lastUpdated)}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
 
           {/* Key Accounts */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Key Account Balances</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {balanceSummary.keyAccounts
-                  .sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance))
-                  .slice(0, 10)
-                  .map((account) => (
-                    <div key={account.accountId} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
-                      <div>
-                        <p className="font-medium text-sm">{account.accountName}</p>
-                        <p className="text-xs text-muted-foreground">{account.accountCode}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className={`font-semibold ${account.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {formatCurrency(account.balance)}
-                        </p>
-                        <Badge variant="outline" className="text-xs">
-                          {account.accountType}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+          <Grid component="div" size={{ xs: 12, lg: 6 }}>
+            <Card>
+              <CardHeader>
+                <Typography variant="h6">Key Account Balances</Typography>
+              </CardHeader>
+              <CardContent>
+                <Box sx={{ maxHeight: '400px', overflowY: 'auto' }}>
+                  {balanceSummary.keyAccounts
+                    .sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance))
+                    .slice(0, 10)
+                    .map((account) => (
+                      <Box 
+                        key={account.accountId} 
+                        sx={{ 
+                          display: 'flex', 
+                          justifyContent: 'space-between', 
+                          alignItems: 'center',
+                          p: 2, 
+                          mb: 1,
+                          borderRadius: 1,
+                          bgcolor: 'grey.50'
+                        }}
+                      >
+                        <Box>
+                          <Typography variant="body2" fontWeight="medium">
+                            {account.accountName}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {account.accountCode}
+                          </Typography>
+                        </Box>
+                        <Box sx={{ textAlign: 'right' }}>
+                          <Typography 
+                            variant="body2" 
+                            fontWeight="bold"
+                            color={account.balance >= 0 ? 'success.main' : 'error.main'}
+                          >
+                            {formatCurrency(account.balance)}
+                          </Typography>
+                          <Chip 
+                            label={account.accountType} 
+                            size="small" 
+                            variant="outlined"
+                          />
+                        </Box>
+                      </Box>
+                    ))}
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
       )}
 
       {/* Cache Status */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center">
-            <AlertCircle className="h-4 w-4 mr-2" />
-            Cache Status
-          </CardTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <AlertIcon />
+            <Typography variant="h6">Cache Status</Typography>
+          </Box>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm">
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box>
+              <Typography variant="body2">
                 Balance data is cached for improved performance. 
                 {balanceSummary?.isFromCache ? ' Currently showing cached data.' : ' Currently showing fresh data.'}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
                 Cache automatically refreshes every 5 minutes or when transactions are posted.
-              </p>
-            </div>
-            <Badge variant={balanceSummary?.isFromCache ? "secondary" : "default"}>
-              {balanceSummary?.isFromCache ? "Cached" : "Fresh"}
-            </Badge>
-          </div>
+              </Typography>
+            </Box>
+            <Chip 
+              label={balanceSummary?.isFromCache ? "Cached" : "Fresh"}
+              variant={balanceSummary?.isFromCache ? "outlined" : "filled"}
+              color={balanceSummary?.isFromCache ? "default" : "primary"}
+            />
+          </Box>
         </CardContent>
       </Card>
-    </div>
+    </Box>
   );
 }
