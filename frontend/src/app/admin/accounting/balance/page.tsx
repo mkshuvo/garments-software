@@ -10,8 +10,7 @@ import {
   Chip,
   Divider,
   Box,
-  CircularProgress,
-  Alert
+  CircularProgress
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import {
@@ -19,7 +18,6 @@ import {
   AccountBalance as DollarIcon,
   Wallet as WalletIcon,
   TrendingUp,
-  TrendingDown,
   Warning as AlertIcon
 } from '@mui/icons-material';
 
