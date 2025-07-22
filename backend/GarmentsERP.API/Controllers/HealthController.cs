@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
 using GarmentsERP.API.Data;
+using System.Diagnostics;
 
 namespace GarmentsERP.API.Controllers
 {
@@ -97,6 +98,75 @@ namespace GarmentsERP.API.Controllers
             }
 
             return Ok(redisHealth);
+        }
+
+        /// <summary>
+        /// Kubernetes-style readiness probe - checks if app is ready to receive traffic
+        /// </summary>
+        [HttpGet("ready")]
+        public async Task<IActionResult> Ready()
+        {
+            try
+            {
+                var dbHealth = await CheckDatabaseHealth();
+                var redisHealth = await CheckRedisHealth();
+
+                var isReady = dbHealth.healthy && redisHealth.healthy;
+
+                var response = new
+                {
+                    status = isReady ? "ready" : "not_ready",
+                    timestamp = DateTime.UtcNow,
+                    checks = new
+                    {
+                        database = dbHealth.healthy,
+                        redis = redisHealth.healthy
+                    }
+                };
+
+                return isReady ? Ok(response) : StatusCode(503, response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Readiness check failed");
+                return StatusCode(503, new
+                {
+                    status = "not_ready",
+                    error = ex.Message,
+                    timestamp = DateTime.UtcNow
+                });
+            }
+        }
+
+        /// <summary>
+        /// Kubernetes-style liveness probe - checks if app is alive and should not be restarted
+        /// </summary>
+        [HttpGet("live")]
+        public IActionResult Live()
+        {
+            try
+            {
+                // Basic liveness check - if we can respond, we're alive
+                var response = new
+                {
+                    status = "alive",
+                    timestamp = DateTime.UtcNow,
+                    uptime = DateTime.UtcNow.Subtract(Process.GetCurrentProcess().StartTime.ToUniversalTime()),
+                    processId = Environment.ProcessId
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Liveness check failed");
+                return StatusCode(500, new
+                {
+                    status = "dead",
+                    error = ex.Message,
+                    timestamp = DateTime.UtcNow
+                });
+            }
         }
 
         private async Task<(bool healthy, object response)> CheckDatabaseHealth()

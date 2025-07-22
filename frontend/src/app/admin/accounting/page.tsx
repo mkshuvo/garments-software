@@ -49,6 +49,14 @@ export default function AccountingPage() {
       bgColor: 'success.light'
     },
     {
+      title: 'Balance Overview',
+      description: 'Real-time bank balance, cash on hand, and account balances',
+      icon: <TrendingUp />,
+      path: '/admin/accounting/balance',
+      color: 'info.main',
+      bgColor: 'info.light'
+    },
+    {
       title: 'Journal Entries',
       description: 'View and manage journal entries',
       icon: <Receipt />,

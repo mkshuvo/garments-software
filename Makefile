@@ -34,24 +34,45 @@ help:
 # Parameters can be passed as USERNAME=value PASSWORD=value
 # No complex parsing needed - Make handles this automatically
 
-# Cross-platform detection
+# Cross-platform detection and configuration
 ifeq ($(OS),Windows_NT)
 	DETECTED_OS := Windows
-	DOTNET := dotnet.exe
+	DOTNET := dotnet
 	RM := del /Q /F
 	RMDIR := rmdir /S /Q
 	MKDIR := mkdir
 	NULL := NUL
-	# Use a different check for Windows as [ -z ... ] is not available
+	PATH_SEP := \\
+	SHELL_CMD := cmd /c
+	# Windows command validation
 	CHECK_VARS = @if "$(USERNAME)" == "" (echo Error: USERNAME is required && exit 1) else if "$(PASSWORD)" == "" (echo Error: PASSWORD is required && exit 1)
+	# Docker compose command for Windows
+	DOCKER_COMPOSE := docker compose
+	# Process management
+	KILL_PROC := taskkill /F /IM
+	BACKGROUND := start /B
 else
-	DETECTED_OS := $(shell uname -s)
+	UNAME_S := $(shell uname -s)
+	ifeq ($(UNAME_S),Linux)
+		DETECTED_OS := Linux
+	endif
+	ifeq ($(UNAME_S),Darwin)
+		DETECTED_OS := macOS
+	endif
 	DOTNET := dotnet
 	RM := rm -f
 	RMDIR := rm -rf
 	MKDIR := mkdir -p
 	NULL := /dev/null
-	CHECK_VARS = if [ -z "$(USERNAME)" ] || [ -z "$(PASSWORD)" ]; then exit 1; fi
+	PATH_SEP := /
+	SHELL_CMD := sh -c
+	# Unix command validation
+	CHECK_VARS = @if [ -z "$(USERNAME)" ] || [ -z "$(PASSWORD)" ]; then echo "Error: USERNAME and PASSWORD are required"; exit 1; fi
+	# Docker compose command for Unix systems
+	DOCKER_COMPOSE := docker compose
+	# Process management
+	KILL_PROC := pkill -f
+	BACKGROUND := &
 endif
 
 # Project paths
@@ -94,11 +115,16 @@ restore:
 
 # Run the application
 run:
-	@echo "Starting GarmentsERP..."
+	@echo "Starting GarmentsERP on $(DETECTED_OS)..."
 	@echo "Backend will run on: https://localhost:7001"
 	@echo "Frontend will run on: http://localhost:3000"
-	@cd $(BACKEND_DIR) && $(DOTNET) run &
+ifeq ($(OS),Windows_NT)
+	@cd $(BACKEND_DIR) && $(BACKGROUND) $(DOTNET) run
 	@cd $(FRONTEND_DIR) && npm run dev
+else
+	@cd $(BACKEND_DIR) && $(DOTNET) run $(BACKGROUND)
+	@cd $(FRONTEND_DIR) && npm run dev
+endif
 
 # Apply database migrations
 migrate:
@@ -118,31 +144,85 @@ clean:
 
 # Docker commands
 docker-build:
-	@echo "Building Docker images..."
-	@docker-compose build
+	@echo "Building Docker images on $(DETECTED_OS)..."
+	@$(DOCKER_COMPOSE) build
 
 docker-up:
-	@echo "Starting with Docker Compose..."
-	@docker-compose up -d
+	@echo "Starting with Docker Compose on $(DETECTED_OS)..."
+	@$(DOCKER_COMPOSE) up -d
 
 docker-down:
-	@echo "Stopping Docker services..."
-	@docker-compose down
+	@echo "Stopping Docker services on $(DETECTED_OS)..."
+	@$(DOCKER_COMPOSE) down
 
 docker-dev:
-	@echo "Building and starting development environment..."
-	@docker compose -f docker-compose.dev.yml up --build -d
+	@echo "Building and starting development environment on $(DETECTED_OS)..."
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml up --build -d
 
 # Hot reload development (no rebuild)
 docker-dev-hot:
-	@echo "Starting development environment with hot reload..."
-	@docker compose -f docker-compose.dev.yml up -d
+	@echo "Starting development environment with hot reload on $(DETECTED_OS)..."
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml up -d
 
 # Rebuild development environment
 docker-dev-rebuild:
-	@echo "Rebuilding development environment..."
-	@docker compose -f docker-compose.dev.yml down
-	@docker compose -f docker-compose.dev.yml up --build -d
+	@echo "Rebuilding development environment on $(DETECTED_OS)..."
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml down
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml up --build -d
+
+# Backend build optimization commands
+backend-build-dev:
+	@echo "Building optimized backend development image on $(DETECTED_OS)..."
+ifeq ($(OS),Windows_NT)
+	@cd backend && powershell -ExecutionPolicy Bypass -File build-dev.ps1
+else
+	@cd backend && chmod +x build-dev.sh && ./build-dev.sh
+endif
+
+# Backend build validation
+backend-validate:
+	@echo "Validating backend Docker optimization on $(DETECTED_OS)..."
+ifeq ($(OS),Windows_NT)
+	@cd backend && powershell -ExecutionPolicy Bypass -File validate-optimization.ps1
+else
+	@echo "Validation script currently only available for Windows. Running basic validation..."
+	@cd backend && docker images | grep garments-backend || echo "No backend images found"
+endif
+
+# Development status check
+dev-status:
+	@echo "Checking development environment status on $(DETECTED_OS)..."
+ifeq ($(OS),Windows_NT)
+	@powershell -Command "Write-Host '🔍 Docker Services Status:' -ForegroundColor Green; docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | Select-String 'garments'; Write-Host '📊 Docker Images:' -ForegroundColor Blue; docker images | Select-String 'garments'"
+else
+	@echo "🔍 Docker Services Status:"
+	@docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | grep garments || echo "No garments services running"
+	@echo "📊 Docker Images:"
+	@docker images | grep garments || echo "No garments images found"
+endif
+
+# Development logs
+dev-logs:
+	@echo "Showing development environment logs on $(DETECTED_OS)..."
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml logs -f --tail=50
+
+# Clean development environment
+dev-clean:
+	@echo "Cleaning development environment on $(DETECTED_OS)..."
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml down -v
+	@docker system prune -f
+ifeq ($(OS),Windows_NT)
+	@powershell -Command "docker images | Select-String 'garments' | ForEach-Object { $$_.ToString().Split()[0] + ':' + $$_.ToString().Split()[1] } | ForEach-Object { docker rmi $$_ -f }"
+else
+	@docker images | grep garments | awk '{print $$1":"$$2}' | xargs -r docker rmi -f
+endif
+
+# Reset development environment (clean restart)
+dev-reset:
+	@echo "Resetting development environment on $(DETECTED_OS)..."
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml down
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml up --build -d
+	@echo "✅ Development environment reset complete!"
 
 # Prevent make from trying to create files for these targets
 %:

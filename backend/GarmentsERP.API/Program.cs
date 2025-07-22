@@ -92,6 +92,8 @@ builder.Services.AddScoped<IContactService, ContactService>();
 builder.Services.AddScoped<ITransactionValidator, TransactionValidator>();
 builder.Services.AddScoped<IBusinessRuleValidator, BusinessRuleValidator>();
 builder.Services.AddScoped<ITrialBalanceService, TrialBalanceService>();
+builder.Services.AddScoped<IBalanceService, BalanceService>();
+builder.Services.AddScoped<IEnhancedCashBookService, EnhancedCashBookService>();
 
 // Redis Configuration
 builder.Services.AddSingleton<IConnectionMultiplexer>(provider =>
