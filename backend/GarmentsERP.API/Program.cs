@@ -185,22 +185,28 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Database Migration only
+// Database Migration and Seeding
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
     
     try
     {
         await context.Database.MigrateAsync();
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
         logger.LogInformation("✅ Database migration completed successfully");
+        
+        // Seed initial MM Fashion categories
+        await CategorySeeder.SeedCategoriesAsync(context);
+        logger.LogInformation("✅ MM Fashion categories seeded successfully");
     }
     catch (Exception ex)
     {
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "❌ An error occurred while migrating the database.");
+        logger.LogError(ex, "❌ An error occurred while migrating the database or seeding data.");
     }
 }
 
 app.Run();
+
+// Make Program class accessible for testing
+public partial class Program { }

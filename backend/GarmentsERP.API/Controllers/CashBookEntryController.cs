@@ -332,16 +332,16 @@ namespace GarmentsERP.API.Controllers
         {
             try
             {
-                var categories = await _context.ChartOfAccounts
+                var categories = await _context.Categories
                     .Where(c => c.IsActive)
                     .Select(c => new CategoryDto
                     {
                         Id = c.Id,
-                        Name = c.AccountName,
-                        AccountCode = c.AccountCode,
-                        AccountType = c.AccountType.ToString()
+                        Name = c.Name,
+                        AccountCode = "", // Categories don't have account codes
+                        AccountType = c.Type.ToString() // Credit or Debit
                     })
-                    .OrderBy(c => c.AccountCode)
+                    .OrderBy(c => c.Name)
                     .ToListAsync();
 
                 return Ok(categories);
@@ -408,11 +408,16 @@ namespace GarmentsERP.API.Controllers
                     result.AccountsCreated++;
                 }
 
+                // Look up category by name (Credit type)
+                var category = await _context.Categories
+                    .FirstOrDefaultAsync(c => c.Name == credit.CategoryName && c.Type == CategoryType.Credit && c.IsActive);
+
                 // Credit the source account
                 journalLines.Add(new JournalEntryLine
                 {
                     JournalEntryId = journalEntry.Id,
                     AccountId = accountId,
+                    CategoryId = category?.Id, // Reference to new Category system
                     Credit = credit.Amount,
                     Debit = 0,
                     Description = credit.Particulars,
@@ -425,6 +430,7 @@ namespace GarmentsERP.API.Controllers
                 {
                     JournalEntryId = journalEntry.Id,
                     AccountId = cashAccountId,
+                    CategoryId = null, // Cash account doesn't need category reference
                     Debit = credit.Amount,
                     Credit = 0,
                     Description = $"Cash from {credit.CategoryName}",
@@ -451,11 +457,16 @@ namespace GarmentsERP.API.Controllers
                     result.AccountsCreated++;
                 }
 
+                // Look up category by name (Debit type)
+                var category = await _context.Categories
+                    .FirstOrDefaultAsync(c => c.Name == debit.CategoryName && c.Type == CategoryType.Debit && c.IsActive);
+
                 // Debit the expense/asset account
                 journalLines.Add(new JournalEntryLine
                 {
                     JournalEntryId = journalEntry.Id,
                     AccountId = accountId,
+                    CategoryId = category?.Id, // Reference to new Category system
                     Debit = debit.Amount,
                     Credit = 0,
                     Description = debit.Particulars,
@@ -468,6 +479,7 @@ namespace GarmentsERP.API.Controllers
                 {
                     JournalEntryId = journalEntry.Id,
                     AccountId = cashAccountId,
+                    CategoryId = null, // Cash account doesn't need category reference
                     Credit = debit.Amount,
                     Debit = 0,
                     Description = $"Cash paid for {debit.CategoryName}",

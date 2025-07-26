@@ -100,6 +100,11 @@ class ApiService {
     return response.data
   }
 
+  async patch<T = unknown, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.instance.patch<T>(url, data, config)
+    return response.data
+  }
+
   // Token management
   setToken(token: string): void {
     if (typeof window === 'undefined') return

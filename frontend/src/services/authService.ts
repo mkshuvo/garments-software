@@ -27,7 +27,52 @@ interface RegisterData {
 
 export const authService = {
   login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
-    return await apiService.post<LoginResponse>('/api/auth/login', credentials);
+    try {
+      // Transform the credentials to match backend DTO
+      const loginData = {
+        EmailOrUsername: credentials.email,
+        Password: credentials.password
+      };
+      
+      console.log('Sending login request with:', loginData);
+      
+      const response = await apiService.post<{
+        token: string;
+        expiration: string;
+        user: {
+          id: string;
+          username: string;
+          email: string;
+          fullName: string;
+          contactNumber: string | null;
+          roles: string[];
+          isActive: boolean;
+          createdAt: string;
+        };
+      }>('/api/auth/login', loginData);
+      
+      console.log('Received login response:', response);
+      
+      // The backend returns the actual login data in the response directly for successful login
+      // Transform the response to match frontend expectations
+      const transformedResponse = {
+        user: {
+          id: response.user.id,
+          email: response.user.email,
+          name: response.user.fullName,
+          role: response.user.roles[0] || 'Employee',
+          roles: response.user.roles
+        },
+        token: response.token
+      };
+      
+      console.log('Transformed response:', transformedResponse);
+      
+      return transformedResponse;
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
+    }
   },
   
   register: async (userData: RegisterData) => {

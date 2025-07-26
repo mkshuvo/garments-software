@@ -1,7 +1,7 @@
 using GarmentsERP.API.Data;
 using GarmentsERP.API.Models;
 using GarmentsERP.API.Models.Accounting;
-using GarmentsERP.API.Interfaces;
+using GarmentsERP.API.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -15,16 +15,13 @@ namespace GarmentsERP.API.Controllers
     public class ChartOfAccountsController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
-        private readonly ICategoryService _categoryService;
         private readonly ILogger<ChartOfAccountsController> _logger;
 
         public ChartOfAccountsController(
             ApplicationDbContext context, 
-            ICategoryService categoryService,
             ILogger<ChartOfAccountsController> logger)
         {
             _context = context;
-            _categoryService = categoryService;
             _logger = logger;
         }
 
@@ -374,140 +371,39 @@ namespace GarmentsERP.API.Controllers
         }
 
         // ========== ENHANCED DYNAMIC ACCOUNTING ENDPOINTS ==========
+        // NOTE: These endpoints are temporarily commented out as they were using the new CategoryService
+        // which is designed for the simple Category system, not the complex ChartOfAccount system.
+        // These should be reimplemented with proper ChartOfAccount service methods.
 
+        /*
         /// <summary>
         /// Get categories in hierarchical structure
         /// </summary>
         [HttpGet("hierarchy")]
         public async Task<ActionResult<List<EnhancedCategoryDto>>> GetCategoriesHierarchy()
         {
-            try
-            {
-                var categories = await _categoryService.GetCategoriesHierarchyAsync();
-                
-                var result = new List<EnhancedCategoryDto>();
-                
-                foreach (var c in categories)
-                {
-                    result.Add(new EnhancedCategoryDto
-                    {
-                        Id = c.Id,
-                        AccountCode = c.AccountCode,
-                        AccountName = c.AccountName,
-                        AccountType = c.AccountType,
-                        ParentAccountId = c.ParentAccountId,
-                        Description = c.Description,
-                        CategoryGroup = c.CategoryGroup,
-                        SortOrder = c.SortOrder,
-                        AllowTransactions = c.AllowTransactions,
-                        IsDynamic = c.IsDynamic,
-                        IsActive = c.IsActive,
-                        CurrentBalance = await _categoryService.GetCategoryBalanceAsync(c.Id),
-                        HasTransactions = await _categoryService.HasTransactionsAsync(c.Id),
-                        CreatedAt = c.CreatedAt,
-                        UpdatedAt = c.UpdatedAt
-                    });
-                }
-
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving categories hierarchy");
-                return StatusCode(500, new { message = "Error retrieving categories hierarchy" });
-            }
+            // TODO: Implement with proper ChartOfAccount service
+            return StatusCode(501, new { message = "Not implemented - requires ChartOfAccount service" });
         }
 
         /// <summary>
         /// Create new category using CategoryService
         /// </summary>
         [HttpPost("category")]
-        public async Task<ActionResult<EnhancedCategoryDto>> CreateCategory([FromBody] CreateCategoryRequest request)
+        public async Task<ActionResult<EnhancedCategoryDto>> CreateCategory([FromBody] CreateChartOfAccountRequest request)
         {
-            try
-            {
-                var category = await _categoryService.CreateCategoryAsync(request);
-                
-                var result = new EnhancedCategoryDto
-                {
-                    Id = category.Id,
-                    AccountCode = category.AccountCode,
-                    AccountName = category.AccountName,
-                    AccountType = category.AccountType,
-                    ParentAccountId = category.ParentAccountId,
-                    Description = category.Description,
-                    CategoryGroup = category.CategoryGroup,
-                    SortOrder = category.SortOrder,
-                    AllowTransactions = category.AllowTransactions,
-                    IsDynamic = category.IsDynamic,
-                    IsActive = category.IsActive,
-                    CurrentBalance = 0,
-                    HasTransactions = false,
-                    CreatedAt = category.CreatedAt,
-                    UpdatedAt = category.UpdatedAt
-                };
-
-                return CreatedAtAction(nameof(GetChartOfAccount), new { id = category.Id }, result);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating category");
-                return StatusCode(500, new { message = "Error creating category" });
-            }
+            // TODO: Implement with proper ChartOfAccount service
+            return StatusCode(501, new { message = "Not implemented - requires ChartOfAccount service" });
         }
 
         /// <summary>
         /// Update category using CategoryService
         /// </summary>
         [HttpPut("category/{id}")]
-        public async Task<ActionResult<EnhancedCategoryDto>> UpdateCategory(Guid id, [FromBody] UpdateCategoryRequest request)
+        public async Task<ActionResult<EnhancedCategoryDto>> UpdateCategory(Guid id, [FromBody] UpdateChartOfAccountRequest request)
         {
-            try
-            {
-                var category = await _categoryService.UpdateCategoryAsync(id, request);
-                
-                var result = new EnhancedCategoryDto
-                {
-                    Id = category.Id,
-                    AccountCode = category.AccountCode,
-                    AccountName = category.AccountName,
-                    AccountType = category.AccountType,
-                    ParentAccountId = category.ParentAccountId,
-                    Description = category.Description,
-                    CategoryGroup = category.CategoryGroup,
-                    SortOrder = category.SortOrder,
-                    AllowTransactions = category.AllowTransactions,
-                    IsDynamic = category.IsDynamic,
-                    IsActive = category.IsActive,
-                    CurrentBalance = await _categoryService.GetCategoryBalanceAsync(category.Id),
-                    HasTransactions = await _categoryService.HasTransactionsAsync(category.Id),
-                    CreatedAt = category.CreatedAt,
-                    UpdatedAt = category.UpdatedAt
-                };
-
-                return Ok(result);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating category");
-                return StatusCode(500, new { message = "Error updating category" });
-            }
+            // TODO: Implement with proper ChartOfAccount service
+            return StatusCode(501, new { message = "Not implemented - requires ChartOfAccount service" });
         }
 
         /// <summary>
@@ -516,26 +412,8 @@ namespace GarmentsERP.API.Controllers
         [HttpDelete("category/{id}")]
         public async Task<ActionResult> DeleteCategory(Guid id)
         {
-            try
-            {
-                var success = await _categoryService.DeleteCategoryAsync(id);
-                
-                if (!success)
-                {
-                    return NotFound(new { message = "Category not found" });
-                }
-
-                return NoContent();
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error deleting category");
-                return StatusCode(500, new { message = "Error deleting category" });
-            }
+            // TODO: Implement with proper ChartOfAccount service
+            return StatusCode(501, new { message = "Not implemented - requires ChartOfAccount service" });
         }
 
         /// <summary>
@@ -544,40 +422,8 @@ namespace GarmentsERP.API.Controllers
         [HttpPatch("category/{id}/activate")]
         public async Task<ActionResult<EnhancedCategoryDto>> ActivateCategory(Guid id)
         {
-            try
-            {
-                var category = await _categoryService.ActivateCategoryAsync(id);
-                
-                var result = new EnhancedCategoryDto
-                {
-                    Id = category.Id,
-                    AccountCode = category.AccountCode,
-                    AccountName = category.AccountName,
-                    AccountType = category.AccountType,
-                    ParentAccountId = category.ParentAccountId,
-                    Description = category.Description,
-                    CategoryGroup = category.CategoryGroup,
-                    SortOrder = category.SortOrder,
-                    AllowTransactions = category.AllowTransactions,
-                    IsDynamic = category.IsDynamic,
-                    IsActive = category.IsActive,
-                    CurrentBalance = await _categoryService.GetCategoryBalanceAsync(category.Id),
-                    HasTransactions = await _categoryService.HasTransactionsAsync(category.Id),
-                    CreatedAt = category.CreatedAt,
-                    UpdatedAt = category.UpdatedAt
-                };
-
-                return Ok(result);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error activating category");
-                return StatusCode(500, new { message = "Error activating category" });
-            }
+            // TODO: Implement with proper ChartOfAccount service
+            return StatusCode(501, new { message = "Not implemented - requires ChartOfAccount service" });
         }
 
         /// <summary>
@@ -586,44 +432,8 @@ namespace GarmentsERP.API.Controllers
         [HttpPatch("category/{id}/deactivate")]
         public async Task<ActionResult<EnhancedCategoryDto>> DeactivateCategory(Guid id)
         {
-            try
-            {
-                var category = await _categoryService.DeactivateCategoryAsync(id);
-                
-                var result = new EnhancedCategoryDto
-                {
-                    Id = category.Id,
-                    AccountCode = category.AccountCode,
-                    AccountName = category.AccountName,
-                    AccountType = category.AccountType,
-                    ParentAccountId = category.ParentAccountId,
-                    Description = category.Description,
-                    CategoryGroup = category.CategoryGroup,
-                    SortOrder = category.SortOrder,
-                    AllowTransactions = category.AllowTransactions,
-                    IsDynamic = category.IsDynamic,
-                    IsActive = category.IsActive,
-                    CurrentBalance = await _categoryService.GetCategoryBalanceAsync(category.Id),
-                    HasTransactions = await _categoryService.HasTransactionsAsync(category.Id),
-                    CreatedAt = category.CreatedAt,
-                    UpdatedAt = category.UpdatedAt
-                };
-
-                return Ok(result);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error deactivating category");
-                return StatusCode(500, new { message = "Error deactivating category" });
-            }
+            // TODO: Implement with proper ChartOfAccount service
+            return StatusCode(501, new { message = "Not implemented - requires ChartOfAccount service" });
         }
 
         /// <summary>
@@ -632,36 +442,8 @@ namespace GarmentsERP.API.Controllers
         [HttpGet("search")]
         public async Task<ActionResult<List<EnhancedCategoryDto>>> SearchCategories([FromQuery] string searchTerm)
         {
-            try
-            {
-                var categories = await _categoryService.SearchCategoriesAsync(searchTerm);
-                
-                var result = categories.Select(c => new EnhancedCategoryDto
-                {
-                    Id = c.Id,
-                    AccountCode = c.AccountCode,
-                    AccountName = c.AccountName,
-                    AccountType = c.AccountType,
-                    ParentAccountId = c.ParentAccountId,
-                    Description = c.Description,
-                    CategoryGroup = c.CategoryGroup,
-                    SortOrder = c.SortOrder,
-                    AllowTransactions = c.AllowTransactions,
-                    IsDynamic = c.IsDynamic,
-                    IsActive = c.IsActive,
-                    CurrentBalance = 0, // Skip balance calculation for search results for performance
-                    HasTransactions = false, // Skip transaction check for search results for performance
-                    CreatedAt = c.CreatedAt,
-                    UpdatedAt = c.UpdatedAt
-                }).ToList();
-
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error searching categories");
-                return StatusCode(500, new { message = "Error searching categories" });
-            }
+            // TODO: Implement with proper ChartOfAccount service
+            return StatusCode(501, new { message = "Not implemented - requires ChartOfAccount service" });
         }
 
         /// <summary>
@@ -670,36 +452,8 @@ namespace GarmentsERP.API.Controllers
         [HttpGet("by-type/{accountType}")]
         public async Task<ActionResult<List<EnhancedCategoryDto>>> GetCategoriesByType(AccountType accountType)
         {
-            try
-            {
-                var categories = await _categoryService.GetCategoriesByTypeAsync(accountType);
-                
-                var result = categories.Select(c => new EnhancedCategoryDto
-                {
-                    Id = c.Id,
-                    AccountCode = c.AccountCode,
-                    AccountName = c.AccountName,
-                    AccountType = c.AccountType,
-                    ParentAccountId = c.ParentAccountId,
-                    Description = c.Description,
-                    CategoryGroup = c.CategoryGroup,
-                    SortOrder = c.SortOrder,
-                    AllowTransactions = c.AllowTransactions,
-                    IsDynamic = c.IsDynamic,
-                    IsActive = c.IsActive,
-                    CurrentBalance = 0, // Skip balance calculation for type filtering for performance
-                    HasTransactions = false, // Skip transaction check for type filtering for performance
-                    CreatedAt = c.CreatedAt,
-                    UpdatedAt = c.UpdatedAt
-                }).ToList();
-
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving categories by type");
-                return StatusCode(500, new { message = "Error retrieving categories by type" });
-            }
+            // TODO: Implement with proper ChartOfAccount service
+            return StatusCode(501, new { message = "Not implemented - requires ChartOfAccount service" });
         }
 
         /// <summary>
@@ -711,16 +465,8 @@ namespace GarmentsERP.API.Controllers
             [FromQuery] DateTime? startDate = null, 
             [FromQuery] DateTime? endDate = null)
         {
-            try
-            {
-                var transactions = await _categoryService.GetCategoryTransactionsAsync(id, startDate, endDate);
-                return Ok(transactions);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving category transactions");
-                return StatusCode(500, new { message = "Error retrieving category transactions" });
-            }
+            // TODO: Implement with proper ChartOfAccount service
+            return StatusCode(501, new { message = "Not implemented - requires ChartOfAccount service" });
         }
 
         /// <summary>
@@ -729,17 +475,10 @@ namespace GarmentsERP.API.Controllers
         [HttpGet("generate-code/{accountType}")]
         public async Task<ActionResult<string>> GenerateAccountCode(AccountType accountType)
         {
-            try
-            {
-                var accountCode = await _categoryService.GenerateAccountCodeAsync(accountType);
-                return Ok(new { accountCode });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error generating account code");
-                return StatusCode(500, new { message = "Error generating account code" });
-            }
+            // TODO: Implement with proper ChartOfAccount service
+            return StatusCode(501, new { message = "Not implemented - requires ChartOfAccount service" });
         }
+        */
     }
 
     // DTOs

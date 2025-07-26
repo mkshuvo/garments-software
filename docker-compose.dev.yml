@@ -3,7 +3,6 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.dev
-      target: development
     image: garments-backend-dev:latest
     container_name: garments-backend-dev
     environment:

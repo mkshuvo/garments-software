@@ -38,6 +38,7 @@ namespace GarmentsERP.API.Data
         public DbSet<ChartOfAccount> ChartOfAccounts { get; set; }
         public DbSet<JournalEntry> JournalEntries { get; set; }
         public DbSet<JournalEntryLine> JournalEntryLines { get; set; }
+        public DbSet<Category> Categories { get; set; }
         public DbSet<CategoryContact> CategoryContacts { get; set; }
         public DbSet<TrialBalance> TrialBalances { get; set; }
         public DbSet<TrialBalanceEntry> TrialBalanceEntries { get; set; }
@@ -363,6 +364,21 @@ namespace GarmentsERP.API.Data
             modelBuilder.Entity<CategoryContact>()
                 .HasIndex(cc => new { cc.CategoryId, cc.ContactId })
                 .IsUnique();
+
+            // Category unique constraint on Name + Type combination
+            modelBuilder.Entity<Category>()
+                .HasIndex(c => new { c.Name, c.Type })
+                .IsUnique();
+
+            // Category performance indexes
+            modelBuilder.Entity<Category>()
+                .HasIndex(c => c.Type);
+
+            modelBuilder.Entity<Category>()
+                .HasIndex(c => c.IsActive);
+
+            modelBuilder.Entity<Category>()
+                .HasIndex(c => c.Name);
 
             // SIMPLIFIED FOREIGN KEY APPROACH - NO NAVIGATION PROPERTIES
             // All relationships are handled via foreign key IDs only

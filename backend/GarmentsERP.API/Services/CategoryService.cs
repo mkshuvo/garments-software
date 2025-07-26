@@ -1,6 +1,7 @@
 using GarmentsERP.API.Data;
 using GarmentsERP.API.Interfaces;
 using GarmentsERP.API.Models.Accounting;
+using GarmentsERP.API.DTOs;
 using Microsoft.EntityFrameworkCore;
 
 namespace GarmentsERP.API.Services
@@ -16,195 +17,212 @@ namespace GarmentsERP.API.Services
             _logger = logger;
         }
 
-        public async Task<ChartOfAccount> CreateCategoryAsync(CreateCategoryRequest request)
+        #region Read Operations
+
+        public async Task<IEnumerable<CategoryDto>> GetAllCategoriesAsync()
         {
             try
             {
-                // Generate unique account code
-                var accountCode = await GenerateAccountCodeAsync(request.AccountType);
+                _logger.LogInformation("Retrieving all categories");
 
-                // Validate account code uniqueness
-                if (!await IsAccountCodeUniqueAsync(accountCode))
+                var categories = await _context.Categories
+                    .Where(x => x.IsActive)
+                    .OrderBy(x => x.Type)
+                    .ThenBy(x => x.Name)
+                    .ToListAsync();
+
+                var categoryDtos = new List<CategoryDto>();
+                foreach (var category in categories)
                 {
-                    throw new InvalidOperationException($"Account code {accountCode} already exists");
+                    var usageCount = await GetCategoryUsageCountAsync(category.Id);
+                    categoryDtos.Add(MapToCategoryDto(category, usageCount));
                 }
 
-                // Validate parent account if specified
-                if (request.ParentAccountId.HasValue)
-                {
-                    var parentAccount = await _context.ChartOfAccounts
-                        .FirstOrDefaultAsync(x => x.Id == request.ParentAccountId.Value);
-                    
-                    if (parentAccount == null)
-                    {
-                        throw new ArgumentException("Parent account not found");
-                    }
-
-                    // Validate parent account type compatibility
-                    if (parentAccount.AccountType != request.AccountType)
-                    {
-                        throw new ArgumentException("Parent account type must match child account type");
-                    }
-                }
-
-                var category = new ChartOfAccount
-                {
-                    AccountCode = accountCode,
-                    AccountName = request.AccountName,
-                    AccountType = request.AccountType,
-                    ParentAccountId = request.ParentAccountId,
-                    Description = request.Description,
-                    CategoryGroup = request.CategoryGroup,
-                    SortOrder = request.SortOrder,
-                    AllowTransactions = request.AllowTransactions,
-                    IsDynamic = true,
-                    IsActive = true,
-                    OpeningBalance = 0,
-                    CurrentBalance = 0,
-                    CreatedAt = DateTime.UtcNow
-                };
-
-                _context.ChartOfAccounts.Add(category);
-                await _context.SaveChangesAsync();
-
-                _logger.LogInformation("Created new category: {AccountCode} - {AccountName}", 
-                    category.AccountCode, category.AccountName);
-
-                return category;
+                _logger.LogInformation("Retrieved {Count} categories", categoryDtos.Count);
+                return categoryDtos;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating category: {AccountName}", request.AccountName);
+                _logger.LogError(ex, "Error retrieving all categories");
                 throw;
             }
         }
 
-        public async Task<IEnumerable<ChartOfAccount>> GetCategoriesAsync()
-        {
-            return await _context.ChartOfAccounts
-                .Where(x => x.IsActive)
-                .OrderBy(x => x.AccountType)
-                .ThenBy(x => x.SortOrder)
-                .ThenBy(x => x.AccountCode)
-                .ToListAsync();
-        }
-
-        public async Task<IEnumerable<ChartOfAccount>> GetCategoriesHierarchyAsync()
-        {
-            var allCategories = await _context.ChartOfAccounts
-                .Where(x => x.IsActive)
-                .OrderBy(x => x.AccountType)
-                .ThenBy(x => x.SortOrder)
-                .ThenBy(x => x.AccountCode)
-                .ToListAsync();
-
-            // Return hierarchical structure (parent accounts first, then children)
-            var parentAccounts = allCategories.Where(x => x.ParentAccountId == null).ToList();
-            var childAccounts = allCategories.Where(x => x.ParentAccountId != null).ToList();
-
-            var result = new List<ChartOfAccount>();
-            
-            foreach (var parent in parentAccounts)
-            {
-                result.Add(parent);
-                var children = childAccounts.Where(x => x.ParentAccountId == parent.Id)
-                    .OrderBy(x => x.SortOrder)
-                    .ThenBy(x => x.AccountCode);
-                result.AddRange(children);
-            }
-
-            return result;
-        }
-
-        public async Task<ChartOfAccount?> GetCategoryByIdAsync(Guid id)
-        {
-            return await _context.ChartOfAccounts
-                .FirstOrDefaultAsync(x => x.Id == id);
-        }
-
-        public async Task<IEnumerable<ChartOfAccount>> SearchCategoriesAsync(string searchTerm)
-        {
-            if (string.IsNullOrWhiteSpace(searchTerm))
-            {
-                return await GetCategoriesAsync();
-            }
-
-            var lowerSearchTerm = searchTerm.ToLower();
-
-            return await _context.ChartOfAccounts
-                .Where(x => x.IsActive && 
-                    (x.AccountName.ToLower().Contains(lowerSearchTerm) ||
-                     x.AccountCode.ToLower().Contains(lowerSearchTerm) ||
-                     (x.Description != null && x.Description.ToLower().Contains(lowerSearchTerm))))
-                .OrderBy(x => x.AccountType)
-                .ThenBy(x => x.SortOrder)
-                .ThenBy(x => x.AccountCode)
-                .ToListAsync();
-        }
-
-        public async Task<IEnumerable<ChartOfAccount>> GetCategoriesByTypeAsync(AccountType accountType)
-        {
-            return await _context.ChartOfAccounts
-                .Where(x => x.IsActive && x.AccountType == accountType)
-                .OrderBy(x => x.SortOrder)
-                .ThenBy(x => x.AccountCode)
-                .ToListAsync();
-        }
-
-        public async Task<ChartOfAccount> UpdateCategoryAsync(Guid id, UpdateCategoryRequest request)
+        public async Task<IEnumerable<CategoryDto>> GetCategoriesByTypeAsync(CategoryType type)
         {
             try
             {
-                var category = await _context.ChartOfAccounts
+                _logger.LogInformation("Retrieving categories by type: {Type}", type);
+
+                var categories = await _context.Categories
+                    .Where(x => x.IsActive && x.Type == type)
+                    .OrderBy(x => x.Name)
+                    .ToListAsync();
+
+                var categoryDtos = new List<CategoryDto>();
+                foreach (var category in categories)
+                {
+                    var usageCount = await GetCategoryUsageCountAsync(category.Id);
+                    categoryDtos.Add(MapToCategoryDto(category, usageCount));
+                }
+
+                _logger.LogInformation("Retrieved {Count} categories for type {Type}", categoryDtos.Count, type);
+                return categoryDtos;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving categories by type: {Type}", type);
+                throw;
+            }
+        }
+
+        public async Task<CategoryDto?> GetCategoryByIdAsync(Guid id)
+        {
+            try
+            {
+                _logger.LogInformation("Retrieving category by ID: {Id}", id);
+
+                var category = await _context.Categories
                     .FirstOrDefaultAsync(x => x.Id == id);
 
                 if (category == null)
                 {
-                    throw new ArgumentException("Category not found");
+                    _logger.LogWarning("Category not found: {Id}", id);
+                    return null;
                 }
 
-                // Check if category has transactions before allowing certain changes
-                var hasTransactions = await HasTransactionsAsync(id);
-                
-                // Validate parent account if specified
-                if (request.ParentAccountId.HasValue)
+                var usageCount = await GetCategoryUsageCountAsync(category.Id);
+                var categoryDto = MapToCategoryDto(category, usageCount);
+
+                _logger.LogInformation("Retrieved category: {Name}", category.Name);
+                return categoryDto;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving category by ID: {Id}", id);
+                throw;
+            }
+        }
+
+        public async Task<IEnumerable<CategoryDto>> SearchCategoriesAsync(string searchTerm)
+        {
+            try
+            {
+                _logger.LogInformation("Searching categories with term: {SearchTerm}", searchTerm);
+
+                if (string.IsNullOrWhiteSpace(searchTerm))
                 {
-                    var parentAccount = await _context.ChartOfAccounts
-                        .FirstOrDefaultAsync(x => x.Id == request.ParentAccountId.Value);
-                    
-                    if (parentAccount == null)
-                    {
-                        throw new ArgumentException("Parent account not found");
-                    }
-
-                    // Validate parent account type compatibility
-                    if (parentAccount.AccountType != category.AccountType)
-                    {
-                        throw new ArgumentException("Parent account type must match child account type");
-                    }
-
-                    // Prevent circular references
-                    if (parentAccount.ParentAccountId == id)
-                    {
-                        throw new ArgumentException("Cannot set parent account that would create circular reference");
-                    }
+                    return await GetAllCategoriesAsync();
                 }
 
-                // Update allowed fields
-                category.AccountName = request.AccountName;
-                category.ParentAccountId = request.ParentAccountId;
-                category.Description = request.Description;
-                category.CategoryGroup = request.CategoryGroup;
-                category.SortOrder = request.SortOrder;
-                category.AllowTransactions = request.AllowTransactions;
+                var lowerSearchTerm = searchTerm.ToLower();
+
+                var categories = await _context.Categories
+                    .Where(x => x.IsActive && 
+                        (x.Name.ToLower().Contains(lowerSearchTerm) ||
+                         (x.Description != null && x.Description.ToLower().Contains(lowerSearchTerm))))
+                    .OrderBy(x => x.Type)
+                    .ThenBy(x => x.Name)
+                    .ToListAsync();
+
+                var categoryDtos = new List<CategoryDto>();
+                foreach (var category in categories)
+                {
+                    var usageCount = await GetCategoryUsageCountAsync(category.Id);
+                    categoryDtos.Add(MapToCategoryDto(category, usageCount));
+                }
+
+                _logger.LogInformation("Found {Count} categories matching search term: {SearchTerm}", categoryDtos.Count, searchTerm);
+                return categoryDtos;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching categories with term: {SearchTerm}", searchTerm);
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region Write Operations
+
+        public async Task<CategoryDto> CreateCategoryAsync(CreateCategoryRequest request, string? userId = null)
+        {
+            try
+            {
+                _logger.LogInformation("Creating category: {Name} of type {Type}", request.Name, request.Type);
+
+                // Validate name uniqueness within type
+                if (!await IsCategoryNameUniqueAsync(request.Name, request.Type))
+                {
+                    var message = $"Category name '{request.Name}' already exists for type '{request.Type}'";
+                    _logger.LogWarning(message);
+                    throw new InvalidOperationException(message);
+                }
+
+                var category = new Category
+                {
+                    Name = request.Name.Trim(),
+                    Description = request.Description?.Trim(),
+                    Type = request.Type,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = userId
+                };
+
+                _context.Categories.Add(category);
+                await _context.SaveChangesAsync();
+
+                var categoryDto = MapToCategoryDto(category, 0);
+
+                _logger.LogInformation("Created category: {Id} - {Name}", category.Id, category.Name);
+                return categoryDto;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating category: {Name}", request.Name);
+                throw;
+            }
+        }
+
+        public async Task<CategoryDto> UpdateCategoryAsync(Guid id, UpdateCategoryRequest request, string? userId = null)
+        {
+            try
+            {
+                _logger.LogInformation("Updating category: {Id}", id);
+
+                var category = await _context.Categories
+                    .FirstOrDefaultAsync(x => x.Id == id);
+
+                if (category == null)
+                {
+                    var message = $"Category not found: {id}";
+                    _logger.LogWarning(message);
+                    throw new ArgumentException(message);
+                }
+
+                // Validate name uniqueness within type (excluding current category)
+                if (!await IsCategoryNameUniqueAsync(request.Name, category.Type, id))
+                {
+                    var message = $"Category name '{request.Name}' already exists for type '{category.Type}'";
+                    _logger.LogWarning(message);
+                    throw new InvalidOperationException(message);
+                }
+
+                // Update category properties
+                category.Name = request.Name.Trim();
+                category.Description = request.Description?.Trim();
+                category.IsActive = request.IsActive;
                 category.UpdatedAt = DateTime.UtcNow;
+                category.UpdatedBy = userId;
 
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("Updated category: {AccountCode} - {AccountName}", 
-                    category.AccountCode, category.AccountName);
+                var usageCount = await GetCategoryUsageCountAsync(category.Id);
+                var categoryDto = MapToCategoryDto(category, usageCount);
 
-                return category;
+                _logger.LogInformation("Updated category: {Id} - {Name}", category.Id, category.Name);
+                return categoryDto;
             }
             catch (Exception ex)
             {
@@ -213,102 +231,36 @@ namespace GarmentsERP.API.Services
             }
         }
 
-        public async Task<ChartOfAccount> ActivateCategoryAsync(Guid id)
-        {
-            var category = await _context.ChartOfAccounts
-                .FirstOrDefaultAsync(x => x.Id == id);
-
-            if (category == null)
-            {
-                throw new ArgumentException("Category not found");
-            }
-
-            category.IsActive = true;
-            category.UpdatedAt = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync();
-
-            _logger.LogInformation("Activated category: {AccountCode} - {AccountName}", 
-                category.AccountCode, category.AccountName);
-
-            return category;
-        }
-
-        public async Task<ChartOfAccount> DeactivateCategoryAsync(Guid id)
-        {
-            var category = await _context.ChartOfAccounts
-                .FirstOrDefaultAsync(x => x.Id == id);
-
-            if (category == null)
-            {
-                throw new ArgumentException("Category not found");
-            }
-
-            // Check if category has active child accounts
-            var hasActiveChildren = await _context.ChartOfAccounts
-                .AnyAsync(x => x.ParentAccountId == id && x.IsActive);
-
-            if (hasActiveChildren)
-            {
-                throw new InvalidOperationException("Cannot deactivate category with active child accounts");
-            }
-
-            category.IsActive = false;
-            category.UpdatedAt = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync();
-
-            _logger.LogInformation("Deactivated category: {AccountCode} - {AccountName}", 
-                category.AccountCode, category.AccountName);
-
-            return category;
-        }
-
         public async Task<bool> DeleteCategoryAsync(Guid id)
         {
             try
             {
-                var category = await _context.ChartOfAccounts
+                _logger.LogInformation("Deleting category: {Id}", id);
+
+                var category = await _context.Categories
                     .FirstOrDefaultAsync(x => x.Id == id);
 
                 if (category == null)
                 {
+                    _logger.LogWarning("Category not found for deletion: {Id}", id);
                     return false;
                 }
 
-                // Check if category has transactions
-                if (await HasTransactionsAsync(id))
+                // Check if category is used in transactions
+                if (await IsCategoryUsedInTransactionsAsync(id))
                 {
-                    throw new InvalidOperationException("Cannot delete category with existing transactions. Use deactivate instead.");
+                    var message = $"Cannot delete category '{category.Name}' because it is used in existing transactions. Use deactivate instead.";
+                    _logger.LogWarning(message);
+                    throw new InvalidOperationException(message);
                 }
 
-                // Check if category has child accounts
-                var hasChildren = await _context.ChartOfAccounts
-                    .AnyAsync(x => x.ParentAccountId == id);
-
-                if (hasChildren)
-                {
-                    throw new InvalidOperationException("Cannot delete category with child accounts");
-                }
-
-                // Check if category is referenced in CategoryContacts
-                var hasContactReferences = await _context.CategoryContacts
-                    .AnyAsync(x => x.CategoryId == id);
-
-                if (hasContactReferences)
-                {
-                    throw new InvalidOperationException("Cannot delete category with contact assignments");
-                }
-
-                // Soft delete by deactivating
+                // Soft delete by marking as inactive
                 category.IsActive = false;
                 category.UpdatedAt = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("Soft deleted category: {AccountCode} - {AccountName}", 
-                    category.AccountCode, category.AccountName);
-
+                _logger.LogInformation("Soft deleted category: {Id} - {Name}", category.Id, category.Name);
                 return true;
             }
             catch (Exception ex)
@@ -318,171 +270,160 @@ namespace GarmentsERP.API.Services
             }
         }
 
-        public async Task<bool> HardDeleteCategoryAsync(Guid id)
+        public async Task<CategoryDto> ToggleActiveStatusAsync(Guid id, string? userId = null)
         {
             try
             {
-                var category = await _context.ChartOfAccounts
+                _logger.LogInformation("Toggling active status for category: {Id}", id);
+
+                var category = await _context.Categories
                     .FirstOrDefaultAsync(x => x.Id == id);
 
                 if (category == null)
                 {
-                    return false;
+                    var message = $"Category not found: {id}";
+                    _logger.LogWarning(message);
+                    throw new ArgumentException(message);
                 }
 
-                // Check if category has transactions
-                if (await HasTransactionsAsync(id))
+                // If trying to deactivate, check if category is used in transactions
+                if (category.IsActive && await IsCategoryUsedInTransactionsAsync(id))
                 {
-                    throw new InvalidOperationException("Cannot hard delete category with existing transactions");
+                    var message = $"Cannot deactivate category '{category.Name}' because it is used in existing transactions.";
+                    _logger.LogWarning(message);
+                    throw new InvalidOperationException(message);
                 }
 
-                // Check if category has child accounts
-                var hasChildren = await _context.ChartOfAccounts
-                    .AnyAsync(x => x.ParentAccountId == id);
+                category.IsActive = !category.IsActive;
+                category.UpdatedAt = DateTime.UtcNow;
+                category.UpdatedBy = userId;
 
-                if (hasChildren)
-                {
-                    throw new InvalidOperationException("Cannot hard delete category with child accounts");
-                }
-
-                // Remove contact references first
-                var contactReferences = await _context.CategoryContacts
-                    .Where(x => x.CategoryId == id)
-                    .ToListAsync();
-
-                if (contactReferences.Any())
-                {
-                    _context.CategoryContacts.RemoveRange(contactReferences);
-                }
-
-                // Hard delete the category
-                _context.ChartOfAccounts.Remove(category);
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("Hard deleted category: {AccountCode} - {AccountName}", 
-                    category.AccountCode, category.AccountName);
+                var usageCount = await GetCategoryUsageCountAsync(category.Id);
+                var categoryDto = MapToCategoryDto(category, usageCount);
 
-                return true;
+                _logger.LogInformation("Toggled active status for category: {Id} - {Name} to {IsActive}", 
+                    category.Id, category.Name, category.IsActive);
+                
+                return categoryDto;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error hard deleting category: {Id}", id);
+                _logger.LogError(ex, "Error toggling active status for category: {Id}", id);
                 throw;
             }
         }
 
-        public async Task<bool> HasTransactionsAsync(Guid categoryId)
+        #endregion
+
+        #region Business Logic Operations
+
+        public async Task<bool> IsCategoryNameUniqueAsync(string name, CategoryType type, Guid? excludeId = null)
         {
-            return await _context.JournalEntryLines
-                .AnyAsync(x => x.AccountId == categoryId);
-        }
-
-        public async Task<string> GenerateAccountCodeAsync(AccountType accountType)
-        {
-            // Account code generation based on standard accounting numbering
-            var prefix = accountType switch
+            try
             {
-                AccountType.Asset => "1",
-                AccountType.Liability => "2",
-                AccountType.Equity => "3",
-                AccountType.Revenue => "4",
-                AccountType.Expense => "5",
-                _ => "9"
-            };
+                var query = _context.Categories
+                    .Where(x => x.Name.ToLower() == name.ToLower() && x.Type == type && x.IsActive);
 
-            // Find the highest existing account code for this type
-            var existingCodes = await _context.ChartOfAccounts
-                .Where(x => x.AccountCode.StartsWith(prefix))
-                .Select(x => x.AccountCode)
-                .ToListAsync();
-
-            var maxNumber = 0;
-            foreach (var code in existingCodes)
-            {
-                if (code.Length >= 4 && int.TryParse(code.Substring(1), out var number))
+                if (excludeId.HasValue)
                 {
-                    maxNumber = Math.Max(maxNumber, number);
+                    query = query.Where(x => x.Id != excludeId.Value);
                 }
-            }
 
-            // Generate next account code
-            var nextNumber = maxNumber + 1;
-            return $"{prefix}{nextNumber:D3}"; // e.g., "1001", "2001", etc.
+                var exists = await query.AnyAsync();
+                return !exists;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking category name uniqueness: {Name}, {Type}", name, type);
+                throw;
+            }
         }
 
-        public async Task<bool> IsAccountCodeUniqueAsync(string accountCode, Guid? excludeId = null)
+        public async Task<bool> IsCategoryUsedInTransactionsAsync(Guid categoryId)
         {
-            var query = _context.ChartOfAccounts
-                .Where(x => x.AccountCode == accountCode);
-
-            if (excludeId.HasValue)
+            try
             {
-                query = query.Where(x => x.Id != excludeId.Value);
-            }
+                _logger.LogDebug("Checking if category {CategoryId} is used in transactions", categoryId);
 
-            return !await query.AnyAsync();
+                // Check if category is referenced in any transaction tables
+                // Currently, the new Category system is not yet integrated with transaction tables
+                // The existing JournalEntryLine uses AccountId (ChartOfAccount), not CategoryId
+                
+                // Future integration points to check when cashbook transactions are implemented:
+                // 1. CashbookEntry table (when created) - should have CategoryId field
+                // 2. Any other transaction tables that will use the new Category system
+                
+                // For now, return false as no transaction tables reference the new Category system
+                // When implemented, this should be:
+                // var isUsed = await _context.CashbookEntries.AnyAsync(x => x.CategoryId == categoryId);
+                
+                var isUsed = await Task.FromResult(false);
+                
+                _logger.LogDebug("Category {CategoryId} usage check result: {IsUsed}", categoryId, isUsed);
+                return isUsed;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking category usage in transactions: {CategoryId}", categoryId);
+                throw;
+            }
         }
 
-        public async Task<decimal> GetCategoryBalanceAsync(Guid categoryId)
+        public async Task<int> GetCategoryUsageCountAsync(Guid categoryId)
         {
-            var category = await _context.ChartOfAccounts
-                .FirstOrDefaultAsync(x => x.Id == categoryId);
-
-            if (category == null)
+            try
             {
-                return 0;
+                _logger.LogDebug("Getting usage count for category {CategoryId}", categoryId);
+
+                // Count how many transactions use this category
+                // Currently, the new Category system is not yet integrated with transaction tables
+                // The existing JournalEntryLine uses AccountId (ChartOfAccount), not CategoryId
+                
+                // Future implementation should count:
+                // 1. CashbookEntry records (when created) that reference this CategoryId
+                // 2. Any other transaction records that will use the new Category system
+                
+                // When implemented, this should be:
+                // var usageCount = await _context.CashbookEntries
+                //     .Where(x => x.CategoryId == categoryId)
+                //     .CountAsync();
+                
+                var usageCount = await Task.FromResult(0);
+                
+                _logger.LogDebug("Category {CategoryId} usage count: {UsageCount}", categoryId, usageCount);
+                return usageCount;
             }
-
-            // Calculate balance from journal entry lines
-            var totalDebits = await _context.JournalEntryLines
-                .Where(x => x.AccountId == categoryId)
-                .SumAsync(x => x.Debit);
-
-            var totalCredits = await _context.JournalEntryLines
-                .Where(x => x.AccountId == categoryId)
-                .SumAsync(x => x.Credit);
-
-            // Calculate balance based on account type
-            var balance = category.AccountType switch
+            catch (Exception ex)
             {
-                AccountType.Asset or AccountType.Expense => totalDebits - totalCredits,
-                AccountType.Liability or AccountType.Equity or AccountType.Revenue => totalCredits - totalDebits,
-                _ => 0
+                _logger.LogError(ex, "Error getting category usage count: {CategoryId}", categoryId);
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region Private Helper Methods
+
+        private static CategoryDto MapToCategoryDto(Category category, int usageCount)
+        {
+            return new CategoryDto
+            {
+                Id = category.Id,
+                Name = category.Name,
+                Description = category.Description,
+                Type = category.Type,
+                TypeName = category.Type.ToString(),
+                IsActive = category.IsActive,
+                CreatedAt = category.CreatedAt,
+                UpdatedAt = category.UpdatedAt,
+                CreatedBy = category.CreatedBy,
+                UpdatedBy = category.UpdatedBy,
+                UsageCount = usageCount
             };
-
-            return balance + category.OpeningBalance;
         }
 
-        public async Task<IEnumerable<object>> GetCategoryTransactionsAsync(Guid categoryId, DateTime? startDate = null, DateTime? endDate = null)
-        {
-            var query = from jel in _context.JournalEntryLines
-                       join je in _context.JournalEntries on jel.JournalEntryId equals je.Id
-                       where jel.AccountId == categoryId
-                       select new
-                       {
-                           TransactionDate = je.TransactionDate,
-                           JournalNumber = je.JournalNumber,
-                           ReferenceNumber = je.ReferenceNumber,
-                           Description = jel.Description ?? je.Description,
-                           Debit = jel.Debit,
-                           Credit = jel.Credit,
-                           Status = je.Status
-                       };
-
-            if (startDate.HasValue)
-            {
-                query = query.Where(x => x.TransactionDate >= startDate.Value);
-            }
-
-            if (endDate.HasValue)
-            {
-                query = query.Where(x => x.TransactionDate <= endDate.Value);
-            }
-
-            return await query
-                .OrderByDescending(x => x.TransactionDate)
-                .ThenBy(x => x.JournalNumber)
-                .ToListAsync();
-        }
+        #endregion
     }
 }
