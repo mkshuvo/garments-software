@@ -25,70 +25,86 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import SettingsIcon from '@mui/icons-material/Settings';
 import LoginIcon from '@mui/icons-material/Login';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
+import ReceiptIcon from '@mui/icons-material/Receipt';
 
 const menuItems = [
   // Admin & User Management
   {
     title: 'Permissions',
     description: 'Manage user and role permissions',
-    icon: <AdminPanelSettingsIcon sx={{ fontSize: 40 }} color="primary" />, 
+    icon: <AdminPanelSettingsIcon sx={{ fontSize: 40 }} color="primary" />,
     href: '/admin/permissions',
     category: 'Administration'
   },
-  
+
   // Company & Business Settings
   {
     title: 'Companies',
     description: 'Manage company information',
-    icon: <BusinessIcon sx={{ fontSize: 40 }} color="primary" />, 
+    icon: <BusinessIcon sx={{ fontSize: 40 }} color="primary" />,
     href: '/admin/companies',
     category: 'Business'
   },
   {
     title: 'Business Settings',
     description: 'Configure business settings',
-    icon: <SettingsIcon sx={{ fontSize: 40 }} color="primary" />, 
+    icon: <SettingsIcon sx={{ fontSize: 40 }} color="primary" />,
     href: '/admin/business-settings',
     category: 'Business'
   },
-  
+
   // Financial Configuration
+  {
+    title: 'Accounting & Cash Book',
+    description: 'Manage cash book entries, journal entries, and financial reports',
+    icon: <AccountBalanceIcon sx={{ fontSize: 40 }} color="primary" />,
+    href: '/admin/accounting',
+    category: 'Financial'
+  },
+  {
+    title: 'Cash Book Entry',
+    description: 'Manual cash book entry in MM Fashion format',
+    icon: <ReceiptIcon sx={{ fontSize: 40 }} color="primary" />,
+    href: '/admin/accounting/cash-book-entry',
+    category: 'Financial'
+  },
   {
     title: 'Currencies',
     description: 'Manage currencies and exchange rates',
-    icon: <CurrencyExchangeIcon sx={{ fontSize: 40 }} color="primary" />, 
+    icon: <CurrencyExchangeIcon sx={{ fontSize: 40 }} color="primary" />,
     href: '/admin/currencies',
     category: 'Financial'
   },
   {
     title: 'Tax Rates',
     description: 'Configure tax rates and types',
-    icon: <PercentIcon sx={{ fontSize: 40 }} color="primary" />, 
+    icon: <PercentIcon sx={{ fontSize: 40 }} color="primary" />,
     href: '/admin/tax-rates',
     category: 'Financial'
   },
-  
+
   // Inventory & Products
   {
     title: 'Product Categories',
     description: 'Organize products into categories',
-    icon: <CategoryIcon sx={{ fontSize: 40 }} color="primary" />, 
+    icon: <CategoryIcon sx={{ fontSize: 40 }} color="primary" />,
     href: '/admin/product-categories',
     category: 'Inventory'
   },
   {
     title: 'Warehouses',
     description: 'Manage warehouse locations',
-    icon: <WarehouseIcon sx={{ fontSize: 40 }} color="primary" />, 
+    icon: <WarehouseIcon sx={{ fontSize: 40 }} color="primary" />,
     href: '/admin/warehouses',
     category: 'Inventory'
   },
-  
+
   // Reports
   {
     title: 'Report Templates',
     description: 'Configure and manage report templates',
-    icon: <DescriptionIcon sx={{ fontSize: 40 }} color="primary" />, 
+    icon: <DescriptionIcon sx={{ fontSize: 40 }} color="primary" />,
     href: '/admin/report-templates',
     category: 'Reports'
   },
@@ -117,7 +133,7 @@ export default function HomePage() {
               <Typography variant="h4" fontWeight="bold">
                 GarmentsERP
               </Typography>
-              
+
               {isAuthenticated ? (
                 <Stack direction="row" spacing={3} alignItems="center">
                   <Stack direction="row" spacing={2} alignItems="center">
@@ -128,14 +144,14 @@ export default function HomePage() {
                       <Typography variant="body1" fontWeight="medium">
                         {user?.name}
                       </Typography>
-                      <Chip 
-                        label={user?.roles?.[0] || 'User'} 
-                        size="small" 
-                        sx={{ 
+                      <Chip
+                        label={user?.roles?.[0] || 'User'}
+                        size="small"
+                        sx={{
                           backgroundColor: 'rgba(255,255,255,0.2)',
                           color: 'white',
                           fontSize: '0.75rem'
-                        }} 
+                        }}
                       />
                     </Box>
                   </Stack>
@@ -227,7 +243,7 @@ export default function HomePage() {
               >
                 Streamline your garment manufacturing, inventory, sales, and financial operations with our comprehensive ERP system.
               </Typography>
-              
+
               {!isAuthenticated && (
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3} sx={{ mt: 4 }}>
                   <Link href="/register" passHref>
@@ -273,6 +289,67 @@ export default function HomePage() {
           </Container>
         </Box>
 
+        {/* Quick Access Section for Authenticated Users */}
+        {isAuthenticated && (
+          <Container sx={{ py: 6 }}>
+            <Card sx={{ mb: 6, background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: 'white' }}>
+              <CardContent sx={{ p: 4 }}>
+                <Typography variant="h5" fontWeight="bold" gutterBottom>
+                  🚀 Quick Access
+                </Typography>
+                <Typography variant="body1" sx={{ mb: 3, opacity: 0.9 }}>
+                  Jump directly to commonly used features
+                </Typography>
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                  <Button
+                    variant="contained"
+                    startIcon={<AccountBalanceIcon />}
+                    onClick={() => window.open('/admin/accounting', '_blank')}
+                    sx={{
+                      backgroundColor: 'rgba(255,255,255,0.2)',
+                      color: 'white',
+                      '&:hover': {
+                        backgroundColor: 'rgba(255,255,255,0.3)',
+                      },
+                    }}
+                  >
+                    Accounting Dashboard
+                  </Button>
+                  <Button
+                    variant="contained"
+                    startIcon={<ReceiptIcon />}
+                    onClick={() => window.open('/admin/accounting/cash-book-entry', '_blank')}
+                    sx={{
+                      backgroundColor: 'rgba(255,255,255,0.2)',
+                      color: 'white',
+                      '&:hover': {
+                        backgroundColor: 'rgba(255,255,255,0.3)',
+                      },
+                    }}
+                  >
+                    New Cash Book Entry
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    startIcon={<DescriptionIcon />}
+                    onClick={() => window.open('/admin/accounting/balance', '_blank')}
+                    sx={{
+                      borderColor: 'white',
+                      color: 'white',
+                      '&:hover': {
+                        borderColor: 'white',
+                        backgroundColor: 'rgba(255,255,255,0.1)',
+                      },
+                    }}
+                  >
+                    View Balance
+                  </Button>
+                </Stack>
+              </CardContent>
+            </Card>
+          </Container>
+        )}
+
         {/* Menu Section */}
         <Container sx={{ py: 12 }}>
           <Stack spacing={8}>
@@ -284,12 +361,12 @@ export default function HomePage() {
                 Select a module to get started with your ERP configuration
               </Typography>
             </Box>
-            
+
             {/* Group menu items by category */}
             {['Administration', 'Business', 'Financial', 'Inventory', 'Reports'].map((category) => {
               const categoryItems = menuItems.filter(item => item.category === category);
               if (categoryItems.length === 0) return null;
-              
+
               return (
                 <Box key={category}>
                   <Typography variant="h4" gutterBottom color="text.primary" sx={{ mb: 4 }}>

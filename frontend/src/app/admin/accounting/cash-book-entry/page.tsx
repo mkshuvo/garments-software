@@ -31,6 +31,7 @@ import { useRouter } from 'next/navigation';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { categoryService } from '@/services/categoryService';
 
 interface CashBookEntry {
   id: string;
@@ -63,8 +64,11 @@ interface DebitTransaction {
 interface Category {
   id: string;
   name: string;
-  accountType: 'Asset' | 'Liability' | 'Equity' | 'Revenue' | 'Expense';
-  accountCode: string;
+  description?: string;
+  type: 'Credit' | 'Debit';
+  typeName: string;
+  isActive: boolean;
+  usageCount: number;
 }
 
 interface Contact {
@@ -73,16 +77,7 @@ interface Contact {
   contactType: 'Customer' | 'Supplier' | 'Both';
 }
 
-const SAMPLE_CATEGORIES: Category[] = [
-  { id: '1', name: 'Loan A/C Chairman', accountType: 'Liability', accountCode: '2001' },
-  { id: '2', name: 'Machine Purchase', accountType: 'Asset', accountCode: '1001' },
-  { id: '3', name: 'Fabric Purchase', accountType: 'Expense', accountCode: '5001' },
-  { id: '4', name: 'Salary A/C', accountType: 'Expense', accountCode: '6001' },
-  { id: '5', name: 'Electric Bill', accountType: 'Expense', accountCode: '7001' },
-  { id: '6', name: 'Received: Urbo ltd', accountType: 'Revenue', accountCode: '4001' },
-  { id: '7', name: 'Received: Brooklyn BD', accountType: 'Revenue', accountCode: '4002' },
-  { id: '8', name: 'Cash on Hand', accountType: 'Asset', accountCode: '1100' },
-];
+
 
 const SAMPLE_CONTACTS: Contact[] = [
   { id: '1', name: 'Urbo ltd', contactType: 'Customer' },
@@ -102,9 +97,12 @@ export default function CashBookEntryPage() {
     debitTransactions: []
   });
 
-  const [categories] = useState<Category[]>(SAMPLE_CATEGORIES);
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
+  const [creditCategories, setCreditCategories] = useState<Category[]>([]);
+  const [debitCategories, setDebitCategories] = useState<Category[]>([]);
   const [contacts] = useState<Contact[]>(SAMPLE_CONTACTS);
   const [loading, setLoading] = useState(false);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [errors, setErrors] = useState<string[]>([]);
 
   // Auto-generate reference number
@@ -112,6 +110,31 @@ export default function CashBookEntryPage() {
     const today = new Date();
     const refNumber = `CB-${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}-${Date.now().toString().slice(-4)}`;
     setEntry(prev => ({ ...prev, referenceNumber: refNumber }));
+  }, []);
+
+  // Load categories from API
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        setCategoriesLoading(true);
+        const categories = await categoryService.getAllCategories();
+        setAllCategories(categories);
+        
+        // Separate categories by type
+        const credits = categories.filter(c => c.type === 'Credit' && c.isActive);
+        const debits = categories.filter(c => c.type === 'Debit' && c.isActive);
+        
+        setCreditCategories(credits);
+        setDebitCategories(debits);
+      } catch (error) {
+        console.error('Failed to load categories:', error);
+        setErrors(prev => [...prev, 'Failed to load categories. Please refresh the page.']);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+
+    loadCategories();
   }, []);
 
   const addCreditTransaction = () => {
@@ -194,6 +217,12 @@ export default function CashBookEntryPage() {
       if (!t.categoryName.trim()) errors.push(`Credit transaction ${index + 1}: Category is required`);
       if (!t.particulars.trim()) errors.push(`Credit transaction ${index + 1}: Particulars is required`);
       if (t.amount <= 0) errors.push(`Credit transaction ${index + 1}: Amount must be greater than zero`);
+      
+      // Validate that the category exists in credit categories (if not freeSolo)
+      const categoryExists = creditCategories.some(c => c.name === t.categoryName);
+      if (!categoryExists && creditCategories.length > 0) {
+        errors.push(`Credit transaction ${index + 1}: "${t.categoryName}" is not a valid Credit category`);
+      }
     });
 
     // Validate debit transactions
@@ -201,6 +230,12 @@ export default function CashBookEntryPage() {
       if (!t.categoryName.trim()) errors.push(`Debit transaction ${index + 1}: Category is required`);
       if (!t.particulars.trim()) errors.push(`Debit transaction ${index + 1}: Particulars is required`);
       if (t.amount <= 0) errors.push(`Debit transaction ${index + 1}: Amount must be greater than zero`);
+      
+      // Validate that the category exists in debit categories (if not freeSolo)
+      const categoryExists = debitCategories.some(c => c.name === t.categoryName);
+      if (!categoryExists && debitCategories.length > 0) {
+        errors.push(`Debit transaction ${index + 1}: "${t.categoryName}" is not a valid Debit category`);
+      }
     });
 
     return errors;
@@ -248,7 +283,7 @@ export default function CashBookEntryPage() {
   const { totalCredits, totalDebits, difference } = calculateTotals();
   const isBalanced = difference < 0.01;
   const hasTransactions = entry.creditTransactions.length > 0 || entry.debitTransactions.length > 0;
-  const isFormValid = entry.referenceNumber.trim() && hasTransactions && isBalanced;
+  const isFormValid = entry.referenceNumber.trim() && hasTransactions && isBalanced && !categoriesLoading;
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -356,6 +391,15 @@ export default function CashBookEntryPage() {
           </CardContent>
         </Card>
 
+        {/* Categories Loading State */}
+        {categoriesLoading && (
+          <Alert severity="info" sx={{ mb: 3 }}>
+            <Typography variant="body2">
+              Loading categories from the new category system...
+            </Typography>
+          </Alert>
+        )}
+
         {/* Quick Help - Double Entry Bookkeeping */}
         <Card sx={{ mb: 3, backgroundColor: 'info.light', color: 'info.dark' }}>
           <CardContent>
@@ -370,6 +414,10 @@ export default function CashBookEntryPage() {
             </Typography>
             <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
               ⚖️ <strong>Balance Rule:</strong> Total Credits must equal Total Debits for the entry to be saved
+            </Typography>
+            <Typography variant="body2" sx={{ mt: 2, fontStyle: 'italic' }}>
+              📝 <strong>New:</strong> Categories are now managed through the dedicated Category Management system. 
+              Only active Credit categories will appear in Credit transactions, and only active Debit categories in Debit transactions.
             </Typography>
           </CardContent>
         </Card>
@@ -426,18 +474,35 @@ export default function CashBookEntryPage() {
                       </Stack>
                       <Autocomplete
                         freeSolo
-                        options={categories.map(c => c.name)}
+                        options={creditCategories.map(c => c.name)}
                         value={transaction.categoryName}
                         onChange={(_, value) => updateCreditTransaction(transaction.id, 'categoryName', value || '')}
                         onInputChange={(_, value) => updateCreditTransaction(transaction.id, 'categoryName', value || '')}
+                        loading={categoriesLoading}
                         renderInput={(params) => (
                           <TextField
                             {...params}
                             size="small"
-                            label="Category"
+                            label="Credit Category"
                             placeholder="e.g., Loan A/C Chairman, Received: Customer Name"
+                            helperText="Only Credit (Money In) categories are shown"
                           />
                         )}
+                        renderOption={(props, option) => {
+                          const category = creditCategories.find(c => c.name === option);
+                          return (
+                            <li {...props}>
+                              <Box>
+                                <Typography variant="body2">{option}</Typography>
+                                {category?.description && (
+                                  <Typography variant="caption" color="text.secondary">
+                                    {category.description}
+                                  </Typography>
+                                )}
+                              </Box>
+                            </li>
+                          );
+                        }}
                       />
                       <TextField
                         size="small"
@@ -471,6 +536,11 @@ export default function CashBookEntryPage() {
                     <AccountBalanceIcon sx={{ fontSize: 48, mb: 1 }} />
                     <Typography>No credit transactions added</Typography>
                     <Typography variant="body2">Click &quot;Add Credit&quot; to start</Typography>
+                    {!categoriesLoading && creditCategories.length === 0 && (
+                      <Typography variant="caption" color="warning.main" sx={{ mt: 1, display: 'block' }}>
+                        ⚠️ No Credit categories available. Please create some in Category Management.
+                      </Typography>
+                    )}
                   </Box>
                 )}
               </CardContent>
@@ -528,18 +598,35 @@ export default function CashBookEntryPage() {
                       </Stack>
                       <Autocomplete
                         freeSolo
-                        options={categories.map(c => c.name)}
+                        options={debitCategories.map(c => c.name)}
                         value={transaction.categoryName}
                         onChange={(_, value) => updateDebitTransaction(transaction.id, 'categoryName', value || '')}
                         onInputChange={(_, value) => updateDebitTransaction(transaction.id, 'categoryName', value || '')}
+                        loading={categoriesLoading}
                         renderInput={(params) => (
                           <TextField
                             {...params}
                             size="small"
-                            label="Category"
+                            label="Debit Category"
                             placeholder="e.g., Fabric Purchase, Salary A/C, Electric Bill"
+                            helperText="Only Debit (Money Out) categories are shown"
                           />
                         )}
+                        renderOption={(props, option) => {
+                          const category = debitCategories.find(c => c.name === option);
+                          return (
+                            <li {...props}>
+                              <Box>
+                                <Typography variant="body2">{option}</Typography>
+                                {category?.description && (
+                                  <Typography variant="caption" color="text.secondary">
+                                    {category.description}
+                                  </Typography>
+                                )}
+                              </Box>
+                            </li>
+                          );
+                        }}
                       />
                       <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
                         <Autocomplete
@@ -590,6 +677,11 @@ export default function CashBookEntryPage() {
                     <AccountBalanceIcon sx={{ fontSize: 48, mb: 1 }} />
                     <Typography>No debit transactions added</Typography>
                     <Typography variant="body2">Click &quot;Add Debit&quot; to start</Typography>
+                    {!categoriesLoading && debitCategories.length === 0 && (
+                      <Typography variant="caption" color="warning.main" sx={{ mt: 1, display: 'block' }}>
+                        ⚠️ No Debit categories available. Please create some in Category Management.
+                      </Typography>
+                    )}
                   </Box>
                 )}
               </CardContent>

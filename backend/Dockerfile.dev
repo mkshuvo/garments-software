@@ -1,6 +1,5 @@
-# Multi-stage development Dockerfile with optimized caching
-# Stage 1: Base SDK image with tools
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS base-dev
+# Development Dockerfile for .NET 8.0
+FROM mcr.microsoft.com/dotnet/sdk:8.0
 
 # Install essential tools for development and health checks
 RUN apt-get update && \
@@ -14,30 +13,17 @@ RUN apt-get update && \
 # Set working directory
 WORKDIR /app
 
-# Stage 2: Dependency restoration (cached layer)
-FROM base-dev AS dependencies
-
-# Copy only project files for dependency restoration
+# Copy project file and restore dependencies
 COPY GarmentsERP.API/*.csproj ./GarmentsERP.API/
+RUN dotnet restore GarmentsERP.API/
 
-# Restore dependencies with optimizations for development
-RUN dotnet restore GarmentsERP.API/ \
-    --verbosity minimal \
-    --nologo
-
-# Stage 3: Development environment
-FROM dependencies AS development
-
-# Copy source code (this layer will change frequently)
+# Copy source code
 COPY . .
 
-# Set proper permissions for the application directory
+# Set proper permissions
 RUN chmod -R 755 /app
 
-# Create development-specific directories
-RUN mkdir -p /app/logs /app/temp
-
-# Set environment variables optimized for development
+# Set environment variables for development
 ENV ASPNETCORE_ENVIRONMENT=Development
 ENV ASPNETCORE_URLS=http://+:8080
 ENV DOTNET_USE_POLLING_FILE_WATCHER=true
@@ -48,9 +34,12 @@ ENV DOTNET_RUNNING_IN_CONTAINER=true
 # Expose port
 EXPOSE 8080
 
-# Health check optimized for development
-HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=3 \
-    CMD curl -f http://localhost:8080/api/health || curl -f http://localhost:8080/health || exit 1
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8080/api/health || exit 1
 
-# Use dotnet watch for hot reload with optimized settings
-CMD ["dotnet", "watch", "run", "--project", "GarmentsERP.API", "--urls", "http://0.0.0.0:8080", "--no-launch-profile"]
+# Set working directory to the project folder
+WORKDIR /app/GarmentsERP.API
+
+# Use dotnet watch for hot reload
+CMD ["dotnet", "watch", "run", "--urls", "http://0.0.0.0:8080", "--no-launch-profile"]
