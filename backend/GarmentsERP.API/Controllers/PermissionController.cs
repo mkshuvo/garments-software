@@ -350,5 +350,30 @@ namespace GarmentsERP.API.Controllers
                 return StatusCode(500, "Internal server error");
             }
         }
+
+        /// <summary>
+        /// Get current user's effective permissions (combined role and direct permissions)
+        /// </summary>
+        [HttpGet("my-permissions")]
+        [Authorize]
+        public async Task<ActionResult<IEnumerable<PermissionResponseDto>>> GetMyPermissions()
+        {
+            try
+            {
+                var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (userId == null)
+                {
+                    return Unauthorized();
+                }
+
+                var permissions = await _permissionService.GetUserEffectivePermissionsAsync(userId);
+                return Ok(permissions);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving current user's effective permissions");
+                return StatusCode(500, "Internal server error");
+            }
+        }
     }
 }

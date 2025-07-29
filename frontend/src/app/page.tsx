@@ -14,7 +14,8 @@ import {
 } from '@mui/material'
 import Link from 'next/link'
 import { useAuthStore } from '@/stores/authStore'
-import ProtectedRoute from '@/components/auth/ProtectedRoute'
+import { authService } from '@/services/authService'
+
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import BusinessIcon from '@mui/icons-material/Business';
 import CurrencyExchangeIcon from '@mui/icons-material/CurrencyExchange';
@@ -70,6 +71,13 @@ const menuItems = [
     category: 'Financial'
   },
   {
+    title: 'Transaction Categories',
+    description: 'Manage credit and debit categories for cash book entries',
+    icon: <CategoryIcon sx={{ fontSize: 40 }} color="primary" />,
+    href: '/admin/accounting/categories',
+    category: 'Financial'
+  },
+  {
     title: 'Currencies',
     description: 'Manage currencies and exchange rates',
     icon: <CurrencyExchangeIcon sx={{ fontSize: 40 }} color="primary" />,
@@ -111,10 +119,24 @@ const menuItems = [
 ];
 
 export default function HomePage() {
-  const { isAuthenticated, user, logout } = useAuthStore()
+  const { isAuthenticated, user, logout, login } = useAuthStore()
+  
+  // Quick test login function for development
+  const handleTestLogin = async () => {
+    try {
+      const response = await authService.login({
+        email: 'admin@example.com',
+        password: 'password'
+      })
+      login(response.user, response.token)
+      alert('Login successful!')
+    } catch (error) {
+      console.error('Test login failed:', error)
+      alert('Test login failed. Try different credentials or check the backend.')
+    }
+  }
 
   return (
-    <ProtectedRoute>
       <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default' }}>
         {/* Header */}
         <Box
@@ -173,6 +195,21 @@ export default function HomePage() {
                 </Stack>
               ) : (
                 <Stack direction="row" spacing={2}>
+                  <Button
+                    variant="contained"
+                    color="secondary"
+                    startIcon={<LoginIcon />}
+                    onClick={handleTestLogin}
+                    sx={{
+                      backgroundColor: 'rgba(255,255,255,0.2)',
+                      color: 'white',
+                      '&:hover': {
+                        backgroundColor: 'rgba(255,255,255,0.3)',
+                      },
+                    }}
+                  >
+                    Test Login
+                  </Button>
                   <Link href="/login" passHref>
                     <Button
                       variant="outlined"
@@ -304,7 +341,8 @@ export default function HomePage() {
                   <Button
                     variant="contained"
                     startIcon={<AccountBalanceIcon />}
-                    onClick={() => window.open('/admin/accounting', '_blank')}
+                    component={Link}
+                    href="/admin/accounting"
                     sx={{
                       backgroundColor: 'rgba(255,255,255,0.2)',
                       color: 'white',
@@ -318,7 +356,8 @@ export default function HomePage() {
                   <Button
                     variant="contained"
                     startIcon={<ReceiptIcon />}
-                    onClick={() => window.open('/admin/accounting/cash-book-entry', '_blank')}
+                    component={Link}
+                    href="/admin/accounting/cash-book-entry"
                     sx={{
                       backgroundColor: 'rgba(255,255,255,0.2)',
                       color: 'white',
@@ -330,9 +369,25 @@ export default function HomePage() {
                     New Cash Book Entry
                   </Button>
                   <Button
+                    variant="contained"
+                    startIcon={<CategoryIcon />}
+                    component={Link}
+                    href="/admin/accounting/categories"
+                    sx={{
+                      backgroundColor: 'rgba(255,255,255,0.2)',
+                      color: 'white',
+                      '&:hover': {
+                        backgroundColor: 'rgba(255,255,255,0.3)',
+                      },
+                    }}
+                  >
+                    Manage Categories
+                  </Button>
+                  <Button
                     variant="outlined"
                     startIcon={<DescriptionIcon />}
-                    onClick={() => window.open('/admin/accounting/balance', '_blank')}
+                    component={Link}
+                    href="/admin/accounting/balance"
                     sx={{
                       borderColor: 'white',
                       color: 'white',
@@ -445,6 +500,5 @@ export default function HomePage() {
           </Container>
         </Box>
       </Box>
-    </ProtectedRoute>
   )
 }

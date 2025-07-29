@@ -635,10 +635,10 @@ export const isCategory = (value: unknown): value is Category => {
     'name' in value &&
     'type' in value &&
     'isActive' in value &&
-    typeof (value as any).id === 'string' &&
-    typeof (value as any).name === 'string' &&
-    isCategoryType((value as any).type) &&
-    typeof (value as any).isActive === 'boolean'
+    typeof (value as Category).id === 'string' &&
+    typeof (value as Category).name === 'string' &&
+    isCategoryType((value as Category).type) &&
+    typeof (value as Category).isActive === 'boolean'
   );
 };
 

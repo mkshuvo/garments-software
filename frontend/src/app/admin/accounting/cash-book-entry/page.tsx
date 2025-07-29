@@ -31,7 +31,7 @@ import { useRouter } from 'next/navigation';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { categoryService } from '@/services/categoryService';
+import { categoryService, CategoryType, Category as CategoryModel } from '@/services/categoryService';
 
 interface CashBookEntry {
   id: string;
@@ -61,15 +61,6 @@ interface DebitTransaction {
   amount: number;
 }
 
-interface Category {
-  id: string;
-  name: string;
-  description?: string;
-  type: 'Credit' | 'Debit';
-  typeName: string;
-  isActive: boolean;
-  usageCount: number;
-}
 
 interface Contact {
   id: string;
@@ -97,9 +88,9 @@ export default function CashBookEntryPage() {
     debitTransactions: []
   });
 
-  const [allCategories, setAllCategories] = useState<Category[]>([]);
-  const [creditCategories, setCreditCategories] = useState<Category[]>([]);
-  const [debitCategories, setDebitCategories] = useState<Category[]>([]);
+
+  const [creditCategories, setCreditCategories] = useState<CategoryModel[]>([]);
+  const [debitCategories, setDebitCategories] = useState<CategoryModel[]>([]);
   const [contacts] = useState<Contact[]>(SAMPLE_CONTACTS);
   const [loading, setLoading] = useState(false);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
@@ -117,12 +108,11 @@ export default function CashBookEntryPage() {
     const loadCategories = async () => {
       try {
         setCategoriesLoading(true);
-        const categories = await categoryService.getAllCategories();
-        setAllCategories(categories);
+        const categories = await categoryService.getAll();
         
         // Separate categories by type
-        const credits = categories.filter(c => c.type === 'Credit' && c.isActive);
-        const debits = categories.filter(c => c.type === 'Debit' && c.isActive);
+        const credits = categories.filter(c => c.type === CategoryType.Credit && c.isActive);
+        const debits = categories.filter(c => c.type === CategoryType.Debit && c.isActive);
         
         setCreditCategories(credits);
         setDebitCategories(debits);

@@ -16,7 +16,8 @@ import {
   Assessment,
   Receipt,
   PieChart,
-  TrendingUp
+  TrendingUp,
+  Category
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 
@@ -39,6 +40,14 @@ export default function AccountingPage() {
       path: '/admin/accounting/cash-book-import',
       color: 'secondary.main',
       bgColor: 'secondary.light'
+    },
+    {
+      title: 'Categories',
+      description: 'Manage credit and debit categories for transactions',
+      icon: <Category />,
+      path: '/admin/accounting/categories',
+      color: 'warning.main',
+      bgColor: 'warning.light'
     },
     {
       title: 'Chart of Accounts',
@@ -189,6 +198,13 @@ export default function AccountingPage() {
               onClick={() => router.push('/admin/accounting/reports')}
             >
               Generate Reports
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<Category />}
+              onClick={() => router.push('/admin/accounting/categories')}
+            >
+              Manage Categories
             </Button>
             <Button
               variant="outlined"
