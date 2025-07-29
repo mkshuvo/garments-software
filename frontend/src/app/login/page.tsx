@@ -66,8 +66,8 @@ export default function LoginPage() {
         password: password
       })
       
-      // Assuming the response contains user and token
-      login(response.user, response.token)
+      // Use the async login method
+      await login(response.user, response.token)
       // Success - redirect handled by useEffect
     } catch (err: unknown) {
       if (err instanceof Error) {

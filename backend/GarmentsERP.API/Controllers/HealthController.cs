@@ -139,6 +139,95 @@ namespace GarmentsERP.API.Controllers
         }
 
         /// <summary>
+        /// Verify permission seeding status
+        /// </summary>
+        [HttpGet("permissions")]
+        public async Task<IActionResult> CheckPermissions()
+        {
+            try
+            {
+                var permissions = await _context.Permissions.ToListAsync();
+                var roles = await _context.Roles.ToListAsync();
+                var rolePermissions = await _context.RolePermissions.ToListAsync();
+
+                var expectedPermissions = new[]
+                {
+                    new { Resource = "Category", Action = "View" },
+                    new { Resource = "Category", Action = "Create" },
+                    new { Resource = "Category", Action = "Update" },
+                    new { Resource = "Category", Action = "Delete" },
+                    new { Resource = "User", Action = "View" },
+                    new { Resource = "User", Action = "Create" },
+                    new { Resource = "User", Action = "Update" },
+                    new { Resource = "User", Action = "Delete" },
+                    new { Resource = "Role", Action = "View" },
+                    new { Resource = "Role", Action = "Create" },
+                    new { Resource = "Role", Action = "Update" },
+                    new { Resource = "Role", Action = "Delete" },
+                    new { Resource = "Permission", Action = "View" },
+                    new { Resource = "Permission", Action = "Create" },
+                    new { Resource = "Permission", Action = "Update" },
+                    new { Resource = "Permission", Action = "Delete" }
+                };
+
+                var missingPermissions = expectedPermissions
+                    .Where(expected => !permissions.Any(p => p.Resource == expected.Resource && p.Action == expected.Action))
+                    .Select(p => $"{p.Resource}.{p.Action}")
+                    .ToList();
+
+                var expectedRoles = new[] { "Admin", "Manager", "Employee" };
+                var missingRoles = expectedRoles
+                    .Where(expected => !roles.Any(r => r.Name == expected))
+                    .ToList();
+
+                var rolePermissionCounts = roles.ToDictionary(
+                    role => role.Name ?? "Unknown",
+                    role => rolePermissions.Count(rp => rp.RoleId == role.Id)
+                );
+
+                var isHealthy = missingPermissions.Count == 0 && missingRoles.Count == 0;
+
+                var response = new
+                {
+                    status = isHealthy ? "healthy" : "unhealthy",
+                    timestamp = DateTime.UtcNow,
+                    permissions = new
+                    {
+                        total = permissions.Count,
+                        expected = expectedPermissions.Length,
+                        active = permissions.Count(p => p.IsActive),
+                        missing = missingPermissions,
+                        allExpectedFound = missingPermissions.Count == 0
+                    },
+                    roles = new
+                    {
+                        total = roles.Count,
+                        expected = expectedRoles.Length,
+                        missing = missingRoles,
+                        allExpectedFound = missingRoles.Count == 0,
+                        permissionCounts = rolePermissionCounts
+                    },
+                    rolePermissions = new
+                    {
+                        totalAssignments = rolePermissions.Count
+                    }
+                };
+
+                return isHealthy ? Ok(response) : StatusCode(503, response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Permission verification failed");
+                return StatusCode(500, new
+                {
+                    status = "error",
+                    error = ex.Message,
+                    timestamp = DateTime.UtcNow
+                });
+            }
+        }
+
+        /// <summary>
         /// Kubernetes-style liveness probe - checks if app is alive and should not be restarted
         /// </summary>
         [HttpGet("live")]

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using GarmentsERP.API.DTOs;
 using GarmentsERP.API.Services.Interfaces;
+using GarmentsERP.API.Interfaces;
 using System.Security.Claims;
 
 namespace GarmentsERP.API.Controllers
@@ -11,39 +12,92 @@ namespace GarmentsERP.API.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
+        private readonly IPermissionSeederService _permissionSeederService;
         private readonly ILogger<AuthController> _logger;
 
         public AuthController(
             IAuthService authService,
+            IPermissionSeederService permissionSeederService,
             ILogger<AuthController> logger)
         {
             _authService = authService;
+            _permissionSeederService = permissionSeederService;
             _logger = logger;
         }        [HttpPost("setup-admin")]
         public async Task<IActionResult> SetupAdmin(RegisterDto registerDto)
         {
-            if (!ModelState.IsValid)
+            try
             {
-                return BadRequest(ModelState);
-            }
+                _logger.LogInformation("Admin setup process initiated for email: {Email}", registerDto.Email);
 
-            // Check if any admin users already exist
-            var existingAdmins = await _authService.GetUsersByRoleAsync("Admin");
-            if (existingAdmins.Any())
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogWarning("Admin setup failed due to invalid model state");
+                    return BadRequest(new { 
+                        message = "Invalid input data provided.",
+                        errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)
+                    });
+                }
+
+                // Check if any admin users already exist
+                var existingAdmins = await _authService.GetUsersByRoleAsync("Admin");
+                if (existingAdmins.Any())
+                {
+                    _logger.LogWarning("Admin setup attempted but admin user already exists");
+                    return BadRequest(new { 
+                        message = "Admin user already exists. Use regular registration.",
+                        code = "ADMIN_EXISTS"
+                    });
+                }
+
+                // Step 1: Ensure all permissions and role assignments are properly seeded
+                _logger.LogInformation("Seeding permissions and role assignments before admin creation");
+                await _permissionSeederService.SeedPermissionsAndRoleAssignmentsAsync();
+
+                // Step 2: Force admin role for first admin setup
+                registerDto.Role = "Admin";
+                
+                _logger.LogInformation("Creating admin user with email: {Email}", registerDto.Email);
+                var result = await _authService.RegisterAsync(registerDto);
+
+                if (result.IsSuccess)
+                {
+                    _logger.LogInformation("Admin user created successfully: {Email}", registerDto.Email);
+                    
+                    // Step 3: Verify admin user has all necessary permissions
+                    var adminUsers = await _authService.GetUsersByRoleAsync("Admin");
+                    var createdAdmin = adminUsers.FirstOrDefault(u => u.Email == registerDto.Email);
+                    
+                    if (createdAdmin != null)
+                    {
+                        _logger.LogInformation("Admin setup completed successfully for user ID: {UserId}", createdAdmin.Id);
+                        return Ok(new { 
+                            message = "First admin user created successfully. You can now login.",
+                            adminId = createdAdmin.Id,
+                            email = createdAdmin.Email
+                        });
+                    }
+                    else
+                    {
+                        _logger.LogError("Admin user created but could not be retrieved for verification");
+                        return Ok(new { message = "Admin user created successfully. You can now login." });
+                    }
+                }
+
+                _logger.LogError("Admin user creation failed: {Message}", result.Message);
+                return BadRequest(new { 
+                    message = $"Failed to create admin user: {result.Message}",
+                    code = "ADMIN_CREATION_FAILED"
+                });
+            }
+            catch (Exception ex)
             {
-                return BadRequest(new { message = "Admin user already exists. Use regular registration." });
+                _logger.LogError(ex, "Unexpected error occurred during admin setup for email: {Email}", registerDto.Email);
+                return StatusCode(500, new { 
+                    message = "An unexpected error occurred during admin setup. Please try again.",
+                    code = "ADMIN_SETUP_ERROR"
+                });
             }
-
-            // Force admin role for first admin setup
-            registerDto.Role = "Admin";
-            var result = await _authService.RegisterAsync(registerDto);
-
-            if (result.IsSuccess)
-            {
-                return Ok(new { message = "First admin user created successfully. You can now login." });
-            }
-
-            return BadRequest(new { message = result.Message });
         }
 
         [HttpPost("register")]

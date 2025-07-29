@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import AuthDebug from '@/components/debug/AuthDebug';
 import {
   Box,
   Typography,
@@ -50,6 +51,8 @@ import {
   CreateCategoryRequest, 
   UpdateCategoryRequest 
 } from '@/services/categoryService';
+import { PermissionGuard } from '@/components/auth/PermissionGuard';
+import { ApiError } from '@/config/api';
 
 // Form data interfaces
 interface CategoryFormData {
@@ -58,6 +61,52 @@ interface CategoryFormData {
   type: CategoryType;
   isActive: boolean;
 }
+
+// Helper functions for error handling
+const getPermissionErrorMessage = (action: string): string => {
+  switch (action.toLowerCase()) {
+    case 'create':
+      return 'You do not have permission to create categories. Please contact your administrator.';
+    case 'update':
+    case 'edit':
+      return 'You do not have permission to edit categories. Please contact your administrator.';
+    case 'delete':
+      return 'You do not have permission to delete categories. Please contact your administrator.';
+    case 'view':
+      return 'You do not have permission to view categories. Please contact your administrator.';
+    default:
+      return 'You do not have permission to perform this action. Please contact your administrator.';
+  }
+};
+
+const formatApiError = (error: unknown, action?: string): string => {
+  if (typeof error === 'object' && error !== null && 'status' in error) {
+    const apiError = error as ApiError;
+    
+    switch (apiError.status) {
+      case 403:
+        return action ? getPermissionErrorMessage(action) : 'Access denied. You do not have permission to perform this action.';
+      case 401:
+        return 'Your session has expired. Please log in again.';
+      case 404:
+        return 'The requested category was not found. It may have been deleted.';
+      case 409:
+        return 'A category with this name already exists. Please choose a different name.';
+      case 422:
+        return apiError.message || 'Please check your input and try again.';
+      case 500:
+        return 'A server error occurred. Please try again later.';
+      default:
+        return apiError.message || 'An unexpected error occurred. Please try again.';
+    }
+  }
+  
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    return (error as { message: string }).message;
+  }
+  
+  return 'An unexpected error occurred. Please try again.';
+};
 
 const CategoriesPage = () => {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -93,7 +142,8 @@ const CategoriesPage = () => {
       setFilteredCategories(data);
       setError(null);
     } catch (error) {
-      setError('Failed to load categories');
+      const errorMessage = formatApiError(error, 'view');
+      setError(errorMessage);
       console.error('Error loading categories:', error);
     } finally {
       setLoading(false);
@@ -136,8 +186,9 @@ const CategoriesPage = () => {
     setSearchTerm(event.target.value);
   };
 
-  const handleTypeFilterChange = (event: any) => {
-    setTypeFilter(event.target.value);
+  const handleTypeFilterChange = (event: { target: { value: unknown } }) => {
+    const value = event.target.value as '' | CategoryType;
+    setTypeFilter(value);
   };
 
   // Dialog handlers
@@ -182,7 +233,7 @@ const CategoriesPage = () => {
   };
 
   // Form handlers
-  const handleFormChange = (field: keyof CategoryFormData, value: any) => {
+  const handleFormChange = (field: keyof CategoryFormData, value: string | boolean | CategoryType) => {
     setFormData(prev => ({
       ...prev,
       [field]: value,
@@ -196,6 +247,7 @@ const CategoriesPage = () => {
     }
 
     setSubmitting(true);
+    setError(null); // Clear previous errors
     try {
       const createRequest: CreateCategoryRequest = {
         name: formData.name.trim(),
@@ -208,7 +260,7 @@ const CategoriesPage = () => {
       setSuccess('Category created successfully');
       handleCloseDialogs();
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to create category';
+      const errorMessage = formatApiError(error, 'create');
       setError(errorMessage);
       console.error('Error creating category:', error);
     } finally {
@@ -223,6 +275,7 @@ const CategoriesPage = () => {
     }
 
     setSubmitting(true);
+    setError(null); // Clear previous errors
     try {
       const updateRequest: UpdateCategoryRequest = {
         name: formData.name.trim(),
@@ -237,7 +290,7 @@ const CategoriesPage = () => {
       setSuccess('Category updated successfully');
       handleCloseDialogs();
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to update category';
+      const errorMessage = formatApiError(error, 'update');
       setError(errorMessage);
       console.error('Error updating category:', error);
     } finally {
@@ -249,13 +302,14 @@ const CategoriesPage = () => {
     if (!categoryToDelete) return;
 
     setSubmitting(true);
+    setError(null); // Clear previous errors
     try {
       await categoryService.delete(categoryToDelete.id);
       setCategories(prev => prev.filter(cat => cat.id !== categoryToDelete.id));
       setSuccess('Category deleted successfully');
       handleCloseDialogs();
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to delete category';
+      const errorMessage = formatApiError(error, 'delete');
       setError(errorMessage);
       console.error('Error deleting category:', error);
     } finally {
@@ -273,6 +327,7 @@ const CategoriesPage = () => {
 
   return (
     <Box sx={{ p: 3 }}>
+      <AuthDebug />
       {/* Header */}
       <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Box>
@@ -283,14 +338,33 @@ const CategoriesPage = () => {
             Manage your cashbook categories for credit and debit transactions
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleCreateCategory}
-          sx={{ borderRadius: 2 }}
+        <PermissionGuard 
+          resource={"Category"} 
+          action={"Create"}
+          fallback={
+            <Tooltip title="You need 'Create Category' permission to add new categories">
+              <span>
+                <Button
+                  variant="outlined"
+                  startIcon={<AddIcon />}
+                  disabled
+                  sx={{ borderRadius: 2, opacity: 0.6 }}
+                >
+                  Create Category
+                </Button>
+              </span>
+            </Tooltip>
+          }
         >
-          Create Category
-        </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleCreateCategory}
+            sx={{ borderRadius: 2 }}
+          >
+            Create Category
+          </Button>
+        </PermissionGuard>
       </Box>
 
       {/* Search and Filters */}
@@ -337,7 +411,12 @@ const CategoriesPage = () => {
 
       {/* Error and Success Messages */}
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+        <Alert 
+          severity={error.includes('permission') || error.includes('Access denied') ? 'warning' : 'error'} 
+          sx={{ mb: 2 }} 
+          onClose={() => setError(null)}
+          variant={error.includes('permission') || error.includes('Access denied') ? 'filled' : 'standard'}
+        >
           {error}
         </Alert>
       )}
@@ -440,25 +519,61 @@ const CategoriesPage = () => {
                     </TableCell>
                     <TableCell align="center">
                       <Stack direction="row" spacing={1} justifyContent="center">
-                        <Tooltip title="Edit Category">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleEditCategory(category)}
-                            color="primary"
-                          >
-                            <EditIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
+                        <PermissionGuard 
+                          resource={"Category"} 
+                          action={"Update"}
+                          fallback={
+                            <Tooltip title="You need 'Update Category' permission to edit categories">
+                              <span>
+                                <IconButton
+                                  size="small"
+                                  disabled
+                                  sx={{ opacity: 0.4 }}
+                                >
+                                  <EditIcon fontSize="small" />
+                                </IconButton>
+                              </span>
+                            </Tooltip>
+                          }
+                        >
+                          <Tooltip title="Edit Category">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleEditCategory(category)}
+                              color="primary"
+                            >
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </PermissionGuard>
                         
-                        <Tooltip title="Delete Category">
-                          <IconButton
-                            size="small"
-                            color="error"
-                            onClick={() => handleDeleteCategory(category)}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
+                        <PermissionGuard 
+                          resource={"Category"} 
+                          action={"Delete"}
+                          fallback={
+                            <Tooltip title="You need 'Delete Category' permission to remove categories">
+                              <span>
+                                <IconButton
+                                  size="small"
+                                  disabled
+                                  sx={{ opacity: 0.4 }}
+                                >
+                                  <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              </span>
+                            </Tooltip>
+                          }
+                        >
+                          <Tooltip title="Delete Category">
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => handleDeleteCategory(category)}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </PermissionGuard>
                       </Stack>
                     </TableCell>
                   </TableRow>

@@ -32,6 +32,7 @@ namespace GarmentsERP.API.Data
         public DbSet<Permission> Permissions { get; set; }
         public DbSet<RolePermission> RolePermissions { get; set; }
         public DbSet<UserPermission> UserPermissions { get; set; }
+        public DbSet<RoleAuditLog> RoleAuditLogs { get; set; }
 
         // Enterprise Accounting Models
         // Accounting

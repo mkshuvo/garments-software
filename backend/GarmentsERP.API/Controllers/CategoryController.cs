@@ -1,6 +1,7 @@
 using GarmentsERP.API.DTOs;
 using GarmentsERP.API.Interfaces;
 using GarmentsERP.API.Models.Accounting;
+using GarmentsERP.API.Attributes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -26,6 +27,7 @@ namespace GarmentsERP.API.Controllers
         /// Get all categories
         /// </summary>
         [HttpGet]
+        [RequirePermission("Category", "View")]
         public async Task<ActionResult<IEnumerable<CategoryDto>>> GetCategories()
         {
             try
@@ -44,6 +46,7 @@ namespace GarmentsERP.API.Controllers
         /// Get category by ID
         /// </summary>
         [HttpGet("{id}")]
+        [RequirePermission("Category", "View")]
         public async Task<ActionResult<CategoryDto>> GetCategory(Guid id)
         {
             try
@@ -73,6 +76,7 @@ namespace GarmentsERP.API.Controllers
         /// Get categories by type (Credit or Debit)
         /// </summary>
         [HttpGet("type/{type}")]
+        [RequirePermission("Category", "View")]
         public async Task<ActionResult<IEnumerable<CategoryDto>>> GetCategoriesByType(CategoryType type)
         {
             try
@@ -96,6 +100,7 @@ namespace GarmentsERP.API.Controllers
         /// Search categories by name or description
         /// </summary>
         [HttpGet("search")]
+        [RequirePermission("Category", "View")]
         public async Task<ActionResult<IEnumerable<CategoryDto>>> SearchCategories([FromQuery] string searchTerm)
         {
             try
@@ -119,6 +124,7 @@ namespace GarmentsERP.API.Controllers
         /// Create new category
         /// </summary>
         [HttpPost]
+        [RequirePermission("Category", "Create")]
         public async Task<ActionResult<CategoryDto>> CreateCategory([FromBody] CreateCategoryRequest request)
         {
             try
@@ -147,6 +153,7 @@ namespace GarmentsERP.API.Controllers
         /// Update category
         /// </summary>
         [HttpPut("{id}")]
+        [RequirePermission("Category", "Update")]
         public async Task<ActionResult<CategoryDto>> UpdateCategory(Guid id, [FromBody] UpdateCategoryRequest request)
         {
             try
@@ -180,6 +187,7 @@ namespace GarmentsERP.API.Controllers
         /// Delete category
         /// </summary>
         [HttpDelete("{id}")]
+        [RequirePermission("Category", "Delete")]
         public async Task<ActionResult> DeleteCategory(Guid id)
         {
             try
@@ -209,6 +217,7 @@ namespace GarmentsERP.API.Controllers
         /// Toggle category active status
         /// </summary>
         [HttpPatch("{id}/toggle-status")]
+        [RequirePermission("Category", "Update")]
         public async Task<ActionResult<CategoryDto>> ToggleActiveStatus(Guid id)
         {
             try

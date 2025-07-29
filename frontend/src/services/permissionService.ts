@@ -9,6 +9,11 @@ export interface Permission {
   isActive: boolean;
 }
 
+// Cache for user permissions
+let permissionCache: Permission[] = [];
+let cacheTimestamp: number = 0;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 export interface CreatePermissionDto {
   name: string;
   resource: string;
@@ -31,7 +36,43 @@ interface PermissionCheckResponse {
 
 export const permissionService = {
   getUserPermissions: async (userId: string): Promise<Permission[]> => {
-    return await apiService.get<Permission[]>(`/api/permissions/user/${userId}`);
+    return await apiService.get<Permission[]>(`/api/permission/user/${userId}`);
+  },
+
+  getMyPermissions: async (): Promise<Permission[]> => {
+    return await apiService.get<Permission[]>('/api/permission/my-permissions');
+  },
+
+  getMyPermissionsCached: async (forceRefresh: boolean = false): Promise<Permission[]> => {
+    const now = Date.now();
+    
+    // Return cached permissions if they're still valid and not forcing refresh
+    if (!forceRefresh && permissionCache.length > 0 && (now - cacheTimestamp) < CACHE_DURATION) {
+      return permissionCache;
+    }
+    
+    try {
+      // Fetch fresh permissions
+      const permissions = await apiService.get<Permission[]>('/api/permission/my-permissions');
+      
+      // Update cache
+      permissionCache = permissions;
+      cacheTimestamp = now;
+      
+      return permissions;
+    } catch (error) {
+      // If fetch fails and we have cached data, return it
+      if (permissionCache.length > 0) {
+        console.warn('Failed to fetch fresh permissions, using cached data:', error);
+        return permissionCache;
+      }
+      throw error;
+    }
+  },
+
+  clearPermissionCache: () => {
+    permissionCache = [];
+    cacheTimestamp = 0;
   },
   
   checkPermission: async (userId: string, resource: string, action: string): Promise<boolean> => {

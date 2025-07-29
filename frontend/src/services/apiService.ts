@@ -3,6 +3,8 @@ import { API_CONFIG, ApiError } from '@/config/api'
 
 class ApiService {
   private instance: AxiosInstance
+  private isRedirecting = false
+  private tokenValidationPromise: Promise<boolean> | null = null
 
   constructor() {
     this.instance = axios.create({
@@ -17,11 +19,18 @@ class ApiService {
   }
 
   private setupInterceptors() {
-    // Request interceptor to add auth token
+    // Request interceptor to add auth token and validate it
     this.instance.interceptors.request.use(
-      (config) => {
+      async (config) => {
         const token = this.getToken()
         if (token) {
+          // Validate token before making request if it's an authenticated endpoint
+          const isAuthRequired = !this.isPublicEndpoint(config.url || '')
+          if (isAuthRequired && !(await this.isTokenValid(token))) {
+            // Token is invalid, clear it and reject the request
+            this.clearToken()
+            throw new Error('Token is invalid or expired')
+          }
           config.headers.Authorization = `Bearer ${token}`
         }
         return config
@@ -32,40 +41,162 @@ class ApiService {
     // Response interceptor for error handling
     this.instance.interceptors.response.use(
       (response: AxiosResponse) => response,
-      (error) => {
-        if (error.response?.status === 401) {
-          // Clear token and redirect to login
-          this.clearToken()
-          if (typeof window !== 'undefined') {
-            window.location.href = '/login'
-          }
+      async (error) => {
+        const status = error.response?.status
+        
+        if (status === 401) {
+          return this.handle401Error(error)
+        } else if (status === 403) {
+          return this.handle403Error(error)
         }
+        
         return Promise.reject(this.formatError(error))
       }
     )
   }
 
-  private formatError(error: unknown): ApiError {
+  private async handle401Error(error: unknown): Promise<never> {
+    // Prevent multiple simultaneous redirects
+    if (this.isRedirecting) {
+      return Promise.reject(this.formatError(error))
+    }
+
+    this.isRedirecting = true
+    
+    try {
+      // Clear token and auth state
+      await this.clearAuthState()
+      
+      if (typeof window !== 'undefined') {
+        const currentPath = window.location.pathname
+        const isAuthPage = this.isAuthRelatedPage(currentPath)
+        
+        if (!isAuthPage) {
+          console.warn('Authentication failed - redirecting to login')
+          // Use setTimeout to avoid redirect in interceptor context
+          setTimeout(() => {
+            window.location.href = '/login'
+            this.isRedirecting = false
+          }, 100)
+        } else {
+          this.isRedirecting = false
+        }
+      } else {
+        this.isRedirecting = false
+      }
+    } catch (clearError) {
+      console.error('Error clearing auth state:', clearError)
+      this.isRedirecting = false
+    }
+    
+    return Promise.reject(this.formatError(error, 'Your session has expired. Please log in again.'))
+  }
+
+  private handle403Error(error: unknown): Promise<never> {
+    console.warn('Access denied - insufficient permissions')
+    return Promise.reject(this.formatError(error, 'You do not have permission to access this resource.'))
+  }
+
+  private isAuthRelatedPage(path: string): boolean {
+    const authPages = ['/login', '/register', '/forgot-password', '/reset-password', '/setup-admin']
+    return authPages.some(page => path.includes(page))
+  }
+
+  private isPublicEndpoint(url: string): boolean {
+    const publicEndpoints = ['/api/auth/login', '/api/auth/register', '/api/auth/forgot-password', '/api/auth/reset-password', '/api/health']
+    return publicEndpoints.some(endpoint => url.includes(endpoint))
+  }
+
+  private async isTokenValid(token: string): Promise<boolean> {
+    // Return cached validation result if available
+    if (this.tokenValidationPromise) {
+      return this.tokenValidationPromise
+    }
+
+    // Basic token format validation
+    if (!token || token.split('.').length !== 3) {
+      return false
+    }
+
+    try {
+      // Decode JWT payload to check expiration
+      const payload = JSON.parse(atob(token.split('.')[1]))
+      const currentTime = Math.floor(Date.now() / 1000)
+      
+      // Check if token is expired (with 30 second buffer)
+      if (payload.exp && payload.exp < currentTime + 30) {
+        return false
+      }
+
+      return true
+    } catch (error) {
+      console.warn('Token validation failed:', error)
+      return false
+    }
+  }
+
+  private async clearAuthState(): Promise<void> {
+    try {
+      // Clear token from localStorage
+      this.clearToken()
+      
+      // Clear auth store state
+      const { useAuthStore } = await import('../stores/authStore')
+      const authStore = useAuthStore.getState()
+      authStore.logout()
+    } catch (error) {
+      console.error('Error clearing auth state:', error)
+    }
+  }
+
+  private formatError(error: unknown, customMessage?: string): ApiError {
     if (typeof error === 'object' && error !== null && 'response' in error && (error as { response: unknown }).response) {
       const err = error as { response: { data?: { message?: string; errors?: string[] }, status: number } }
       return {
-        message: err.response.data?.message || 'An error occurred',
+        message: customMessage || err.response.data?.message || this.getDefaultErrorMessage(err.response.status),
         errors: err.response.data?.errors,
         status: err.response.status,
       }
     } else if (typeof error === 'object' && error !== null && 'request' in error && (error as { request: unknown }).request) {
       return {
-        message: 'Network error - please check your connection',
+        message: customMessage || 'Network error - please check your connection',
         status: 0,
       }
     } else if (typeof error === 'object' && error !== null && 'message' in error) {
       return {
-        message: (error as { message: string }).message || 'An unexpected error occurred',
+        message: customMessage || (error as { message: string }).message || 'An unexpected error occurred',
       }
     } else {
       return {
-        message: 'An unexpected error occurred',
+        message: customMessage || 'An unexpected error occurred',
       }
+    }
+  }
+
+  private getDefaultErrorMessage(status: number): string {
+    switch (status) {
+      case 400:
+        return 'Bad request - please check your input'
+      case 401:
+        return 'Authentication required - please log in'
+      case 403:
+        return 'Access denied - insufficient permissions'
+      case 404:
+        return 'Resource not found'
+      case 409:
+        return 'Conflict - resource already exists'
+      case 422:
+        return 'Validation failed - please check your input'
+      case 429:
+        return 'Too many requests - please try again later'
+      case 500:
+        return 'Server error - please try again later'
+      case 502:
+        return 'Service unavailable - please try again later'
+      case 503:
+        return 'Service temporarily unavailable'
+      default:
+        return 'An error occurred'
     }
   }
 
@@ -109,10 +240,34 @@ class ApiService {
   setToken(token: string): void {
     if (typeof window === 'undefined') return
     localStorage.setItem('auth_token', token)
+    // Clear any cached validation results when setting new token
+    this.tokenValidationPromise = null
   }
 
   removeToken(): void {
     this.clearToken()
+  }
+
+  // Enhanced token validation method for external use
+  async validateCurrentToken(): Promise<boolean> {
+    const token = this.getToken()
+    if (!token) return false
+    return this.isTokenValid(token)
+  }
+
+  // Method to refresh token if supported by backend
+  async refreshToken(): Promise<boolean> {
+    try {
+      const response = await this.post<{ token: string }>('/api/auth/refresh')
+      if (response.token) {
+        this.setToken(response.token)
+        return true
+      }
+      return false
+    } catch (error) {
+      console.warn('Token refresh failed:', error)
+      return false
+    }
   }
 }
 

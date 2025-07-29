@@ -1993,6 +1993,48 @@ namespace GarmentsERP.API.Migrations
                     b.ToTable("UserPermissions");
                 });
 
+            modelBuilder.Entity("GarmentsERP.API.Models.RoleAuditLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Details")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime>("PerformedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PerformedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RoleId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RoleName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Action");
+
+                    b.HasIndex("PerformedAt");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("RoleAuditLogs");
+                });
+
             modelBuilder.Entity("GarmentsERP.API.Models.Users.VendorProfile", b =>
                 {
                     b.Property<Guid>("Id")

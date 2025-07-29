@@ -74,6 +74,8 @@ builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IUserManagementService, UserManagementService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
+builder.Services.AddScoped<IPermissionSeederService, PermissionSeederService>();
+builder.Services.AddScoped<IRoleManagementService, RoleManagementService>();
 
 // Register independent model services
 builder.Services.AddScoped<ICurrencyService, CurrencyService>();
@@ -189,12 +191,17 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    var permissionSeeder = scope.ServiceProvider.GetRequiredService<IPermissionSeederService>();
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
     
     try
     {
         await context.Database.MigrateAsync();
         logger.LogInformation("✅ Database migration completed successfully");
+        
+        // Seed permissions and role assignments
+        await permissionSeeder.SeedPermissionsAndRoleAssignmentsAsync();
+        logger.LogInformation("✅ Permissions and role assignments seeded successfully");
         
         // Seed initial MM Fashion categories
         await CategorySeeder.SeedCategoriesAsync(context);
