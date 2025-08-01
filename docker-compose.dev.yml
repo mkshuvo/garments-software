@@ -142,7 +142,7 @@ services:
     container_name: garments-mailhog-dev
     ports:
       - "1025:1025"  # SMTP server
-      - "8025:8025"  # Web UI
+      - "8125:8025"  # Web UI (changed from 8025 to avoid Windows port exclusion)
     networks:
       - garments-dev-network
     restart: unless-stopped
