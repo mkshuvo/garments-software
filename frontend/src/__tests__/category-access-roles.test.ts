@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Category Access Tests with Different User Roles
  * 
@@ -17,6 +16,10 @@
 
 import { useAuthStore } from '../stores/authStore';
 import { apiService } from '../services/apiService';
+
+// Mock the auth store
+jest.mock('../stores/authStore');
+const mockUseAuthStore = useAuthStore as jest.MockedFunction<typeof useAuthStore>;
 
 // Define proper error types
 interface ApiError {
@@ -140,24 +143,55 @@ const mockConsole = {
 };
 
 describe('Category Access Tests with Different User Roles', () => {
-    let authStore: AuthStore;
+    let authStore: any;
+    
+    const mockAuthStore = {
+        user: null,
+        token: null,
+        permissions: [],
+        roles: [],
+        isAuthenticated: false,
+        isLoading: false,
+        isInitialized: true,
+        hasPermission: jest.fn(),
+        hasRole: jest.fn(),
+        clearAuthState: jest.fn(),
+        setState: jest.fn(),
+    };
 
     beforeEach(() => {
         // Reset all mocks
         jest.clearAllMocks();
 
         // Mock global objects
-        Object.defineProperty(window, 'localStorage', { value: mockLocalStorage });
-        Object.defineProperty(global, 'console', { value: mockConsole });
+        Object.defineProperty(window, 'localStorage', { 
+            value: mockLocalStorage, 
+            writable: true, 
+            configurable: true 
+        });
+        Object.defineProperty(global, 'console', { 
+            value: mockConsole, 
+            writable: true, 
+            configurable: true 
+        });
 
         // Clear localStorage
         mockLocalStorage.clear();
 
-        // Get fresh auth store instance
-        authStore = useAuthStore.getState() as AuthStore;
+        // Reset mock auth store
+        Object.keys(mockAuthStore).forEach(key => {
+            if (typeof mockAuthStore[key] === 'function') {
+                mockAuthStore[key].mockReset();
+            } else {
+                mockAuthStore[key] = key === 'permissions' || key === 'roles' ? [] : 
+                                   key === 'isInitialized' ? true : 
+                                   key.startsWith('is') ? false : null;
+            }
+        });
 
-        // Reset auth store to initial state
-        authStore.clearAuthState();
+        // Set up the mock to return our mock store
+        mockUseAuthStore.mockReturnValue(mockAuthStore);
+        authStore = mockAuthStore;
     });
 
     // Helper function to set up user authentication
@@ -165,16 +199,28 @@ describe('Category Access Tests with Different User Roles', () => {
         const user = testUsers[userType];
         const token = `mock-token-${userType}`;
 
-        // Set up auth store state
-        authStore = useAuthStore.setState({
-            user: user,
-            token: token,
-            permissions: user.permissions,
-            roles: user.roles,
-            isAuthenticated: true,
-            isInitialized: true,
-            isLoading: false
-        }) as AuthStore;
+        // Set up mock auth store state
+        authStore.user = user;
+        authStore.token = token;
+        authStore.permissions = user.permissions;
+        authStore.roles = user.roles;
+        authStore.isAuthenticated = true;
+        authStore.isInitialized = true;
+        authStore.isLoading = false;
+
+        // Set up hasPermission mock
+        authStore.hasPermission.mockImplementation((resource: string, action: string) => {
+            return user.permissions.some(p => 
+                p.resource === resource && 
+                p.action === action && 
+                p.isActive
+            );
+        });
+
+        // Set up hasRole mock
+        authStore.hasRole.mockImplementation((roleName: string) => {
+            return user.roles.includes(roleName);
+        });
 
         // Set token in localStorage
         mockLocalStorage.setItem('auth_token', token);
@@ -189,20 +235,22 @@ describe('Category Access Tests with Different User Roles', () => {
                 expectedStatus === 401 ? mockApiResponses.unauthorized :
                     { message: 'Unknown error', status: expectedStatus };
 
-        return {
+        const callTracker = {
             endpoint,
             method,
             expectedStatus,
             response: mockResponse,
             called: false,
             call: () => {
-                mockResponse.called = true;
+                callTracker.called = true;
                 if (expectedStatus !== 200) {
                     throw mockResponse;
                 }
                 return Promise.resolve(mockResponse);
             }
         };
+
+        return callTracker;
     };
 
     describe('Admin User Tests (Full Access)', () => {
@@ -475,16 +523,8 @@ describe('Category Access Tests with Different User Roles', () => {
             };
 
             Object.entries(rolePermissions).forEach(([roleName, config]) => {
-                // Set up user
-                authStore = useAuthStore.setState({
-                    user: config.user,
-                    token: `token-${roleName.toLowerCase()}`,
-                    permissions: config.user.permissions,
-                    roles: config.user.roles,
-                    isAuthenticated: true,
-                    isInitialized: true,
-                    isLoading: false
-                }) as AuthStore;
+                // Set up user using the helper function
+                setupUserAuth(roleName.toLowerCase() as 'admin' | 'manager' | 'employee');
 
                 // Test each expected permission
                 const allPermissions = ['View', 'Create', 'Update', 'Delete'];
