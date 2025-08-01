@@ -116,7 +116,10 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowedOrigins", policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "https://localhost:3000")
+        policy.WithOrigins(
+                "http://localhost:3000", "https://localhost:3000",  // Original Next.js port
+                "http://localhost:4000", "https://localhost:4000"   // Current Docker mapped port
+              )
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();
