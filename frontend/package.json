@@ -10,9 +10,14 @@
     "lint:fix": "next lint --fix",
     "lint:check": "next lint --quiet",
     "type-check": "tsc --noEmit",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test": "npx jest --testTimeout=2000 --forceExit --maxWorkers=1",
+    "test:quick": "npx jest __tests__/quick.test.tsx __tests__/basic.test.tsx --testTimeout=1000 --forceExit",
+    "test:hooks": "npx jest __tests__/hooks --testTimeout=2000 --forceExit",
+    "test:ui": "npx jest __tests__/components/ui --testTimeout=3000 --forceExit",
+    "test:accounting": "npx jest __tests__/components/accounting --testTimeout=5000 --forceExit",
+    "test:all": "npx jest --testTimeout=3000 --forceExit --maxWorkers=1 --bail",
+    "test:watch": "npx jest --watch --testTimeout=2000",
+    "test:debug": "npx jest --verbose --testTimeout=5000"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

@@ -11,7 +11,6 @@
  */
 
 import { useAuthStore } from '../stores/authStore';
-import { apiService } from '../services/apiService';
 
 // Mock the auth store
 jest.mock('../stores/authStore');
@@ -67,7 +66,7 @@ const mockApiResponses = {
 };
 
 describe('Authentication Flow End-to-End Tests', () => {
-  let authStore: any;
+  let authStore: ReturnType<typeof useAuthStore>;
   
   const mockAuthStore = {
     user: null,
@@ -139,7 +138,7 @@ describe('Authentication Flow End-to-End Tests', () => {
       const loginData = mockApiResponses.login.data;
       
       // Set up mock login behavior
-      authStore.login.mockImplementation(async (user: any, token: string) => {
+      authStore.login.mockImplementation(async (user: unknown, token: string) => {
         mockLocalStorage.setItem('auth_token', token);
         authStore.user = user;
         authStore.token = token;
@@ -147,7 +146,7 @@ describe('Authentication Flow End-to-End Tests', () => {
         authStore.isInitialized = true;
         authStore.isLoading = false;
         authStore.permissions = mockApiResponses.permissions;
-        authStore.roles = user.roles || [];
+        authStore.roles = (user as { roles?: string[] }).roles || [];
       });
 
       // Act
@@ -169,7 +168,7 @@ describe('Authentication Flow End-to-End Tests', () => {
       const invalidToken = 'invalid-token';
       
       // Set up mock login behavior for invalid token
-      authStore.login.mockImplementation(async (user: any, token: string) => {
+      authStore.login.mockImplementation(async (user: unknown, token: string) => {
         if (token === 'invalid-token') {
           throw new Error('Invalid token format');
         }
@@ -192,10 +191,10 @@ describe('Authentication Flow End-to-End Tests', () => {
       };
       
       // Set up mock login behavior
-      authStore.login.mockImplementation(async (user: any, token: string) => {
+      authStore.login.mockImplementation(async (user: unknown, token: string) => {
         authStore.user = user;
         authStore.token = token;
-        authStore.roles = user.roles || [];
+        authStore.roles = (user as { roles?: string[] }).roles || [];
         authStore.isAuthenticated = true;
       });
 
@@ -362,7 +361,7 @@ describe('Authentication Flow End-to-End Tests', () => {
         try {
           // Simulate API error but still clear state
           throw new Error('API service error');
-        } catch (error) {
+        } catch {
           // Clear state even with errors
           authStore.user = null;
           authStore.token = null;
@@ -537,7 +536,7 @@ describe('Authentication Flow End-to-End Tests', () => {
       const loginData = mockApiResponses.login.data;
       
       // Set up mock login behavior that includes permission loading
-      authStore.login.mockImplementation(async (user: any, token: string) => {
+      authStore.login.mockImplementation(async (user: unknown, token: string) => {
         mockLocalStorage.setItem('auth_token', token);
         authStore.user = user;
         authStore.token = token;
@@ -545,7 +544,7 @@ describe('Authentication Flow End-to-End Tests', () => {
         authStore.isInitialized = true;
         authStore.isLoading = false;
         authStore.permissions = mockApiResponses.permissions;
-        authStore.roles = user.roles || [];
+        authStore.roles = (user as { roles?: string[] }).roles || [];
       });
 
       // Act
@@ -561,7 +560,7 @@ describe('Authentication Flow End-to-End Tests', () => {
       const loginData = mockApiResponses.login.data;
       
       // Set up mock login behavior that handles permission loading failure
-      authStore.login.mockImplementation(async (user: any, token: string) => {
+      authStore.login.mockImplementation(async (user: unknown, token: string) => {
         mockLocalStorage.setItem('auth_token', token);
         authStore.user = user;
         authStore.token = token;
@@ -570,7 +569,7 @@ describe('Authentication Flow End-to-End Tests', () => {
         authStore.isLoading = false;
         // Simulate permission loading failure - permissions remain empty
         authStore.permissions = [];
-        authStore.roles = user.roles || [];
+        authStore.roles = (user as { roles?: string[] }).roles || [];
       });
 
       // Act
