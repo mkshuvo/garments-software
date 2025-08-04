@@ -8,9 +8,7 @@ import {
   CardContent,
   TextField,
   Button,
-  Autocomplete,
   Alert,
-  IconButton,
   Paper,
   Chip,
   Stack,
@@ -18,8 +16,6 @@ import {
   Link
 } from '@mui/material';
 import {
-  Add as AddIcon,
-  Delete as DeleteIcon,
   Save as SaveIcon,
   Cancel as CancelIcon,
   AccountBalance as AccountBalanceIcon,
@@ -32,6 +28,10 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { categoryService, CategoryType, Category as CategoryModel } from '@/services/categoryService';
+import { TransactionList } from '@/components/accounting/TransactionList';
+import { AddTransactionButtons } from '@/components/accounting/AddTransactionButtons';
+import { CreditTransactionModal } from '@/components/accounting/CreditTransactionModal';
+import { DebitTransactionModal } from '@/components/accounting/DebitTransactionModal';
 
 interface CashBookEntry {
   id: string;
@@ -96,6 +96,18 @@ export default function CashBookEntryPage() {
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [errors, setErrors] = useState<string[]>([]);
 
+  // Modal state management
+  const [modals, setModals] = useState({
+    creditModal: {
+      isOpen: false,
+      editingTransaction: undefined as CreditTransaction | undefined
+    },
+    debitModal: {
+      isOpen: false,
+      editingTransaction: undefined as DebitTransaction | undefined
+    }
+  });
+
   // Auto-generate reference number
   useEffect(() => {
     const today = new Date();
@@ -127,51 +139,7 @@ export default function CashBookEntryPage() {
     loadCategories();
   }, []);
 
-  const addCreditTransaction = () => {
-    const newTransaction: CreditTransaction = {
-      id: Date.now().toString(),
-      date: new Date(),
-      categoryName: '',
-      particulars: '',
-      amount: 0
-    };
-    setEntry(prev => ({
-      ...prev,
-      creditTransactions: [...prev.creditTransactions, newTransaction]
-    }));
-  };
 
-  const addDebitTransaction = () => {
-    const newTransaction: DebitTransaction = {
-      id: Date.now().toString(),
-      date: new Date(),
-      categoryName: '',
-      particulars: '',
-      amount: 0
-    };
-    setEntry(prev => ({
-      ...prev,
-      debitTransactions: [...prev.debitTransactions, newTransaction]
-    }));
-  };
-
-  const updateCreditTransaction = (id: string, field: keyof CreditTransaction, value: string | number | Date) => {
-    setEntry(prev => ({
-      ...prev,
-      creditTransactions: prev.creditTransactions.map(t =>
-        t.id === id ? { ...t, [field]: value } : t
-      )
-    }));
-  };
-
-  const updateDebitTransaction = (id: string, field: keyof DebitTransaction, value: string | number | Date) => {
-    setEntry(prev => ({
-      ...prev,
-      debitTransactions: prev.debitTransactions.map(t =>
-        t.id === id ? { ...t, [field]: value } : t
-      )
-    }));
-  };
 
   const removeCreditTransaction = (id: string) => {
     setEntry(prev => ({
@@ -185,6 +153,93 @@ export default function CashBookEntryPage() {
       ...prev,
       debitTransactions: prev.debitTransactions.filter(t => t.id !== id)
     }));
+  };
+
+  // Modal management functions
+  const openCreditModal = (transaction?: CreditTransaction) => {
+    setModals(prev => ({
+      ...prev,
+      creditModal: {
+        isOpen: true,
+        editingTransaction: transaction
+      }
+    }));
+  };
+
+  const closeCreditModal = () => {
+    setModals(prev => ({
+      ...prev,
+      creditModal: {
+        isOpen: false,
+        editingTransaction: undefined
+      }
+    }));
+  };
+
+  const openDebitModal = (transaction?: DebitTransaction) => {
+    setModals(prev => ({
+      ...prev,
+      debitModal: {
+        isOpen: true,
+        editingTransaction: transaction
+      }
+    }));
+  };
+
+  const closeDebitModal = () => {
+    setModals(prev => ({
+      ...prev,
+      debitModal: {
+        isOpen: false,
+        editingTransaction: undefined
+      }
+    }));
+  };
+
+  const handleSaveCreditTransaction = (transaction: CreditTransaction) => {
+    if (modals.creditModal.editingTransaction) {
+      // Update existing transaction
+      setEntry(prev => ({
+        ...prev,
+        creditTransactions: prev.creditTransactions.map(t =>
+          t.id === transaction.id ? transaction : t
+        )
+      }));
+    } else {
+      // Add new transaction
+      const newTransaction = {
+        ...transaction,
+        id: Date.now().toString()
+      };
+      setEntry(prev => ({
+        ...prev,
+        creditTransactions: [...prev.creditTransactions, newTransaction]
+      }));
+    }
+    closeCreditModal();
+  };
+
+  const handleSaveDebitTransaction = (transaction: DebitTransaction) => {
+    if (modals.debitModal.editingTransaction) {
+      // Update existing transaction
+      setEntry(prev => ({
+        ...prev,
+        debitTransactions: prev.debitTransactions.map(t =>
+          t.id === transaction.id ? transaction : t
+        )
+      }));
+    } else {
+      // Add new transaction
+      const newTransaction = {
+        ...transaction,
+        id: Date.now().toString()
+      };
+      setEntry(prev => ({
+        ...prev,
+        debitTransactions: [...prev.debitTransactions, newTransaction]
+      }));
+    }
+    closeDebitModal();
   };
 
   const calculateTotals = () => {
@@ -412,272 +467,28 @@ export default function CashBookEntryPage() {
           </CardContent>
         </Card>
 
-        <Stack direction={{ xs: 'column', lg: 'row' }} spacing={3}>
-          {/* Credit Transactions (Money In) */}
-          <Box sx={{ flex: 1 }}>
-            <Card sx={{ height: 'fit-content' }}>
-              <CardContent>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                  <Typography variant="h6" color="success.main">
-                    💰 Credit Transactions (Money In)
-                  </Typography>
-                  <Button
-                    variant="outlined"
-                    startIcon={<AddIcon />}
-                    onClick={addCreditTransaction}
-                    size="small"
-                  >
-                    Add Credit
-                  </Button>
-                </Box>
+        {/* Add Transaction Buttons */}
+        <Box sx={{ mb: 3 }}>
+          <AddTransactionButtons
+            onAddCredit={() => openCreditModal()}
+            onAddDebit={() => openDebitModal()}
+            disabled={modals.creditModal.isOpen || modals.debitModal.isOpen}
+          />
+        </Box>
 
-                {entry.creditTransactions.map((transaction, index) => (
-                  <Paper key={transaction.id} sx={{ p: 2, mb: 2, bgcolor: 'success.50' }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                      <Typography variant="subtitle2">Credit Transaction {index + 1}</Typography>
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={() => removeCreditTransaction(transaction.id)}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Box>
-                    
-                    <Stack spacing={2}>
-                      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                        <DatePicker
-                          label="Date"
-                          value={transaction.date}
-                          onChange={(date) => updateCreditTransaction(transaction.id, 'date', date || new Date())}
-                          slotProps={{ textField: { size: 'small', fullWidth: true } }}
-                        />
-                        <TextField
-                          size="small"
-                          fullWidth
-                          label="Amount (Tk.)"
-                          type="number"
-                          value={transaction.amount || ''}
-                          onChange={(e) => updateCreditTransaction(transaction.id, 'amount', parseFloat(e.target.value) || 0)}
-                          InputProps={{ inputProps: { min: 0, step: 0.01 } }}
-                        />
-                      </Stack>
-                      <Autocomplete
-                        freeSolo
-                        options={creditCategories.map(c => c.name)}
-                        value={transaction.categoryName}
-                        onChange={(_, value) => updateCreditTransaction(transaction.id, 'categoryName', value || '')}
-                        onInputChange={(_, value) => updateCreditTransaction(transaction.id, 'categoryName', value || '')}
-                        loading={categoriesLoading}
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            size="small"
-                            label="Credit Category"
-                            placeholder="e.g., Loan A/C Chairman, Received: Customer Name"
-                            helperText="Only Credit (Money In) categories are shown"
-                          />
-                        )}
-                        renderOption={(props, option) => {
-                          const category = creditCategories.find(c => c.name === option);
-                          return (
-                            <li {...props}>
-                              <Box>
-                                <Typography variant="body2">{option}</Typography>
-                                {category?.description && (
-                                  <Typography variant="caption" color="text.secondary">
-                                    {category.description}
-                                  </Typography>
-                                )}
-                              </Box>
-                            </li>
-                          );
-                        }}
-                      />
-                      <TextField
-                        size="small"
-                        fullWidth
-                        label="Particulars"
-                        value={transaction.particulars}
-                        onChange={(e) => updateCreditTransaction(transaction.id, 'particulars', e.target.value)}
-                        placeholder="Transaction description"
-                      />
-                      <Autocomplete
-                        freeSolo
-                        options={contacts.map(c => c.name)}
-                        value={transaction.contactName || ''}
-                        onChange={(_, value) => updateCreditTransaction(transaction.id, 'contactName', value || '')}
-                        onInputChange={(_, value) => updateCreditTransaction(transaction.id, 'contactName', value || '')}
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            size="small"
-                            label="Contact (Optional)"
-                            placeholder="Customer or supplier name"
-                          />
-                        )}
-                      />
-                    </Stack>
-                  </Paper>
-                ))}
-
-                {entry.creditTransactions.length === 0 && (
-                  <Box sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
-                    <AccountBalanceIcon sx={{ fontSize: 48, mb: 1 }} />
-                    <Typography>No credit transactions added</Typography>
-                    <Typography variant="body2">Click &quot;Add Credit&quot; to start</Typography>
-                    {!categoriesLoading && creditCategories.length === 0 && (
-                      <Typography variant="caption" color="warning.main" sx={{ mt: 1, display: 'block' }}>
-                        ⚠️ No Credit categories available. Please create some in Category Management.
-                      </Typography>
-                    )}
-                  </Box>
-                )}
-              </CardContent>
-            </Card>
-          </Box>
-
-          {/* Debit Transactions (Money Out) */}
-          <Box sx={{ flex: 1 }}>
-            <Card sx={{ height: 'fit-content' }}>
-              <CardContent>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                  <Typography variant="h6" color="error.main">
-                    💸 Debit Transactions (Money Out)
-                  </Typography>
-                  <Button
-                    variant="outlined"
-                    startIcon={<AddIcon />}
-                    onClick={addDebitTransaction}
-                    size="small"
-                  >
-                    Add Debit
-                  </Button>
-                </Box>
-
-                {entry.debitTransactions.map((transaction, index) => (
-                  <Paper key={transaction.id} sx={{ p: 2, mb: 2, bgcolor: 'error.50' }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                      <Typography variant="subtitle2">Debit Transaction {index + 1}</Typography>
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={() => removeDebitTransaction(transaction.id)}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Box>
-                    
-                    <Stack spacing={2}>
-                      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                        <DatePicker
-                          label="Date"
-                          value={transaction.date}
-                          onChange={(date) => updateDebitTransaction(transaction.id, 'date', date || new Date())}
-                          slotProps={{ textField: { size: 'small', fullWidth: true } }}
-                        />
-                        <TextField
-                          size="small"
-                          fullWidth
-                          label="Amount (Tk.)"
-                          type="number"
-                          value={transaction.amount || ''}
-                          onChange={(e) => updateDebitTransaction(transaction.id, 'amount', parseFloat(e.target.value) || 0)}
-                          InputProps={{ inputProps: { min: 0, step: 0.01 } }}
-                        />
-                      </Stack>
-                      <Autocomplete
-                        freeSolo
-                        options={debitCategories.map(c => c.name)}
-                        value={transaction.categoryName}
-                        onChange={(_, value) => updateDebitTransaction(transaction.id, 'categoryName', value || '')}
-                        onInputChange={(_, value) => updateDebitTransaction(transaction.id, 'categoryName', value || '')}
-                        loading={categoriesLoading}
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            size="small"
-                            label="Debit Category"
-                            placeholder="e.g., Fabric Purchase, Salary A/C, Electric Bill"
-                            helperText="Only Debit (Money Out) categories are shown"
-                          />
-                        )}
-                        renderOption={(props, option) => {
-                          const category = debitCategories.find(c => c.name === option);
-                          return (
-                            <li {...props}>
-                              <Box>
-                                <Typography variant="body2">{option}</Typography>
-                                {category?.description && (
-                                  <Typography variant="caption" color="text.secondary">
-                                    {category.description}
-                                  </Typography>
-                                )}
-                              </Box>
-                            </li>
-                          );
-                        }}
-                      />
-                      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                        <Autocomplete
-                          freeSolo
-                          options={contacts.filter(c => c.contactType === 'Supplier' || c.contactType === 'Both').map(c => c.name)}
-                          value={transaction.supplierName || ''}
-                          onChange={(_, value) => updateDebitTransaction(transaction.id, 'supplierName', value || '')}
-                          onInputChange={(_, value) => updateDebitTransaction(transaction.id, 'supplierName', value || '')}
-                          renderInput={(params) => (
-                            <TextField
-                              {...params}
-                              size="small"
-                              label="Supplier (Optional)"
-                              placeholder="Supplier name"
-                            />
-                          )}
-                        />
-                        <Autocomplete
-                          freeSolo
-                          options={contacts.filter(c => c.contactType === 'Customer' || c.contactType === 'Both').map(c => c.name)}
-                          value={transaction.buyerName || ''}
-                          onChange={(_, value) => updateDebitTransaction(transaction.id, 'buyerName', value || '')}
-                          onInputChange={(_, value) => updateDebitTransaction(transaction.id, 'buyerName', value || '')}
-                          renderInput={(params) => (
-                            <TextField
-                              {...params}
-                              size="small"
-                              label="Buyer (Optional)"
-                              placeholder="Customer name"
-                            />
-                          )}
-                        />
-                      </Stack>
-                      <TextField
-                        size="small"
-                        fullWidth
-                        label="Particulars"
-                        value={transaction.particulars}
-                        onChange={(e) => updateDebitTransaction(transaction.id, 'particulars', e.target.value)}
-                        placeholder="Transaction description"
-                      />
-                    </Stack>
-                  </Paper>
-                ))}
-
-                {entry.debitTransactions.length === 0 && (
-                  <Box sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
-                    <AccountBalanceIcon sx={{ fontSize: 48, mb: 1 }} />
-                    <Typography>No debit transactions added</Typography>
-                    <Typography variant="body2">Click &quot;Add Debit&quot; to start</Typography>
-                    {!categoriesLoading && debitCategories.length === 0 && (
-                      <Typography variant="caption" color="warning.main" sx={{ mt: 1, display: 'block' }}>
-                        ⚠️ No Debit categories available. Please create some in Category Management.
-                      </Typography>
-                    )}
-                  </Box>
-                )}
-              </CardContent>
-            </Card>
-          </Box>
-        </Stack>
+        {/* Transaction List */}
+        <Box sx={{ mb: 3 }}>
+          <TransactionList
+            creditTransactions={entry.creditTransactions}
+            debitTransactions={entry.debitTransactions}
+            onEditCredit={openCreditModal}
+            onEditDebit={openDebitModal}
+            onDeleteCredit={removeCreditTransaction}
+            onDeleteDebit={removeDebitTransaction}
+            loading={false}
+            error={undefined}
+          />
+        </Box>
 
         {/* Summary and Actions */}
         <Card sx={{ mt: 3 }}>
@@ -775,6 +586,26 @@ export default function CashBookEntryPage() {
             </Box>
           </CardContent>
         </Card>
+
+        {/* Credit Transaction Modal */}
+        <CreditTransactionModal
+          isOpen={modals.creditModal.isOpen}
+          transaction={modals.creditModal.editingTransaction}
+          categories={creditCategories}
+          contacts={contacts}
+          onSave={handleSaveCreditTransaction}
+          onCancel={closeCreditModal}
+        />
+
+        {/* Debit Transaction Modal */}
+        <DebitTransactionModal
+          isOpen={modals.debitModal.isOpen}
+          transaction={modals.debitModal.editingTransaction}
+          categories={debitCategories}
+          contacts={contacts}
+          onSave={handleSaveDebitTransaction}
+          onCancel={closeDebitModal}
+        />
       </Box>
     </LocalizationProvider>
   );

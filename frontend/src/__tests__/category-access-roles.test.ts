@@ -15,7 +15,6 @@
  */
 
 import { useAuthStore } from '../stores/authStore';
-import { apiService } from '../services/apiService';
 
 // Mock the auth store
 jest.mock('../stores/authStore');
@@ -41,7 +40,7 @@ function isApiError(error: unknown): error is ApiError {
 
 // Define the auth store type based on the actual store structure
 interface AuthStore {
-    user: any;
+    user: unknown;
     token: string | null;
     permissions: Array<{ id: string; name: string; resource: string; action: string; isActive: boolean }>;
     roles: string[];
@@ -143,7 +142,7 @@ const mockConsole = {
 };
 
 describe('Category Access Tests with Different User Roles', () => {
-    let authStore: any;
+    let authStore: AuthStore;
     
     const mockAuthStore = {
         user: null,
@@ -229,7 +228,7 @@ describe('Category Access Tests with Different User Roles', () => {
     };
 
     // Helper function to mock API calls
-    const mockApiCall = (endpoint: string, method: string, expectedStatus: number, responseData?: any) => {
+    const mockApiCall = (endpoint: string, method: string, expectedStatus: number, responseData?: unknown) => {
         const mockResponse = expectedStatus === 200 ? responseData :
             expectedStatus === 403 ? mockApiResponses.forbidden :
                 expectedStatus === 401 ? mockApiResponses.unauthorized :
@@ -256,7 +255,7 @@ describe('Category Access Tests with Different User Roles', () => {
     describe('Admin User Tests (Full Access)', () => {
         test('should have full access to all category operations', async () => {
             // Arrange
-            const { user } = setupUserAuth('admin');
+            setupUserAuth('admin');
 
             // Test API endpoint access
             const getCategoriesCall = mockApiCall('/api/category', 'GET', 200, mockApiResponses.categories);
@@ -315,7 +314,7 @@ describe('Category Access Tests with Different User Roles', () => {
     describe('Manager User Tests (View, Create, Update - No Delete)', () => {
         test('should have limited access without delete permission', async () => {
             // Arrange
-            const { user } = setupUserAuth('manager');
+            setupUserAuth('manager');
 
             // Test API endpoint access
             const getCategoriesCall = mockApiCall('/api/category', 'GET', 200, mockApiResponses.categories);
@@ -411,7 +410,7 @@ describe('Category Access Tests with Different User Roles', () => {
     describe('Employee User Tests (View Only)', () => {
         test('should only have view access to categories', async () => {
             // Arrange
-            const { user } = setupUserAuth('employee');
+            setupUserAuth('employee');
 
             // Test API endpoint access
             const getCategoriesCall = mockApiCall('/api/category', 'GET', 200, mockApiResponses.categories);
