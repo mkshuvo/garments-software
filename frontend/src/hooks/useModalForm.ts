@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 
 interface UseModalFormOptions<T> {
   initialValues: T;
@@ -112,10 +112,19 @@ export const useModalForm = <T extends Record<string, unknown>>({
     onClose?.();
   }, [reset, resetOnClose, onClose]);
 
+  // Use ref to track previous initialValues to prevent infinite re-renders
+  const prevInitialValuesRef = useRef<T>(initialValues);
+  
   // Reset form when initialValues change (for edit mode)
   useEffect(() => {
-    setValuesState(initialValues);
-    setIsDirty(false);
+    // Deep comparison to prevent unnecessary updates
+    const hasChanged = JSON.stringify(prevInitialValuesRef.current) !== JSON.stringify(initialValues);
+    
+    if (hasChanged) {
+      setValuesState(initialValues);
+      setIsDirty(false);
+      prevInitialValuesRef.current = initialValues;
+    }
   }, [initialValues]);
 
   return {

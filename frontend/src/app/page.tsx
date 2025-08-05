@@ -121,20 +121,7 @@ const menuItems = [
 export default function HomePage() {
   const { isAuthenticated, user, logout, login } = useAuthStore()
   
-  // Quick test login function for development
-  const handleTestLogin = async () => {
-    try {
-      const response = await authService.login({
-        email: 'admin@example.com',
-        password: 'password'
-      })
-      login(response.user, response.token)
-      alert('Login successful!')
-    } catch (error) {
-      console.error('Test login failed:', error)
-      alert('Test login failed. Try different credentials or check the backend.')
-    }
-  }
+
 
   return (
       <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default' }}>
@@ -195,21 +182,6 @@ export default function HomePage() {
                 </Stack>
               ) : (
                 <Stack direction="row" spacing={2}>
-                  <Button
-                    variant="contained"
-                    color="secondary"
-                    startIcon={<LoginIcon />}
-                    onClick={handleTestLogin}
-                    sx={{
-                      backgroundColor: 'rgba(255,255,255,0.2)',
-                      color: 'white',
-                      '&:hover': {
-                        backgroundColor: 'rgba(255,255,255,0.3)',
-                      },
-                    }}
-                  >
-                    Test Login
-                  </Button>
                   <Link href="/login" passHref>
                     <Button
                       variant="outlined"

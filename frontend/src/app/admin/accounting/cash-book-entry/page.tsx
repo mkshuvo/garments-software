@@ -32,6 +32,7 @@ import { TransactionList } from '@/components/accounting/TransactionList';
 import { AddTransactionButtons } from '@/components/accounting/AddTransactionButtons';
 import { CreditTransactionModal } from '@/components/accounting/CreditTransactionModal';
 import { DebitTransactionModal } from '@/components/accounting/DebitTransactionModal';
+import ServiceStatusBanner from '@/components/ui/ServiceStatusBanner';
 
 interface CashBookEntry {
   id: string;
@@ -95,6 +96,7 @@ export default function CashBookEntryPage() {
   const [loading, setLoading] = useState(false);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [errors, setErrors] = useState<string[]>([]);
+  const [successMessage, setSuccessMessage] = useState<string>('');
 
   // Modal state management
   const [modals, setModals] = useState({
@@ -295,6 +297,7 @@ export default function CashBookEntryPage() {
 
     setLoading(true);
     setErrors([]);
+    setSuccessMessage('');
     
     try {
       // TODO: API call to save the cash book entry
@@ -302,6 +305,10 @@ export default function CashBookEntryPage() {
       
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Show success message
+      const savedRefNumber = entry.referenceNumber;
+      setSuccessMessage(`✅ Cash book entry "${savedRefNumber}" saved successfully! Form has been reset for the next entry.`);
       
       // Reset form
       setEntry({
@@ -318,6 +325,9 @@ export default function CashBookEntryPage() {
       const refNumber = `CB-${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}-${Date.now().toString().slice(-4)}`;
       setEntry(prev => ({ ...prev, referenceNumber: refNumber }));
       
+      // Clear success message after 5 seconds
+      setTimeout(() => setSuccessMessage(''), 5000);
+      
     } catch {
       setErrors(['Failed to save cash book entry. Please try again.']);
     } finally {
@@ -332,7 +342,15 @@ export default function CashBookEntryPage() {
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Box sx={{ p: 3 }}>
+      {/* Service Status Banner */}
+      <ServiceStatusBanner 
+        showWhenHealthy={false}
+        dismissible={true}
+        showDetails={true}
+        position="top"
+      />
+      
+      <Box sx={{ p: 3, mt: 6 }}>
         {/* Navigation Breadcrumbs */}
         <Breadcrumbs sx={{ mb: 3 }}>
           <Link 
@@ -376,6 +394,15 @@ export default function CashBookEntryPage() {
             Back to Accounting
           </Button>
         </Box>
+
+        {/* Success Message */}
+        {successMessage && (
+          <Alert severity="success" sx={{ mb: 3 }}>
+            <Typography variant="body2">
+              {successMessage}
+            </Typography>
+          </Alert>
+        )}
 
         {/* Balance Status Alert */}
         {hasTransactions && (
@@ -457,12 +484,16 @@ export default function CashBookEntryPage() {
             <Typography variant="body2" sx={{ mb: 2 }}>
               <strong>Debit Transactions (Money Out):</strong> Money paid, expenses, or asset increases
             </Typography>
-            <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+            <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 2 }}>
               ⚖️ <strong>Balance Rule:</strong> Total Credits must equal Total Debits for the entry to be saved
             </Typography>
-            <Typography variant="body2" sx={{ mt: 2, fontStyle: 'italic' }}>
+            <Typography variant="body2" sx={{ mb: 2, fontStyle: 'italic' }}>
               📝 <strong>New:</strong> Categories are now managed through the dedicated Category Management system. 
               Only active Credit categories will appear in Credit transactions, and only active Debit categories in Debit transactions.
+            </Typography>
+            <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'success.main' }}>
+              💾 <strong>Save Behavior:</strong> After saving, the form automatically resets for the next entry. 
+              Your saved entries are stored in the system.
             </Typography>
           </CardContent>
         </Card>

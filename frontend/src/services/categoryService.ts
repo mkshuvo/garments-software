@@ -77,16 +77,139 @@ const handleApiError = (error: unknown, defaultMessage: string): never => {
 };
 
 // Service implementation with proper error handling and loading states
+// Mock categories for fallback mode
+const MOCK_CATEGORIES: Category[] = [
+  // Credit Categories (Money In)
+  {
+    id: 'credit-1',
+    name: 'Sales Revenue',
+    description: 'Income from product sales',
+    type: CategoryType.Credit,
+    typeName: 'Credit',
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    usageCount: 15
+  },
+  {
+    id: 'credit-2',
+    name: 'Service Income',
+    description: 'Income from services provided',
+    type: CategoryType.Credit,
+    typeName: 'Credit',
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    usageCount: 8
+  },
+  {
+    id: 'credit-3',
+    name: 'Interest Income',
+    description: 'Interest earned on investments',
+    type: CategoryType.Credit,
+    typeName: 'Credit',
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    usageCount: 3
+  },
+  {
+    id: 'credit-4',
+    name: 'Customer Payments',
+    description: 'Payments received from customers',
+    type: CategoryType.Credit,
+    typeName: 'Credit',
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    usageCount: 25
+  },
+  // Debit Categories (Money Out)
+  {
+    id: 'debit-1',
+    name: 'Office Supplies',
+    description: 'Stationery and office materials',
+    type: CategoryType.Debit,
+    typeName: 'Debit',
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    usageCount: 12
+  },
+  {
+    id: 'debit-2',
+    name: 'Raw Materials',
+    description: 'Materials for production',
+    type: CategoryType.Debit,
+    typeName: 'Debit',
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    usageCount: 20
+  },
+  {
+    id: 'debit-3',
+    name: 'Utilities',
+    description: 'Electricity, water, internet bills',
+    type: CategoryType.Debit,
+    typeName: 'Debit',
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    usageCount: 6
+  },
+  {
+    id: 'debit-4',
+    name: 'Transportation',
+    description: 'Vehicle fuel and maintenance',
+    type: CategoryType.Debit,
+    typeName: 'Debit',
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    usageCount: 9
+  },
+  {
+    id: 'debit-5',
+    name: 'Employee Salaries',
+    description: 'Staff wages and salaries',
+    type: CategoryType.Debit,
+    typeName: 'Debit',
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    usageCount: 18
+  }
+];
+
 export const categoryService = {
+  /**
+   * Check if we should use fallback mode
+   */
+  shouldUseFallback(): boolean {
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    const isFallbackMode = typeof window !== 'undefined' && 
+                          localStorage.getItem('auth_fallback_mode') === 'true';
+    const shouldBypassAuth = process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true';
+    
+    return isDevelopment && (isFallbackMode || shouldBypassAuth);
+  },
+
   /**
    * Get all categories
    */
   async getAll(): Promise<Category[]> {
+    // Check if we should use fallback mode
+    if (this.shouldUseFallback()) {
+      // Simulate API delay for development
+      await new Promise(resolve => setTimeout(resolve, 200));
+      return [...MOCK_CATEGORIES];
+    }
+
     try {
       const categories = await apiService.get<Category[]>('/api/category');
       return Array.isArray(categories) ? categories : [];
     } catch (error) {
       console.error('Error fetching categories:', error);
+      
+      // If we're in development and the error is auth-related, try fallback
+      if (this.shouldUseFallback() && error && typeof error === 'object' && 'status' in error && error.status === 401) {
+
+        await new Promise(resolve => setTimeout(resolve, 200));
+        return [...MOCK_CATEGORIES];
+      }
+      
       return handleApiError(error, 'Failed to fetch categories. Please try again.');
     }
   },
@@ -97,6 +220,17 @@ export const categoryService = {
   async getById(id: string): Promise<Category> {
     if (!id?.trim()) {
       throw new CategoryServiceError('Category ID is required');
+    }
+
+    // Check if we should use fallback mode
+    if (this.shouldUseFallback()) {
+      console.log('🔄 Using mock category by ID (fallback mode)');
+      await new Promise(resolve => setTimeout(resolve, 100));
+      const category = MOCK_CATEGORIES.find(c => c.id === id);
+      if (!category) {
+        throw new CategoryServiceError('Category not found', 404);
+      }
+      return { ...category };
     }
 
     try {
@@ -115,11 +249,26 @@ export const categoryService = {
       throw new CategoryServiceError('Invalid category type provided');
     }
 
+    // Check if we should use fallback mode
+    if (this.shouldUseFallback()) {
+      console.log(`🔄 Using mock categories by type ${type} (fallback mode)`);
+      await new Promise(resolve => setTimeout(resolve, 150));
+      return MOCK_CATEGORIES.filter(c => c.type === type);
+    }
+
     try {
       const categories = await apiService.get<Category[]>(`/api/category/type/${type}`);
       return Array.isArray(categories) ? categories : [];
     } catch (error) {
       console.error(`Error fetching categories by type ${type}:`, error);
+      
+      // If we're in development and the error is auth-related, try fallback
+      if (this.shouldUseFallback() && error && typeof error === 'object' && 'status' in error && error.status === 401) {
+        console.log(`🔄 API failed, falling back to mock categories by type ${type}`);
+        await new Promise(resolve => setTimeout(resolve, 150));
+        return MOCK_CATEGORIES.filter(c => c.type === type);
+      }
+      
       return handleApiError(error, `Failed to fetch ${type === CategoryType.Credit ? 'credit' : 'debit'} categories.`);
     }
   },
@@ -132,12 +281,35 @@ export const categoryService = {
       return [];
     }
 
+    // Check if we should use fallback mode
+    if (this.shouldUseFallback()) {
+      console.log(`🔄 Using mock category search for "${searchTerm}" (fallback mode)`);
+      await new Promise(resolve => setTimeout(resolve, 100));
+      const term = searchTerm.toLowerCase().trim();
+      return MOCK_CATEGORIES.filter(c => 
+        c.name.toLowerCase().includes(term) || 
+        (c.description && c.description.toLowerCase().includes(term))
+      );
+    }
+
     try {
       const params = new URLSearchParams({ q: searchTerm.trim() });
       const categories = await apiService.get<Category[]>(`/api/category/search?${params}`);
       return Array.isArray(categories) ? categories : [];
     } catch (error) {
       console.error(`Error searching categories with term "${searchTerm}":`, error);
+      
+      // If we're in development and the error is auth-related, try fallback
+      if (this.shouldUseFallback() && error && typeof error === 'object' && 'status' in error && error.status === 401) {
+        console.log(`🔄 API failed, falling back to mock category search for "${searchTerm}"`);
+        await new Promise(resolve => setTimeout(resolve, 100));
+        const term = searchTerm.toLowerCase().trim();
+        return MOCK_CATEGORIES.filter(c => 
+          c.name.toLowerCase().includes(term) || 
+          (c.description && c.description.toLowerCase().includes(term))
+        );
+      }
+      
       return handleApiError(error, 'Failed to search categories. Please try again.');
     }
   },
