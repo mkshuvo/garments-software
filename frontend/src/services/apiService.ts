@@ -61,6 +61,19 @@ class ApiService {
       return Promise.reject(this.formatError(error))
     }
 
+    // Check if we're in development mode with fallback authentication
+    const isDevelopment = process.env.NODE_ENV === 'development'
+    const isFallbackMode = typeof window !== 'undefined' && 
+                          localStorage.getItem('auth_fallback_mode') === 'true'
+    const shouldBypassAuth = process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true'
+    
+    if (isDevelopment && (isFallbackMode || shouldBypassAuth)) {
+      console.warn('🔄 API call failed but in fallback mode - not redirecting to login')
+      // In fallback mode, don't redirect but still reject the request
+      // This allows individual services to handle the fallback
+      return Promise.reject(this.formatError(error, 'Authentication required - please log in'))
+    }
+
     this.isRedirecting = true
     
     try {

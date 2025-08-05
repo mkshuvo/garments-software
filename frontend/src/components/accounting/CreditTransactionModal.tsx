@@ -145,7 +145,7 @@ export const CreditTransactionModal: React.FC<CreditTransactionModalProps> = ({
       setFormErrors([]);
       clearAllErrors();
     }
-  }, [isOpen, transaction]); // Removed reset and clearAllErrors from dependencies
+  }, [isOpen, transaction, reset, clearAllErrors]);
 
   const validateForm = (formValues: typeof values): string[] => {
     const errors: string[] = [];
@@ -402,8 +402,9 @@ export const CreditTransactionModal: React.FC<CreditTransactionModalProps> = ({
               )}
               renderOption={(props, option) => {
                 const category = categories.find(c => c.name === option);
+                const { key, ...otherProps } = props;
                 return (
-                  <li {...props}>
+                  <li key={key} {...otherProps}>
                     <Box>
                       <Typography variant="body2">{option}</Typography>
                       {category?.description && (

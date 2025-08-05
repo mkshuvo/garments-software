@@ -42,6 +42,7 @@ interface AuthState {
   hasAnyPermission: (permissionChecks: Array<{ resource: string; action: string }>) => boolean;
   hasAllPermissions: (permissionChecks: Array<{ resource: string; action: string }>) => boolean;
   refreshTokenIfNeeded: () => Promise<boolean>;
+  checkForBackendRecovery: () => Promise<boolean>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -181,6 +182,87 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true });
         
         try {
+          // Check if we should bypass authentication in development
+          const { devAuthService } = await import('../services/devAuthService');
+          
+
+          
+          // Priority 1: Check for explicit bypass flag
+          if (devAuthService.shouldBypassAuth()) {
+            console.log('🚀 Development mode: Bypassing authentication (explicit bypass)');
+            
+            try {
+              const { user, token, permissions } = await devAuthService.bypassAuthentication();
+              
+              set({
+                user,
+                token,
+                permissions,
+                roles: user.roles,
+                isAuthenticated: true,
+                isInitialized: true,
+                isLoading: false,
+              });
+              
+              // Store token for consistency
+              if (typeof window !== 'undefined') {
+                localStorage.setItem('auth_token', token);
+                localStorage.setItem('auth_fallback_mode', 'true');
+              }
+              
+              return;
+            } catch (devError) {
+              console.warn('Development auth bypass failed:', devError);
+            }
+          }
+
+          // Check backend availability and determine fallback strategy
+          const { healthCheckService } = await import('../services/healthCheckService');
+          const backendStatus = await healthCheckService.detectBackendAvailability();
+          
+
+          
+          if (!backendStatus.isAvailable) {
+            console.warn('🔴 Backend is not available:', backendStatus.reason);
+            
+            // Check if we should use fallback authentication
+            if (backendStatus.shouldUseFallback || healthCheckService.shouldUseMockAuth()) {
+              console.log('🔄 Automatically switching to mock authentication');
+              try {
+                const { user, token, permissions } = await devAuthService.bypassAuthentication();
+                
+                set({
+                  user,
+                  token,
+                  permissions,
+                  roles: user.roles,
+                  isAuthenticated: true,
+                  isInitialized: true,
+                  isLoading: false,
+                });
+                
+                if (typeof window !== 'undefined') {
+                  localStorage.setItem('auth_token', token);
+                  // Store a flag to indicate we're using fallback auth
+                  localStorage.setItem('auth_fallback_mode', 'true');
+                }
+                
+                return;
+              } catch (fallbackError) {
+                console.error('Fallback authentication failed:', fallbackError);
+              }
+            }
+            
+            // Backend unavailable and no fallback available - clear auth state
+            await get().clearAuthState();
+            return;
+          } else {
+            // Backend is available - clear any fallback flags
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem('auth_fallback_mode');
+            }
+          }
+          
           // If we have user and token from persistence, restore authentication
           if (state.user && state.token) {
             // Import apiService dynamically to avoid circular dependency
@@ -429,6 +511,44 @@ export const useAuthStore = create<AuthState>()(
           return false;
         }
       },
+
+      // Method to check if we should switch from fallback to real auth
+      checkForBackendRecovery: async (): Promise<boolean> => {
+        const state = get();
+        const isFallbackMode = typeof window !== 'undefined' && 
+                              localStorage.getItem('auth_fallback_mode') === 'true';
+        
+        if (!isFallbackMode || !state.isAuthenticated) {
+          return false;
+        }
+        
+        try {
+          const { healthCheckService } = await import('../services/healthCheckService');
+          const backendStatus = await healthCheckService.detectBackendAvailability();
+          
+          if (backendStatus.isAvailable) {
+            console.log('🟢 Backend is now available - switching from fallback to real authentication');
+            
+            // Clear fallback mode flag
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem('auth_fallback_mode');
+            }
+            
+            // Clear current auth state and trigger re-authentication
+            await get().clearAuthState();
+            
+            // Trigger a new auth check to use real backend
+            await get().checkAuth();
+            
+            return true;
+          }
+          
+          return false;
+        } catch (error) {
+          console.error('Error checking for backend recovery:', error);
+          return false;
+        }
+      },
     }),
     {
       name: 'auth-storage',
@@ -441,6 +561,11 @@ export const useAuthStore = create<AuthState>()(
       }),
       // Add version for migration if needed in the future
       version: 1,
+      migrate: (persistedState: unknown) => {
+        // Simple migration - just return the persisted state
+        // Add more complex migration logic here if needed in the future
+        return persistedState;
+      },
     }
   )
 );

@@ -48,13 +48,7 @@ export const Modal: React.FC<ModalProps> = ({
 }) => {
   const theme = useTheme();
   // Handle test environment where useMediaQuery might fail
-  let isMobile = false;
-  try {
-    isMobile = useMediaQuery(theme.breakpoints?.down?.('sm') || '(max-width: 600px)');
-  } catch (error) {
-    // Fallback for test environment
-    isMobile = false;
-  }
+  const isMobile = useMediaQuery(theme.breakpoints?.down?.('sm') || '(max-width: 600px)');
   const firstFocusableElementRef = useRef<HTMLElement | null>(null);
   const modalRef = useRef<HTMLDivElement | null>(null);
 
@@ -451,7 +445,9 @@ export const Modal: React.FC<ModalProps> = ({
           },
           // Ensure all child elements are marked as modal elements
           '& *': {
-            '[data-modal-element]': 'true'
+            '&[data-modal-element]': {
+              // Modal element styles can go here if needed
+            }
           }
         }
       }}
