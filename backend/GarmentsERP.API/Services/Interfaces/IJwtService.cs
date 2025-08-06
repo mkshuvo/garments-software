@@ -7,5 +7,7 @@ namespace GarmentsERP.API.Services.Interfaces
     {
         string GenerateToken(ApplicationUser user, IList<string> roles);
         ClaimsPrincipal? GetPrincipalFromExpiredToken(string token);
+        string GenerateRefreshToken();
+        bool ValidateToken(string token);
     }
 }

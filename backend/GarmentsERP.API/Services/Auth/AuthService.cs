@@ -290,5 +290,105 @@ namespace GarmentsERP.API.Services.Auth
                 return new List<UserInfoDto>();
             }
         }
+
+        public async Task<UserInfoDto?> GetCurrentUserAsync(System.Security.Claims.ClaimsPrincipal user)
+        {
+            try
+            {
+                var userId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    _logger.LogWarning("No user ID found in claims");
+                    return null;
+                }
+
+                var applicationUser = await _userManager.FindByIdAsync(userId);
+                if (applicationUser == null)
+                {
+                    _logger.LogWarning($"User not found for ID: {userId}");
+                    return null;
+                }
+
+                var roles = await _userManager.GetRolesAsync(applicationUser);
+
+                return new UserInfoDto
+                {
+                    Id = applicationUser.Id,
+                    Username = applicationUser.UserName!,
+                    Email = applicationUser.Email!,
+                    FullName = applicationUser.FullName,
+                    ContactNumber = applicationUser.ContactNumber,
+                    Roles = roles.ToList(),
+                    IsActive = applicationUser.IsActive,
+                    CreatedAt = applicationUser.CreatedAt
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while fetching current user");
+                return null;
+            }
+        }
+
+        public async Task<DTOs.AuthResult> RefreshTokenAsync(string token)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(token))
+                {
+                    return DTOs.AuthResult.Failed("Token is required");
+                }
+
+                // Validate the token (even if expired)
+                var principal = _jwtService.GetPrincipalFromExpiredToken(token);
+                if (principal == null)
+                {
+                    return DTOs.AuthResult.Failed("Invalid token");
+                }
+
+                var userId = principal.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return DTOs.AuthResult.Failed("Invalid token claims");
+                }
+
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null || !user.IsActive)
+                {
+                    return DTOs.AuthResult.Failed("User not found or inactive");
+                }
+
+                // Get current user roles
+                var roles = await _userManager.GetRolesAsync(user);
+
+                // Generate new token
+                var newToken = _jwtService.GenerateToken(user, roles);
+
+                var response = new LoginResponseDto
+                {
+                    Token = newToken,
+                    Expiration = DateTime.UtcNow.AddHours(24), // Should match JWT expiration
+                    User = new UserInfoDto
+                    {
+                        Id = user.Id,
+                        Username = user.UserName!,
+                        Email = user.Email!,
+                        FullName = user.FullName,
+                        ContactNumber = user.ContactNumber,
+                        Roles = roles.ToList(),
+                        IsActive = user.IsActive,
+                        CreatedAt = user.CreatedAt
+                    }
+                };
+
+                _logger.LogInformation($"Token refreshed successfully for user: {user.Email}");
+                return DTOs.AuthResult.Success("Token refreshed successfully", response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred during token refresh");
+                return DTOs.AuthResult.Failed("An error occurred during token refresh");
+            }
+        }
     }
 }
