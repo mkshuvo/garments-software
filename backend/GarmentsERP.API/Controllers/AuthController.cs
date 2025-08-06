@@ -207,5 +207,53 @@ namespace GarmentsERP.API.Controllers
             var roles = await _authService.GetRolesAsync();
             return Ok(roles);
         }
+
+        [HttpGet("me")]
+        [Authorize]
+        public async Task<IActionResult> GetCurrentUser()
+        {
+            try
+            {
+                var userInfo = await _authService.GetCurrentUserAsync(User);
+                if (userInfo == null)
+                {
+                    _logger.LogWarning("Current user not found");
+                    return NotFound(new { message = "User not found" });
+                }
+
+                return Ok(userInfo);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while fetching current user");
+                return StatusCode(500, new { message = "An error occurred while fetching user information" });
+            }
+        }
+
+        [HttpPost("refresh")]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
+        {
+            try
+            {
+                if (request == null || string.IsNullOrEmpty(request.Token))
+                {
+                    return BadRequest(new { message = "Token is required" });
+                }
+
+                var result = await _authService.RefreshTokenAsync(request.Token);
+
+                if (result.IsSuccess)
+                {
+                    return Ok(result.Data);
+                }
+
+                return Unauthorized(new { message = result.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred during token refresh");
+                return StatusCode(500, new { message = "An error occurred during token refresh" });
+            }
+        }
     }
 }

@@ -84,4 +84,10 @@ namespace GarmentsERP.API.DTOs
         [MaxLength(15)]
         public string? ContactNumber { get; set; }
     }
+
+    public class RefreshTokenRequest
+    {
+        [Required]
+        public string Token { get; set; } = string.Empty;
+    }
 }
