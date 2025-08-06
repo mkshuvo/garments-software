@@ -15,6 +15,7 @@ import {
   Breadcrumbs,
   Link
 } from '@mui/material';
+import { cashBookService } from '@/services/cashBookService';
 import {
   Save as SaveIcon,
   Cancel as CancelIcon,
@@ -300,15 +301,22 @@ export default function CashBookEntryPage() {
     setSuccessMessage('');
     
     try {
-      // TODO: API call to save the cash book entry
+      // Save the cash book entry to the database
       console.log('Saving cash book entry:', entry);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const result = await cashBookService.saveCashBookEntry(entry);
       
-      // Show success message
+      if (!result.success) {
+        setErrors([result.message]);
+        return;
+      }
+      
+      // Show success message with details
       const savedRefNumber = entry.referenceNumber;
-      setSuccessMessage(`✅ Cash book entry "${savedRefNumber}" saved successfully! Form has been reset for the next entry.`);
+      const details = result.journalEntryId 
+        ? ` (Journal ID: ${result.journalEntryId}, ${result.transactionsProcessed} transactions processed)`
+        : '';
+      setSuccessMessage(`✅ Cash book entry "${savedRefNumber}" saved successfully!${details} Form has been reset for the next entry.`);
       
       // Reset form
       setEntry({

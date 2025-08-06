@@ -26,6 +26,7 @@ export default function AuthInitializer({ children }: { children: React.ReactNod
         alignItems="center" 
         minHeight="100vh"
         gap={2}
+        suppressHydrationWarning
       >
         <CircularProgress size={40} />
         <Typography variant="body1" color="text.secondary">
