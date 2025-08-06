@@ -451,8 +451,9 @@ export const CreditTransactionModal: React.FC<CreditTransactionModalProps> = ({
               )}
               renderOption={(props, option) => {
                 const contact = contacts.find(c => c.name === option);
+                const { key, ...otherProps } = props;
                 return (
-                  <li {...props}>
+                  <li key={key} {...otherProps}>
                     <Box>
                       <Typography variant="body2">{option}</Typography>
                       {contact && (
