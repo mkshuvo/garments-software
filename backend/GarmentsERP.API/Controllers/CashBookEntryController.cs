@@ -429,6 +429,51 @@ namespace GarmentsERP.API.Controllers
             }
         }
 
+        [HttpGet("recent-transactions")]
+        public async Task<IActionResult> GetRecentTransactions([FromQuery] int limit = 50)
+        {
+            try
+            {
+                var recentJournalEntries = await _context.JournalEntries
+                    .Include(je => je.JournalEntryLines)
+                    .ThenInclude(jel => jel.Account)
+                    .Where(je => je.Description != null && (je.Description.Contains("Credit:") || je.Description.Contains("Debit:")))
+                    .OrderByDescending(je => je.TransactionDate)
+                    .Take(limit)
+                    .ToListAsync();
+
+                var transactions = new List<object>();
+
+                foreach (var entry in recentJournalEntries)
+                {
+                    var line = entry.JournalEntryLines.FirstOrDefault();
+                    if (line != null)
+                    {
+                        var isCredit = entry.Description?.StartsWith("Credit:") ?? false;
+                        transactions.Add(new
+                        {
+                            Id = entry.Id.ToString(),
+                            Date = entry.TransactionDate,
+                            Type = isCredit ? "Credit" : "Debit",
+                            CategoryName = line.Account?.AccountName ?? "Unknown",
+                            Particulars = entry.Description?.Replace("Credit: ", "").Replace("Debit: ", "") ?? "",
+                            Amount = isCredit ? line.Credit : line.Debit,
+                            ReferenceNumber = entry.ReferenceNumber,
+                            ContactName = line.Reference,
+                            CreatedAt = entry.CreatedAt
+                        });
+                    }
+                }
+
+                return Ok(transactions);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching recent transactions");
+                return StatusCode(500, new { Success = false, Message = "Internal server error" });
+            }
+        }
+
         private async Task<CashBookProcessResult> ProcessCashBookEntry(CashBookEntryDto request)
         {
             var result = new CashBookProcessResult();

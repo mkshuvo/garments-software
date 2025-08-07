@@ -26,6 +26,18 @@ export interface TransactionSaveResponse {
   journalEntryId?: string;
 }
 
+export interface SavedTransaction {
+  id: string;
+  date: string;
+  type: 'Credit' | 'Debit';
+  categoryName: string;
+  particulars: string;
+  amount: number;
+  referenceNumber: string;
+  contactName?: string;
+  createdAt: string;
+}
+
 class TransactionService {
   private readonly baseUrl = '/api/cashbookentry';
 
@@ -92,6 +104,19 @@ class TransactionService {
         success: false,
         message: error instanceof Error ? error.message : 'Failed to save debit transaction'
       };
+    }
+  }
+
+  /**
+   * Get recent transactions from the database
+   */
+  async getRecentTransactions(limit: number = 50): Promise<SavedTransaction[]> {
+    try {
+      const response = await apiService.get<SavedTransaction[]>(`${this.baseUrl}/recent-transactions?limit=${limit}`);
+      return response;
+    } catch (error) {
+      console.error('Error fetching recent transactions:', error);
+      return [];
     }
   }
 
