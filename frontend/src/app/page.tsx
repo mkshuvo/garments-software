@@ -14,7 +14,7 @@ import {
 } from '@mui/material'
 import Link from 'next/link'
 import { useAuthStore } from '@/stores/authStore'
-import { authService } from '@/services/authService'
+// import { authService } from '@/services/authService' // Unused import
 
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import BusinessIcon from '@mui/icons-material/Business';
@@ -119,7 +119,7 @@ const menuItems = [
 ];
 
 export default function HomePage() {
-  const { isAuthenticated, user, logout, login } = useAuthStore()
+  const { isAuthenticated, user, logout } = useAuthStore()
   
 
 

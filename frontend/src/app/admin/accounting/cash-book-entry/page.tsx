@@ -123,11 +123,11 @@ export default function CashBookEntryPage() {
       try {
         setCategoriesLoading(true);
         const categories = await categoryService.getAll();
-        
+
         // Separate categories by type
         const credits = categories.filter(c => c.type === CategoryType.Credit && c.isActive);
         const debits = categories.filter(c => c.type === CategoryType.Debit && c.isActive);
-        
+
         setCreditCategories(credits);
         setDebitCategories(debits);
       } catch (error) {
@@ -206,7 +206,7 @@ export default function CashBookEntryPage() {
     try {
       // Save the credit transaction to the database
       const result = await cashBookService.saveCreditTransaction(transaction);
-      
+
       if (!result.success) {
         setErrors([result.message]);
         return;
@@ -234,7 +234,7 @@ export default function CashBookEntryPage() {
           creditTransactions: [...prev.creditTransactions, newTransaction]
         }));
       }
-      
+
       closeCreditModal();
     } catch {
       setErrors(['Failed to save credit transaction. Please try again.']);
@@ -251,7 +251,7 @@ export default function CashBookEntryPage() {
     try {
       // Save the debit transaction to the database
       const result = await cashBookService.saveDebitTransaction(transaction);
-      
+
       if (!result.success) {
         setErrors([result.message]);
         return;
@@ -279,7 +279,7 @@ export default function CashBookEntryPage() {
           debitTransactions: [...prev.debitTransactions, newTransaction]
         }));
       }
-      
+
       closeDebitModal();
     } catch {
       setErrors(['Failed to save debit transaction. Please try again.']);
@@ -305,27 +305,27 @@ export default function CashBookEntryPage() {
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       {/* Service Status Banner */}
-      <ServiceStatusBanner 
+      <ServiceStatusBanner
         showWhenHealthy={false}
         dismissible={true}
         showDetails={true}
         position="top"
       />
-      
+
       <Box sx={{ p: 3, mt: 6 }}>
         {/* Navigation Breadcrumbs */}
         <Breadcrumbs sx={{ mb: 3 }}>
-          <Link 
-            color="inherit" 
-            href="/" 
+          <Link
+            color="inherit"
+            href="/"
             sx={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}
           >
             <HomeIcon sx={{ mr: 0.5 }} fontSize="inherit" />
             Home
           </Link>
-          <Link 
-            color="inherit" 
-            href="/admin/accounting" 
+          <Link
+            color="inherit"
+            href="/admin/accounting"
             sx={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}
           >
             <AccountBalanceIcon sx={{ mr: 0.5 }} fontSize="inherit" />
@@ -368,8 +368,8 @@ export default function CashBookEntryPage() {
 
         {/* Balance Status Alert */}
         {hasTransactions && (
-          <Alert 
-            severity={isBalanced ? 'success' : 'warning'} 
+          <Alert
+            severity={isBalanced ? 'success' : 'warning'}
             sx={{ mb: 3 }}
             icon={<AccountBalanceIcon />}
           >
@@ -377,12 +377,12 @@ export default function CashBookEntryPage() {
               {isBalanced ? '✅ Entry is Balanced' : '⚠️ Entry Not Balanced'}
             </Typography>
             <Typography variant="body2">
-              Credits: ৳{totalCredits.toFixed(2)} | Debits: ৳{totalDebits.toFixed(2)} | 
+              Credits: ৳{totalCredits.toFixed(2)} | Debits: ৳{totalDebits.toFixed(2)} |
               Difference: ৳{difference.toFixed(2)}
             </Typography>
             {!isBalanced && (
               <Typography variant="body2" sx={{ mt: 1 }}>
-                💡 <strong>Tip:</strong> Add matching debit and credit transactions to balance the entry. 
+                💡 <strong>Tip:</strong> Add matching debit and credit transactions to balance the entry.
                 Total credits must equal total debits for proper double-entry bookkeeping.
               </Typography>
             )}
@@ -450,11 +450,11 @@ export default function CashBookEntryPage() {
               ⚖️ <strong>Balance Rule:</strong> Total Credits must equal Total Debits for the entry to be saved
             </Typography>
             <Typography variant="body2" sx={{ mb: 2, fontStyle: 'italic' }}>
-              📝 <strong>New:</strong> Categories are now managed through the dedicated Category Management system. 
+              📝 <strong>New:</strong> Categories are now managed through the dedicated Category Management system.
               Only active Credit categories will appear in Credit transactions, and only active Debit categories in Debit transactions.
             </Typography>
             <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'success.main' }}>
-              💾 <strong>Save Behavior:</strong> Each credit and debit transaction is saved independently when you click Save in the respective modal. 
+              💾 <strong>Save Behavior:</strong> Each credit and debit transaction is saved independently when you click Save in the respective modal.
               📊 No balance validation required - save transactions as needed.
             </Typography>
           </CardContent>
@@ -489,7 +489,7 @@ export default function CashBookEntryPage() {
             <Typography variant="h6" gutterBottom>
               📊 Transaction Summary
             </Typography>
-            
+
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={3}>
               <Paper sx={{ p: 2, bgcolor: 'success.50', textAlign: 'center', flex: 1 }}>
                 <Typography variant="h6" color="success.main">
@@ -510,8 +510,8 @@ export default function CashBookEntryPage() {
                 <Typography variant="body2">Difference</Typography>
               </Paper>
               <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1 }}>
-                <Chip 
-                  label={isBalanced ? "Balanced" : "Not Balanced"} 
+                <Chip
+                  label={isBalanced ? "Balanced" : "Not Balanced"}
                   color={isBalanced ? "success" : "warning"}
                   variant={isBalanced ? "filled" : "outlined"}
                 />
