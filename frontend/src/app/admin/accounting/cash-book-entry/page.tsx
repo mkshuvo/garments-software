@@ -33,6 +33,7 @@ import { CreditTransactionModal } from '@/components/accounting/CreditTransactio
 import { DebitTransactionModal } from '@/components/accounting/DebitTransactionModal';
 import ServiceStatusBanner from '@/components/ui/ServiceStatusBanner';
 import { cashBookService } from '@/services/cashBookService';
+import { transactionService, SavedTransaction } from '@/services/transactionService';
 
 interface CashBookEntry {
   id: string;
@@ -97,6 +98,8 @@ export default function CashBookEntryPage() {
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [errors, setErrors] = useState<string[]>([]);
   const [successMessage, setSuccessMessage] = useState<string>('');
+  const [savedTransactions, setSavedTransactions] = useState<SavedTransaction[]>([]);
+  const [loadingSavedTransactions, setLoadingSavedTransactions] = useState(true);
 
   // Modal state management
   const [modals, setModals] = useState({
@@ -139,6 +142,23 @@ export default function CashBookEntryPage() {
     };
 
     loadCategories();
+  }, []);
+
+  // Load saved transactions from API
+  useEffect(() => {
+    const loadSavedTransactions = async () => {
+      try {
+        setLoadingSavedTransactions(true);
+        const transactions = await transactionService.getRecentTransactions(20);
+        setSavedTransactions(transactions);
+      } catch (error) {
+        console.error('Failed to load saved transactions:', error);
+      } finally {
+        setLoadingSavedTransactions(false);
+      }
+    };
+
+    loadSavedTransactions();
   }, []);
 
 
@@ -236,6 +256,9 @@ export default function CashBookEntryPage() {
       }
 
       closeCreditModal();
+      
+      // Refresh the saved transactions list
+      await refreshSavedTransactions();
     } catch {
       setErrors(['Failed to save credit transaction. Please try again.']);
     } finally {
@@ -281,6 +304,9 @@ export default function CashBookEntryPage() {
       }
 
       closeDebitModal();
+      
+      // Refresh the saved transactions list
+      await refreshSavedTransactions();
     } catch {
       setErrors(['Failed to save debit transaction. Please try again.']);
     } finally {
@@ -292,6 +318,15 @@ export default function CashBookEntryPage() {
     const totalCredits = entry.creditTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
     const totalDebits = entry.debitTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
     return { totalCredits, totalDebits, difference: Math.abs(totalCredits - totalDebits) };
+  };
+
+  const refreshSavedTransactions = async () => {
+    try {
+      const transactions = await transactionService.getRecentTransactions(20);
+      setSavedTransactions(transactions);
+    } catch (error) {
+      console.error('Failed to refresh saved transactions:', error);
+    }
   };
 
   // Removed validateEntry function as transactions are now saved independently without validation
@@ -482,6 +517,76 @@ export default function CashBookEntryPage() {
             error={undefined}
           />
         </Box>
+
+        {/* Saved Transactions List */}
+        <Card sx={{ mb: 3 }}>
+          <CardContent>
+            <Typography variant="h6" gutterBottom>
+              💾 Recently Saved Transactions
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              These are the transactions you've saved to the database. They persist across sessions.
+            </Typography>
+            
+            {loadingSavedTransactions ? (
+              <Typography variant="body2" color="text.secondary">
+                Loading saved transactions...
+              </Typography>
+            ) : savedTransactions.length === 0 ? (
+              <Typography variant="body2" color="text.secondary">
+                No saved transactions yet. Add and save some transactions to see them here.
+              </Typography>
+            ) : (
+              <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
+                {savedTransactions.map((transaction, index) => (
+                  <Paper 
+                    key={transaction.id} 
+                    sx={{ 
+                      p: 2, 
+                      mb: 1, 
+                      backgroundColor: transaction.type === 'Credit' ? 'success.50' : 'error.50',
+                      border: `1px solid ${transaction.type === 'Credit' ? 'success.200' : 'error.200'}`
+                    }}
+                  >
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Box sx={{ flex: 1 }}>
+                        <Stack direction="row" spacing={2} alignItems="center">
+                          <Chip 
+                            label={transaction.type}
+                            color={transaction.type === 'Credit' ? 'success' : 'error'}
+                            size="small"
+                          />
+                          <Typography variant="body2" fontWeight="bold">
+                            {transaction.categoryName}
+                          </Typography>
+                          <Typography variant="body2">
+                            {transaction.particulars}
+                          </Typography>
+                        </Stack>
+                        <Stack direction="row" spacing={2} sx={{ mt: 1 }}>
+                          <Typography variant="caption" color="text.secondary">
+                            {new Date(transaction.date).toLocaleDateString()}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            Ref: {transaction.referenceNumber}
+                          </Typography>
+                          {transaction.contactName && (
+                            <Typography variant="caption" color="text.secondary">
+                              Contact: {transaction.contactName}
+                            </Typography>
+                          )}
+                        </Stack>
+                      </Box>
+                      <Typography variant="h6" color={transaction.type === 'Credit' ? 'success.main' : 'error.main'}>
+                        ৳{transaction.amount.toFixed(2)}
+                      </Typography>
+                    </Stack>
+                  </Paper>
+                ))}
+              </Box>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Summary and Actions */}
         <Card sx={{ mt: 3 }}>
