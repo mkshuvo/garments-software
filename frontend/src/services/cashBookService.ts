@@ -66,41 +66,52 @@ class CashBookService {
   private readonly baseUrl = '/api/cashbookentry';
 
   /**
-   * Save a cash book entry to the database
+   * Save a single credit transaction to the database
    */
-  async saveCashBookEntry(entry: CashBookEntry): Promise<CashBookSaveResponse> {
+  async saveCreditTransaction(transaction: CreditTransaction): Promise<CashBookSaveResponse> {
     try {
-      // Transform the frontend data structure to match the backend DTO
-      const dto: CashBookEntryDto = {
-        transactionDate: entry.transactionDate.toISOString(),
-        referenceNumber: entry.referenceNumber,
-        description: entry.description,
-        creditTransactions: entry.creditTransactions.map(ct => ({
-          date: ct.date.toISOString(),
-          categoryName: ct.categoryName,
-          particulars: ct.particulars,
-          amount: ct.amount,
-          contactName: ct.contactName
-        })),
-        debitTransactions: entry.debitTransactions.map(dt => ({
-          date: dt.date.toISOString(),
-          categoryName: dt.categoryName,
-          supplierName: dt.supplierName,
-          buyerName: dt.buyerName,
-          particulars: dt.particulars,
-          amount: dt.amount
-        }))
+      const dto: CreditTransactionDto = {
+        date: transaction.date.toISOString(),
+        categoryName: transaction.categoryName,
+        particulars: transaction.particulars,
+        amount: transaction.amount,
+        contactName: transaction.contactName
       };
 
-      const response = await apiService.post<CashBookSaveResponse>(`${this.baseUrl}/create-entry`, dto);
+      const response = await apiService.post<CashBookSaveResponse>(`${this.baseUrl}/credit-transaction`, dto);
       return response;
     } catch (error: any) {
-      console.error('Error saving cash book entry:', error);
+      console.error('Error saving credit transaction:', error);
       
-      // Return a structured error response
       return {
         success: false,
-        message: error.response?.data?.message || error.message || 'Failed to save cash book entry'
+        message: error.response?.data?.message || error.message || 'Failed to save credit transaction'
+      };
+    }
+  }
+
+  /**
+   * Save a single debit transaction to the database
+   */
+  async saveDebitTransaction(transaction: DebitTransaction): Promise<CashBookSaveResponse> {
+    try {
+      const dto: DebitTransactionDto = {
+        date: transaction.date.toISOString(),
+        categoryName: transaction.categoryName,
+        supplierName: transaction.supplierName,
+        buyerName: transaction.buyerName,
+        particulars: transaction.particulars,
+        amount: transaction.amount
+      };
+
+      const response = await apiService.post<CashBookSaveResponse>(`${this.baseUrl}/debit-transaction`, dto);
+      return response;
+    } catch (error: any) {
+      console.error('Error saving debit transaction:', error);
+      
+      return {
+        success: false,
+        message: error.response?.data?.message || error.message || 'Failed to save debit transaction'
       };
     }
   }
