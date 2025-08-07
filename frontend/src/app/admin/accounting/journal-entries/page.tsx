@@ -46,6 +46,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useRouter } from 'next/navigation';
 import ServiceStatusBanner from '@/components/ui/ServiceStatusBanner';
+import { ExportModal } from '@/components/accounting/ExportModal';
 
 interface JournalEntry {
   id: string;
@@ -92,6 +93,8 @@ export default function JournalEntriesPage() {
 
   const [categories, setCategories] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
 
   // Load journal entries
   const loadJournalEntries = async () => {
@@ -133,7 +136,7 @@ export default function JournalEntriesPage() {
         params.append('description', filters.description);
       }
 
-      const response = await fetch(`/api/cashbookentry/journal-entries?${params}`);
+      const response = await fetch(`http://localhost:8080/api/cashbookentry/journal-entries?${params}`);
       if (!response.ok) {
         throw new Error('Failed to load journal entries');
       }
@@ -153,7 +156,7 @@ export default function JournalEntriesPage() {
   // Load categories for filter dropdown
   const loadCategories = async () => {
     try {
-      const response = await fetch('/api/cashbookentry/categories');
+      const response = await fetch('http://localhost:8080/api/cashbookentry/categories');
       if (response.ok) {
         const data = await response.json();
         const categoryNames = data.map((cat: any) => cat.name);
@@ -196,6 +199,63 @@ export default function JournalEntriesPage() {
       month: 'short',
       day: 'numeric'
     });
+  };
+
+  const handleExport = async (selectedColumns: string[]) => {
+    try {
+      setExportLoading(true);
+      
+      // Build query parameters with current filters
+      const params = new URLSearchParams();
+      
+      if (filters.dateFrom) {
+        params.append('dateFrom', filters.dateFrom.toISOString());
+      }
+      if (filters.dateTo) {
+        params.append('dateTo', filters.dateTo.toISOString());
+      }
+      if (filters.transactionType !== 'All') {
+        params.append('type', filters.transactionType);
+      }
+      if (filters.amountMin !== undefined) {
+        params.append('amountMin', filters.amountMin.toString());
+      }
+      if (filters.amountMax !== undefined) {
+        params.append('amountMax', filters.amountMax.toString());
+      }
+      if (filters.category) {
+        params.append('category', filters.category);
+      }
+      if (filters.referenceNumber) {
+        params.append('referenceNumber', filters.referenceNumber);
+      }
+      if (filters.contactName) {
+        params.append('contactName', filters.contactName);
+      }
+      if (filters.description) {
+        params.append('description', filters.description);
+      }
+      
+      // Add selected columns
+      params.append('columns', selectedColumns.join(','));
+
+      // Create download link
+      const url = `/api/cashbookentry/journal-entries/export?${params}`;
+      
+      // Create a temporary link and trigger download
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `journal-entries-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      setShowExportModal(false);
+    } catch (err) {
+      setError('Failed to export data. Please try again.');
+    } finally {
+      setExportLoading(false);
+    }
   };
 
   return (
@@ -243,6 +303,15 @@ export default function JournalEntriesPage() {
             </Typography>
           </Box>
           <Stack direction="row" spacing={2}>
+            <Button
+              variant="contained"
+              startIcon={<DownloadIcon />}
+              onClick={() => setShowExportModal(true)}
+              disabled={loading || entries.length === 0}
+              color="success"
+            >
+              Export CSV
+            </Button>
             <Button
               variant="outlined"
               startIcon={<RefreshIcon />}
@@ -411,7 +480,11 @@ export default function JournalEntriesPage() {
           </Typography>
           <Stack direction="row" spacing={1}>
             <Tooltip title="Export to CSV">
-              <IconButton size="small">
+              <IconButton 
+                size="small"
+                onClick={() => setShowExportModal(true)}
+                disabled={loading || entries.length === 0}
+              >
                 <DownloadIcon />
               </IconButton>
             </Tooltip>
@@ -535,6 +608,14 @@ export default function JournalEntriesPage() {
             </Box>
           )}
         </Card>
+
+        {/* Export Modal */}
+        <ExportModal
+          isOpen={showExportModal}
+          onClose={() => setShowExportModal(false)}
+          onExport={handleExport}
+          loading={exportLoading}
+        />
       </Box>
     </LocalizationProvider>
   );

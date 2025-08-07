@@ -30,9 +30,9 @@ export default function RootLayout({
     <html lang="en">
       <body className={systemFont.className}>
         <ThemeProvider>
-          <AuthInitializer>
+          {/* <AuthInitializer> */}
             {children}
-          </AuthInitializer>
+          {/* </AuthInitializer> */}
         </ThemeProvider>
       </body>
     </html>

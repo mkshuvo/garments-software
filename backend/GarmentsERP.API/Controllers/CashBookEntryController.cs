@@ -601,6 +601,164 @@ namespace GarmentsERP.API.Controllers
             }
         }
 
+        [HttpGet("journal-entries/export")]
+        public async Task<IActionResult> ExportJournalEntries(
+            [FromQuery] DateTime? dateFrom = null,
+            [FromQuery] DateTime? dateTo = null,
+            [FromQuery] string? type = null,
+            [FromQuery] decimal? amountMin = null,
+            [FromQuery] decimal? amountMax = null,
+            [FromQuery] string? category = null,
+            [FromQuery] string? referenceNumber = null,
+            [FromQuery] string? contactName = null,
+            [FromQuery] string? description = null,
+            [FromQuery] string? columns = null)
+        {
+            try
+            {
+                var query = _context.JournalEntries
+                    .Include(je => je.JournalEntryLines)
+                    .ThenInclude(jel => jel.Account)
+                    .Where(je => je.Description != null && (je.Description.Contains("Credit:") || je.Description.Contains("Debit:")))
+                    .AsQueryable();
+
+                // Apply the same filters as the main endpoint
+                if (dateFrom.HasValue)
+                {
+                    query = query.Where(je => je.TransactionDate >= dateFrom.Value);
+                }
+
+                if (dateTo.HasValue)
+                {
+                    query = query.Where(je => je.TransactionDate <= dateTo.Value);
+                }
+
+                if (!string.IsNullOrEmpty(type) && type != "All")
+                {
+                    if (type == "Credit")
+                    {
+                        query = query.Where(je => je.Description!.StartsWith("Credit:"));
+                    }
+                    else if (type == "Debit")
+                    {
+                        query = query.Where(je => je.Description!.StartsWith("Debit:"));
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(category))
+                {
+                    query = query.Where(je => je.JournalEntryLines.Any(jel => jel.Account!.AccountName.Contains(category)));
+                }
+
+                if (!string.IsNullOrEmpty(referenceNumber))
+                {
+                    query = query.Where(je => je.ReferenceNumber.Contains(referenceNumber));
+                }
+
+                if (!string.IsNullOrEmpty(contactName))
+                {
+                    query = query.Where(je => je.JournalEntryLines.Any(jel => jel.Reference != null && jel.Reference.Contains(contactName)));
+                }
+
+                if (!string.IsNullOrEmpty(description))
+                {
+                    query = query.Where(je => je.Description!.Contains(description));
+                }
+
+                if (amountMin.HasValue)
+                {
+                    query = query.Where(je => je.JournalEntryLines.Any(jel => jel.Credit >= amountMin.Value || jel.Debit >= amountMin.Value));
+                }
+
+                if (amountMax.HasValue)
+                {
+                    query = query.Where(je => je.JournalEntryLines.Any(jel => jel.Credit <= amountMax.Value || jel.Debit <= amountMax.Value));
+                }
+
+                // Get all matching entries (no pagination for export)
+                var journalEntries = await query
+                    .OrderByDescending(je => je.TransactionDate)
+                    .ToListAsync();
+
+                // Parse selected columns
+                var selectedColumns = new List<string>();
+                if (!string.IsNullOrEmpty(columns))
+                {
+                    selectedColumns = columns.Split(',').Select(c => c.Trim()).ToList();
+                }
+                else
+                {
+                    // Default columns if none specified
+                    selectedColumns = new List<string> { "journalNumber", "transactionDate", "type", "categoryName", "particulars", "amount", "referenceNumber", "contactName", "accountName" };
+                }
+
+                // Build CSV content
+                var csvContent = new System.Text.StringBuilder();
+                
+                // Add header row
+                var headers = new List<string>();
+                foreach (var column in selectedColumns)
+                {
+                    headers.Add(column switch
+                    {
+                        "journalNumber" => "Journal Number",
+                        "transactionDate" => "Transaction Date",
+                        "type" => "Type",
+                        "categoryName" => "Category",
+                        "particulars" => "Particulars",
+                        "amount" => "Amount",
+                        "referenceNumber" => "Reference Number",
+                        "contactName" => "Contact Name",
+                        "accountName" => "Account Name",
+                        "createdAt" => "Created At",
+                        _ => column
+                    });
+                }
+                csvContent.AppendLine(string.Join(",", headers.Select(h => $"\"{h}\"")));
+
+                // Add data rows
+                foreach (var entry in journalEntries)
+                {
+                    var line = entry.JournalEntryLines.FirstOrDefault();
+                    if (line != null)
+                    {
+                        var isCredit = entry.Description?.StartsWith("Credit:") ?? false;
+                        var values = new List<string>();
+
+                        foreach (var column in selectedColumns)
+                        {
+                            var value = column switch
+                            {
+                                "journalNumber" => entry.JournalNumber,
+                                "transactionDate" => entry.TransactionDate.ToString("yyyy-MM-dd"),
+                                "type" => isCredit ? "Credit" : "Debit",
+                                "categoryName" => line.Account?.AccountName ?? "Unknown",
+                                "particulars" => entry.Description?.Replace("Credit: ", "").Replace("Debit: ", "") ?? "",
+                                "amount" => (isCredit ? line.Credit : line.Debit).ToString("F2"),
+                                "referenceNumber" => entry.ReferenceNumber,
+                                "contactName" => line.Reference ?? "",
+                                "accountName" => line.Account?.AccountName ?? "Unknown",
+                                "createdAt" => entry.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"),
+                                _ => ""
+                            };
+                            values.Add($"\"{value}\"");
+                        }
+                        csvContent.AppendLine(string.Join(",", values));
+                    }
+                }
+
+                var fileName = $"journal-entries-{DateTime.Now:yyyyMMdd-HHmmss}.csv";
+                var bytes = System.Text.Encoding.UTF8.GetBytes(csvContent.ToString());
+
+                return File(bytes, "text/csv", fileName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error exporting journal entries");
+                return StatusCode(500, new { Success = false, Message = "Internal server error" });
+            }
+        }
+
         private async Task<CashBookProcessResult> ProcessCashBookEntry(CashBookEntryDto request)
         {
             var result = new CashBookProcessResult();
