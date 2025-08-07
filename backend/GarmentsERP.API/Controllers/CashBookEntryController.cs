@@ -778,7 +778,7 @@ namespace GarmentsERP.API.Controllers
                 TransactionDate = request.Date,
                 JournalType = JournalType.General,
                 ReferenceNumber = $"CR-{DateTime.Now:yyyyMMdd}-{Guid.NewGuid().ToString()[..8]}",
-                Description = request.Particulars,
+                Description = $"Credit: {request.Particulars}",
                 Status = JournalStatus.Posted,
                 CreatedByUserId = GetCurrentUserId()
             };
@@ -844,7 +844,7 @@ namespace GarmentsERP.API.Controllers
                 TransactionDate = request.Date,
                 JournalType = JournalType.General,
                 ReferenceNumber = $"DR-{DateTime.Now:yyyyMMdd}-{Guid.NewGuid().ToString()[..8]}",
-                Description = request.Particulars,
+                Description = $"Debit: {request.Particulars}",
                 Status = JournalStatus.Posted,
                 CreatedByUserId = GetCurrentUserId()
             };
