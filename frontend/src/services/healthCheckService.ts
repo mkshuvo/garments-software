@@ -40,8 +40,8 @@ class HealthCheckService {
       retryDelay = 1000
     } = options;
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
-    const healthEndpoint = `${apiUrl}/api/health`;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+    const healthEndpoint = apiUrl ? `${apiUrl}/api/health` : '/api/health';
 
     // In development, if we're explicitly bypassing auth, don't try to check backend health
     const isDevelopment = process.env.NODE_ENV === 'development';
@@ -239,9 +239,10 @@ class HealthCheckService {
   }
 
   getServiceInfo() {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
     return {
-      apiUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080',
-      healthEndpoint: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/health`,
+      apiUrl: apiUrl || 'relative',
+      healthEndpoint: apiUrl ? `${apiUrl}/api/health` : '/api/health',
       isDevelopment: process.env.NODE_ENV === 'development',
       isUsingFallback: this.healthStatus.isUsingFallback,
       shouldUseMockAuth: this.shouldUseMockAuth()
