@@ -15,9 +15,7 @@ import {
   Breadcrumbs,
   Link
 } from '@mui/material';
-import { transactionService } from '@/services/transactionService';
 import {
-  Save as SaveIcon,
   Cancel as CancelIcon,
   AccountBalance as AccountBalanceIcon,
   ArrowBack as ArrowBackIcon,
@@ -34,6 +32,7 @@ import { AddTransactionButtons } from '@/components/accounting/AddTransactionBut
 import { CreditTransactionModal } from '@/components/accounting/CreditTransactionModal';
 import { DebitTransactionModal } from '@/components/accounting/DebitTransactionModal';
 import ServiceStatusBanner from '@/components/ui/ServiceStatusBanner';
+import { cashBookService } from '@/services/cashBookService';
 
 interface CashBookEntry {
   id: string;
@@ -237,7 +236,7 @@ export default function CashBookEntryPage() {
       }
       
       closeCreditModal();
-    } catch (error: any) {
+    } catch {
       setErrors(['Failed to save credit transaction. Please try again.']);
     } finally {
       setLoading(false);
@@ -282,7 +281,7 @@ export default function CashBookEntryPage() {
       }
       
       closeDebitModal();
-    } catch (error: any) {
+    } catch {
       setErrors(['Failed to save debit transaction. Please try again.']);
     } finally {
       setLoading(false);
@@ -295,50 +294,13 @@ export default function CashBookEntryPage() {
     return { totalCredits, totalDebits, difference: Math.abs(totalCredits - totalDebits) };
   };
 
-  const validateEntry = (): string[] => {
-    const errors: string[] = [];
-    
-    if (!entry.transactionDate) errors.push('Transaction date is required');
-    if (!entry.referenceNumber.trim()) errors.push('Reference number is required');
-    if (entry.creditTransactions.length === 0 && entry.debitTransactions.length === 0) {
-      errors.push('At least one transaction is required');
-    }
-
-    // Validate credit transactions
-    entry.creditTransactions.forEach((t, index) => {
-      if (!t.categoryName.trim()) errors.push(`Credit transaction ${index + 1}: Category is required`);
-      if (!t.particulars.trim()) errors.push(`Credit transaction ${index + 1}: Particulars is required`);
-      if (t.amount <= 0) errors.push(`Credit transaction ${index + 1}: Amount must be greater than zero`);
-      
-      // Validate that the category exists in credit categories (if not freeSolo)
-      const categoryExists = creditCategories.some(c => c.name === t.categoryName);
-      if (!categoryExists && creditCategories.length > 0) {
-        errors.push(`Credit transaction ${index + 1}: "${t.categoryName}" is not a valid Credit category`);
-      }
-    });
-
-    // Validate debit transactions
-    entry.debitTransactions.forEach((t, index) => {
-      if (!t.categoryName.trim()) errors.push(`Debit transaction ${index + 1}: Category is required`);
-      if (!t.particulars.trim()) errors.push(`Debit transaction ${index + 1}: Particulars is required`);
-      if (t.amount <= 0) errors.push(`Debit transaction ${index + 1}: Amount must be greater than zero`);
-      
-      // Validate that the category exists in debit categories (if not freeSolo)
-      const categoryExists = debitCategories.some(c => c.name === t.categoryName);
-      if (!categoryExists && debitCategories.length > 0) {
-        errors.push(`Debit transaction ${index + 1}: "${t.categoryName}" is not a valid Debit category`);
-      }
-    });
-
-    return errors;
-  };
+  // Removed validateEntry function as transactions are now saved independently without validation
 
 
 
   const { totalCredits, totalDebits, difference } = calculateTotals();
   const isBalanced = difference < 0.01;
   const hasTransactions = entry.creditTransactions.length > 0 || entry.debitTransactions.length > 0;
-  const isFormValid = entry.referenceNumber.trim() && hasTransactions && isBalanced && !categoriesLoading;
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
