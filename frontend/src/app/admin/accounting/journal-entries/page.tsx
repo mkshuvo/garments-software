@@ -615,6 +615,8 @@ export default function JournalEntriesPage() {
           onClose={() => setShowExportModal(false)}
           onExport={handleExport}
           loading={exportLoading}
+          activeFilters={filters}
+          totalEntries={totalEntries}
         />
       </Box>
     </LocalizationProvider>

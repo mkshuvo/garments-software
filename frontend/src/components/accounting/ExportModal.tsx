@@ -32,6 +32,18 @@ interface ExportModalProps {
   onClose: () => void;
   onExport: (selectedColumns: string[]) => Promise<void>;
   loading?: boolean;
+  activeFilters?: {
+    dateFrom?: Date;
+    dateTo?: Date;
+    transactionType?: string;
+    amountMin?: number;
+    amountMax?: number;
+    category?: string;
+    referenceNumber?: string;
+    contactName?: string;
+    description?: string;
+  };
+  totalEntries?: number;
 }
 
 const AVAILABLE_COLUMNS: ExportColumn[] = [
@@ -47,7 +59,7 @@ const AVAILABLE_COLUMNS: ExportColumn[] = [
   { key: 'createdAt', label: 'Created At', description: 'When the entry was created in system' }
 ];
 
-export function ExportModal({ isOpen, onClose, onExport, loading = false }: ExportModalProps) {
+export function ExportModal({ isOpen, onClose, onExport, loading = false, activeFilters, totalEntries }: ExportModalProps) {
   const [selectedColumns, setSelectedColumns] = useState<string[]>([
     'journalNumber',
     'transactionDate', 
@@ -97,9 +109,34 @@ export function ExportModal({ isOpen, onClose, onExport, loading = false }: Expo
       </DialogTitle>
       
       <DialogContent>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Select the columns you want to include in your CSV export. The export will include all transactions that match your current filters.
         </Typography>
+
+        {/* Active Filters Summary */}
+        {activeFilters && (
+          <Alert severity="info" sx={{ mb: 3 }}>
+            <Typography variant="body2" fontWeight="medium" gutterBottom>
+              📊 Export Summary: {totalEntries || 0} transactions will be exported
+            </Typography>
+            <Typography variant="body2">
+              🔍 Active Filters: {' '}
+              {activeFilters.dateFrom && `From ${activeFilters.dateFrom.toLocaleDateString()}`}
+              {activeFilters.dateTo && ` To ${activeFilters.dateTo.toLocaleDateString()}`}
+              {activeFilters.transactionType && activeFilters.transactionType !== 'All' && ` • Type: ${activeFilters.transactionType}`}
+              {activeFilters.category && ` • Category: ${activeFilters.category}`}
+              {activeFilters.amountMin && ` • Min Amount: ৳${activeFilters.amountMin}`}
+              {activeFilters.amountMax && ` • Max Amount: ৳${activeFilters.amountMax}`}
+              {activeFilters.referenceNumber && ` • Reference: ${activeFilters.referenceNumber}`}
+              {activeFilters.contactName && ` • Contact: ${activeFilters.contactName}`}
+              {activeFilters.description && ` • Description: ${activeFilters.description}`}
+              {!activeFilters.dateFrom && !activeFilters.dateTo && !activeFilters.category && 
+               !activeFilters.amountMin && !activeFilters.amountMax && !activeFilters.referenceNumber && 
+               !activeFilters.contactName && !activeFilters.description && 
+               (!activeFilters.transactionType || activeFilters.transactionType === 'All') && 'None (All transactions)'}
+            </Typography>
+          </Alert>
+        )}
 
         {selectedColumns.length === 0 && (
           <Alert severity="warning" sx={{ mb: 2 }}>
