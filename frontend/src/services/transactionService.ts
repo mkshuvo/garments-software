@@ -51,12 +51,12 @@ class TransactionService {
 
       const response = await apiService.post<TransactionSaveResponse>(`${this.baseUrl}/credit-transaction`, dto);
       return response;
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving credit transaction:', error);
       
       return {
         success: false,
-        message: error.response?.data?.message || error.message || 'Failed to save credit transaction'
+        message: error instanceof Error ? error.message : 'Failed to save credit transaction'
       };
     }
   }
@@ -85,12 +85,12 @@ class TransactionService {
 
       const response = await apiService.post<TransactionSaveResponse>(`${this.baseUrl}/debit-transaction`, dto);
       return response;
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving debit transaction:', error);
       
       return {
         success: false,
-        message: error.response?.data?.message || error.message || 'Failed to save debit transaction'
+        message: error instanceof Error ? error.message : 'Failed to save debit transaction'
       };
     }
   }
