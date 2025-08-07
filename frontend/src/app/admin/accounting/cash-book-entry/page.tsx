@@ -15,7 +15,7 @@ import {
   Breadcrumbs,
   Link
 } from '@mui/material';
-import { cashBookService } from '@/services/cashBookService';
+import { transactionService } from '@/services/transactionService';
 import {
   Save as SaveIcon,
   Cancel as CancelIcon,
@@ -199,50 +199,94 @@ export default function CashBookEntryPage() {
     }));
   };
 
-  const handleSaveCreditTransaction = (transaction: CreditTransaction) => {
-    if (modals.creditModal.editingTransaction) {
-      // Update existing transaction
-      setEntry(prev => ({
-        ...prev,
-        creditTransactions: prev.creditTransactions.map(t =>
-          t.id === transaction.id ? transaction : t
-        )
-      }));
-    } else {
-      // Add new transaction
-      const newTransaction = {
-        ...transaction,
-        id: Date.now().toString()
-      };
-      setEntry(prev => ({
-        ...prev,
-        creditTransactions: [...prev.creditTransactions, newTransaction]
-      }));
+  const handleSaveCreditTransaction = async (transaction: CreditTransaction) => {
+    setLoading(true);
+    setErrors([]);
+    setSuccessMessage('');
+
+    try {
+      // Save the credit transaction to the database
+      const result = await cashBookService.saveCreditTransaction(transaction);
+      
+      if (!result.success) {
+        setErrors([result.message]);
+        return;
+      }
+
+      // Show success message
+      setSuccessMessage(`✅ Credit transaction saved successfully! Amount: $${transaction.amount}`);
+
+      if (modals.creditModal.editingTransaction) {
+        // Update existing transaction in local state
+        setEntry(prev => ({
+          ...prev,
+          creditTransactions: prev.creditTransactions.map(t =>
+            t.id === transaction.id ? transaction : t
+          )
+        }));
+      } else {
+        // Add new transaction to local state
+        const newTransaction = {
+          ...transaction,
+          id: Date.now().toString()
+        };
+        setEntry(prev => ({
+          ...prev,
+          creditTransactions: [...prev.creditTransactions, newTransaction]
+        }));
+      }
+      
+      closeCreditModal();
+    } catch (error: any) {
+      setErrors(['Failed to save credit transaction. Please try again.']);
+    } finally {
+      setLoading(false);
     }
-    closeCreditModal();
   };
 
-  const handleSaveDebitTransaction = (transaction: DebitTransaction) => {
-    if (modals.debitModal.editingTransaction) {
-      // Update existing transaction
-      setEntry(prev => ({
-        ...prev,
-        debitTransactions: prev.debitTransactions.map(t =>
-          t.id === transaction.id ? transaction : t
-        )
-      }));
-    } else {
-      // Add new transaction
-      const newTransaction = {
-        ...transaction,
-        id: Date.now().toString()
-      };
-      setEntry(prev => ({
-        ...prev,
-        debitTransactions: [...prev.debitTransactions, newTransaction]
-      }));
+  const handleSaveDebitTransaction = async (transaction: DebitTransaction) => {
+    setLoading(true);
+    setErrors([]);
+    setSuccessMessage('');
+
+    try {
+      // Save the debit transaction to the database
+      const result = await cashBookService.saveDebitTransaction(transaction);
+      
+      if (!result.success) {
+        setErrors([result.message]);
+        return;
+      }
+
+      // Show success message
+      setSuccessMessage(`✅ Debit transaction saved successfully! Amount: $${transaction.amount}`);
+
+      if (modals.debitModal.editingTransaction) {
+        // Update existing transaction in local state
+        setEntry(prev => ({
+          ...prev,
+          debitTransactions: prev.debitTransactions.map(t =>
+            t.id === transaction.id ? transaction : t
+          )
+        }));
+      } else {
+        // Add new transaction to local state
+        const newTransaction = {
+          ...transaction,
+          id: Date.now().toString()
+        };
+        setEntry(prev => ({
+          ...prev,
+          debitTransactions: [...prev.debitTransactions, newTransaction]
+        }));
+      }
+      
+      closeDebitModal();
+    } catch (error: any) {
+      setErrors(['Failed to save debit transaction. Please try again.']);
+    } finally {
+      setLoading(false);
     }
-    closeDebitModal();
   };
 
   const calculateTotals = () => {
@@ -289,59 +333,7 @@ export default function CashBookEntryPage() {
     return errors;
   };
 
-  const handleSave = async () => {
-    const validationErrors = validateEntry();
-    if (validationErrors.length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
 
-    setLoading(true);
-    setErrors([]);
-    setSuccessMessage('');
-    
-    try {
-      // Save the cash book entry to the database
-      console.log('Saving cash book entry:', entry);
-      
-      const result = await cashBookService.saveCashBookEntry(entry);
-      
-      if (!result.success) {
-        setErrors([result.message]);
-        return;
-      }
-      
-      // Show success message with details
-      const savedRefNumber = entry.referenceNumber;
-      const details = result.journalEntryId 
-        ? ` (Journal ID: ${result.journalEntryId}, ${result.transactionsProcessed} transactions processed)`
-        : '';
-      setSuccessMessage(`✅ Cash book entry "${savedRefNumber}" saved successfully!${details} Form has been reset for the next entry.`);
-      
-      // Reset form
-      setEntry({
-        id: '',
-        transactionDate: new Date(),
-        referenceNumber: '',
-        description: '',
-        creditTransactions: [],
-        debitTransactions: []
-      });
-      
-      // Generate new reference number
-      const today = new Date();
-      const refNumber = `CB-${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}-${Date.now().toString().slice(-4)}`;
-      setEntry(prev => ({ ...prev, referenceNumber: refNumber }));
-      
-      // Clear success message after 5 seconds
-      setTimeout(() => setSuccessMessage(''), 5000);
-      
-    } catch {
-      setErrors(['Failed to save cash book entry. Please try again.']);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const { totalCredits, totalDebits, difference } = calculateTotals();
   const isBalanced = difference < 0.01;
@@ -500,8 +492,8 @@ export default function CashBookEntryPage() {
               Only active Credit categories will appear in Credit transactions, and only active Debit categories in Debit transactions.
             </Typography>
             <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'success.main' }}>
-              💾 <strong>Save Behavior:</strong> After saving, the form automatically resets for the next entry. 
-              Your saved entries are stored in the system.
+              💾 <strong>Save Behavior:</strong> Each credit and debit transaction is saved independently when you click Save in the respective modal. 
+              📊 No balance validation required - save transactions as needed.
             </Typography>
           </CardContent>
         </Card>
@@ -588,22 +580,6 @@ export default function CashBookEntryPage() {
 
             {/* Action Buttons */}
             <Box sx={{ display: 'flex', gap: 2, mt: 3 }}>
-              <Button
-                variant="contained"
-                startIcon={<SaveIcon />}
-                onClick={handleSave}
-                disabled={loading || !isFormValid}
-                size="large"
-                sx={{ 
-                  minWidth: 200,
-                  backgroundColor: isFormValid ? 'primary.main' : 'grey.400',
-                  '&:hover': {
-                    backgroundColor: isFormValid ? 'primary.dark' : 'grey.400',
-                  }
-                }}
-              >
-                {loading ? 'Saving...' : 'Save Cash Book Entry'}
-              </Button>
               <Button
                 variant="outlined"
                 startIcon={<CancelIcon />}

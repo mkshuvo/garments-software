@@ -14,8 +14,8 @@ namespace GarmentsERP.API.Models.Accounting
         [ForeignKey("Account")]
         public Guid AccountId { get; set; }
 
-        [ForeignKey("Category")]
-        public Guid? CategoryId { get; set; }
+        // [ForeignKey("Category")]
+        // public Guid? CategoryId { get; set; } // Temporarily disabled until migration is applied
 
         [MaxLength(500)]
         public string? Description { get; set; }
@@ -39,6 +39,6 @@ namespace GarmentsERP.API.Models.Accounting
         // Navigation properties
         public virtual JournalEntry JournalEntry { get; set; } = null!;
         public virtual ChartOfAccount Account { get; set; } = null!;
-        public virtual Category? Category { get; set; }
+        // public virtual Category? Category { get; set; } // Temporarily disabled until migration is applied
     }
 }

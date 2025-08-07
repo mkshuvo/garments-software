@@ -300,6 +300,56 @@ namespace GarmentsERP.API.Controllers
             }
         }
 
+        [HttpPost("credit-transaction")]
+        public async Task<IActionResult> SaveCreditTransaction([FromBody] CreditTransactionDto request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                var result = await ProcessSingleCreditTransaction(request);
+                
+                return Ok(new
+                {
+                    Success = true,
+                    Message = "Credit transaction saved successfully",
+                    TransactionId = result.TransactionId,
+                    JournalEntryId = result.JournalEntryId
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error saving credit transaction");
+                return StatusCode(500, new { Success = false, Message = "Internal server error" });
+            }
+        }
+
+        [HttpPost("debit-transaction")]
+        public async Task<IActionResult> SaveDebitTransaction([FromBody] DebitTransactionDto request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                var result = await ProcessSingleDebitTransaction(request);
+                
+                return Ok(new
+                {
+                    Success = true,
+                    Message = "Debit transaction saved successfully",
+                    TransactionId = result.TransactionId,
+                    JournalEntryId = result.JournalEntryId
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error saving debit transaction");
+                return StatusCode(500, new { Success = false, Message = "Internal server error" });
+            }
+        }
+
         [HttpPost("create-entry")]
         public async Task<IActionResult> CreateCashBookEntryLegacy([FromBody] CashBookEntryDto request)
         {
@@ -417,7 +467,7 @@ namespace GarmentsERP.API.Controllers
                 {
                     JournalEntryId = journalEntry.Id,
                     AccountId = accountId,
-                    CategoryId = category?.Id, // Reference to new Category system
+                    // CategoryId = category?.Id, // Reference to new Category system - temporarily disabled
                     Credit = credit.Amount,
                     Debit = 0,
                     Description = credit.Particulars,
@@ -430,7 +480,7 @@ namespace GarmentsERP.API.Controllers
                 {
                     JournalEntryId = journalEntry.Id,
                     AccountId = cashAccountId,
-                    CategoryId = null, // Cash account doesn't need category reference
+                    // CategoryId = null, // Cash account doesn't need category reference - temporarily disabled
                     Debit = credit.Amount,
                     Credit = 0,
                     Description = $"Cash from {credit.CategoryName}",
@@ -466,7 +516,7 @@ namespace GarmentsERP.API.Controllers
                 {
                     JournalEntryId = journalEntry.Id,
                     AccountId = accountId,
-                    CategoryId = category?.Id, // Reference to new Category system
+                    // CategoryId = category?.Id, // Reference to new Category system - temporarily disabled
                     Debit = debit.Amount,
                     Credit = 0,
                     Description = debit.Particulars,
@@ -479,7 +529,7 @@ namespace GarmentsERP.API.Controllers
                 {
                     JournalEntryId = journalEntry.Id,
                     AccountId = cashAccountId,
-                    CategoryId = null, // Cash account doesn't need category reference
+                    // CategoryId = null, // Cash account doesn't need category reference - temporarily disabled
                     Credit = debit.Amount,
                     Debit = 0,
                     Description = $"Cash paid for {debit.CategoryName}",
@@ -671,6 +721,142 @@ namespace GarmentsERP.API.Controllers
             return $"CB-{year}-{month:D2}-{count:D4}";
         }
 
+        private async Task<SingleTransactionResult> ProcessSingleCreditTransaction(CreditTransactionDto request)
+        {
+            var result = new SingleTransactionResult();
+            var cashAccountId = await GetOrCreateCashAccount();
+
+            // Create journal entry for this single credit transaction
+            var journalEntry = new JournalEntry
+            {
+                JournalNumber = await GenerateJournalNumber(),
+                TransactionDate = request.Date,
+                JournalType = JournalType.General,
+                ReferenceNumber = $"CR-{DateTime.Now:yyyyMMdd}-{Guid.NewGuid().ToString()[..8]}",
+                Description = request.Particulars,
+                Status = JournalStatus.Posted,
+                CreatedByUserId = GetCurrentUserId()
+            };
+
+            var journalLines = new List<JournalEntryLine>();
+
+            // Get or create account for the category
+            var accountId = await GetOrCreateAccount(request.CategoryName, DetermineAccountType(request.CategoryName));
+
+            // Credit the source account (money coming in from this source)
+            journalLines.Add(new JournalEntryLine
+            {
+                JournalEntryId = journalEntry.Id,
+                AccountId = accountId,
+                Credit = request.Amount,
+                Debit = 0,
+                Description = request.Particulars,
+                Reference = request.ContactName,
+                LineOrder = 1
+            });
+
+            // Debit cash account (cash increases)
+            journalLines.Add(new JournalEntryLine
+            {
+                JournalEntryId = journalEntry.Id,
+                AccountId = cashAccountId,
+                Debit = request.Amount,
+                Credit = 0,
+                Description = $"Cash from {request.CategoryName}",
+                Reference = request.ContactName,
+                LineOrder = 2
+            });
+
+            // Create contact if provided
+            if (!string.IsNullOrWhiteSpace(request.ContactName))
+            {
+                await GetOrCreateContact(request.ContactName, ContactType.Customer);
+            }
+
+            // Set totals
+            journalEntry.TotalDebit = request.Amount;
+            journalEntry.TotalCredit = request.Amount;
+
+            // Save to database
+            _context.JournalEntries.Add(journalEntry);
+            _context.JournalEntryLines.AddRange(journalLines);
+            await _context.SaveChangesAsync();
+
+            result.JournalEntryId = journalEntry.Id;
+            result.TransactionId = journalEntry.Id; // Using journal entry ID as transaction ID
+            return result;
+        }
+
+        private async Task<SingleTransactionResult> ProcessSingleDebitTransaction(DebitTransactionDto request)
+        {
+            var result = new SingleTransactionResult();
+            var cashAccountId = await GetOrCreateCashAccount();
+
+            // Create journal entry for this single debit transaction
+            var journalEntry = new JournalEntry
+            {
+                JournalNumber = await GenerateJournalNumber(),
+                TransactionDate = request.Date,
+                JournalType = JournalType.General,
+                ReferenceNumber = $"DR-{DateTime.Now:yyyyMMdd}-{Guid.NewGuid().ToString()[..8]}",
+                Description = request.Particulars,
+                Status = JournalStatus.Posted,
+                CreatedByUserId = GetCurrentUserId()
+            };
+
+            var journalLines = new List<JournalEntryLine>();
+
+            // Get or create account for the category
+            var accountId = await GetOrCreateAccount(request.CategoryName, DetermineAccountType(request.CategoryName));
+
+            // Debit the expense/asset account (money going out for this purpose)
+            journalLines.Add(new JournalEntryLine
+            {
+                JournalEntryId = journalEntry.Id,
+                AccountId = accountId,
+                Debit = request.Amount,
+                Credit = 0,
+                Description = request.Particulars,
+                Reference = request.SupplierName ?? request.BuyerName,
+                LineOrder = 1
+            });
+
+            // Credit cash account (cash decreases)
+            journalLines.Add(new JournalEntryLine
+            {
+                JournalEntryId = journalEntry.Id,
+                AccountId = cashAccountId,
+                Credit = request.Amount,
+                Debit = 0,
+                Description = $"Cash paid for {request.CategoryName}",
+                Reference = request.SupplierName ?? request.BuyerName,
+                LineOrder = 2
+            });
+
+            // Create contacts if provided
+            if (!string.IsNullOrWhiteSpace(request.SupplierName))
+            {
+                await GetOrCreateContact(request.SupplierName, ContactType.Supplier);
+            }
+            if (!string.IsNullOrWhiteSpace(request.BuyerName))
+            {
+                await GetOrCreateContact(request.BuyerName, ContactType.Customer);
+            }
+
+            // Set totals
+            journalEntry.TotalDebit = request.Amount;
+            journalEntry.TotalCredit = request.Amount;
+
+            // Save to database
+            _context.JournalEntries.Add(journalEntry);
+            _context.JournalEntryLines.AddRange(journalLines);
+            await _context.SaveChangesAsync();
+
+            result.JournalEntryId = journalEntry.Id;
+            result.TransactionId = journalEntry.Id; // Using journal entry ID as transaction ID
+            return result;
+        }
+
         private Guid GetCurrentUserId()
         {
             // TODO: Get from JWT token or authentication context
@@ -755,6 +941,12 @@ namespace GarmentsERP.API.Controllers
         public int AccountsCreated { get; set; }
         public int ContactsCreated { get; set; }
         public int TransactionsProcessed { get; set; }
+    }
+
+    public class SingleTransactionResult
+    {
+        public Guid JournalEntryId { get; set; }
+        public Guid TransactionId { get; set; }
     }
 
     // Additional DTOs for lifecycle management
