@@ -14,7 +14,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
   Chip,
   Stack,
   Breadcrumbs,
@@ -23,7 +22,6 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Grid,
   Alert,
   CircularProgress,
   Pagination,
@@ -159,7 +157,7 @@ export default function JournalEntriesPage() {
       const response = await fetch('http://localhost:8080/api/cashbookentry/categories');
       if (response.ok) {
         const data = await response.json();
-        const categoryNames = data.map((cat: any) => cat.name);
+        const categoryNames = data.map((cat: { name: string }) => cat.name);
         setCategories(categoryNames);
       }
     } catch (err) {
@@ -169,13 +167,13 @@ export default function JournalEntriesPage() {
 
   useEffect(() => {
     loadJournalEntries();
-  }, [page, filters]);
+  }, [page, filters]); // loadJournalEntries is stable and doesn't need to be in dependencies
 
   useEffect(() => {
     loadCategories();
   }, []);
 
-  const handleFilterChange = (field: keyof JournalFilters, value: any) => {
+  const handleFilterChange = (field: keyof JournalFilters, value: string | number | Date | undefined | null) => {
     setFilters(prev => ({ ...prev, [field]: value }));
     setPage(1); // Reset to first page when filtering
   };
@@ -251,7 +249,7 @@ export default function JournalEntriesPage() {
       document.body.removeChild(link);
       
       setShowExportModal(false);
-    } catch (err) {
+    } catch {
       setError('Failed to export data. Please try again.');
     } finally {
       setExportLoading(false);
@@ -357,106 +355,90 @@ export default function JournalEntriesPage() {
             </Box>
 
             {showFilters && (
-              <Grid container spacing={2}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(4, 1fr)' }, gap: 2 }}>
                 {/* Date Range */}
-                <Grid item xs={12} md={3}>
-                  <DatePicker
-                    label="Date From"
-                    value={filters.dateFrom || null}
-                    onChange={(date) => handleFilterChange('dateFrom', date)}
-                    slotProps={{ textField: { fullWidth: true, size: 'small' } }}
-                  />
-                </Grid>
-                <Grid item xs={12} md={3}>
-                  <DatePicker
-                    label="Date To"
-                    value={filters.dateTo || null}
-                    onChange={(date) => handleFilterChange('dateTo', date)}
-                    slotProps={{ textField: { fullWidth: true, size: 'small' } }}
-                  />
-                </Grid>
+                <DatePicker
+                  label="Date From"
+                  value={filters.dateFrom || null}
+                  onChange={(date) => handleFilterChange('dateFrom', date)}
+                  slotProps={{ textField: { fullWidth: true, size: 'small' } }}
+                />
+                <DatePicker
+                  label="Date To"
+                  value={filters.dateTo || null}
+                  onChange={(date) => handleFilterChange('dateTo', date)}
+                  slotProps={{ textField: { fullWidth: true, size: 'small' } }}
+                />
 
                 {/* Transaction Type */}
-                <Grid item xs={12} md={3}>
-                  <FormControl fullWidth size="small">
-                    <InputLabel>Transaction Type</InputLabel>
-                    <Select
-                      value={filters.transactionType}
-                      label="Transaction Type"
-                      onChange={(e) => handleFilterChange('transactionType', e.target.value)}
-                    >
-                      <MenuItem value="All">All Types</MenuItem>
-                      <MenuItem value="Credit">Credit (Money In)</MenuItem>
-                      <MenuItem value="Debit">Debit (Money Out)</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Transaction Type</InputLabel>
+                  <Select
+                    value={filters.transactionType}
+                    label="Transaction Type"
+                    onChange={(e) => handleFilterChange('transactionType', e.target.value)}
+                  >
+                    <MenuItem value="All">All Types</MenuItem>
+                    <MenuItem value="Credit">Credit (Money In)</MenuItem>
+                    <MenuItem value="Debit">Debit (Money Out)</MenuItem>
+                  </Select>
+                </FormControl>
 
                 {/* Category */}
-                <Grid item xs={12} md={3}>
-                  <FormControl fullWidth size="small">
-                    <InputLabel>Category</InputLabel>
-                    <Select
-                      value={filters.category}
-                      label="Category"
-                      onChange={(e) => handleFilterChange('category', e.target.value)}
-                    >
-                      <MenuItem value="">All Categories</MenuItem>
-                      {categories.map((category) => (
-                        <MenuItem key={category} value={category}>
-                          {category}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Category</InputLabel>
+                  <Select
+                    value={filters.category}
+                    label="Category"
+                    onChange={(e) => handleFilterChange('category', e.target.value)}
+                  >
+                    <MenuItem value="">All Categories</MenuItem>
+                    {categories.map((category) => (
+                      <MenuItem key={category} value={category}>
+                        {category}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
 
                 {/* Amount Range */}
-                <Grid item xs={12} md={3}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    label="Min Amount"
-                    type="number"
-                    value={filters.amountMin || ''}
-                    onChange={(e) => handleFilterChange('amountMin', e.target.value ? parseFloat(e.target.value) : undefined)}
-                  />
-                </Grid>
-                <Grid item xs={12} md={3}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    label="Max Amount"
-                    type="number"
-                    value={filters.amountMax || ''}
-                    onChange={(e) => handleFilterChange('amountMax', e.target.value ? parseFloat(e.target.value) : undefined)}
-                  />
-                </Grid>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Min Amount"
+                  type="number"
+                  value={filters.amountMin || ''}
+                  onChange={(e) => handleFilterChange('amountMin', e.target.value ? parseFloat(e.target.value) : undefined)}
+                />
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Max Amount"
+                  type="number"
+                  value={filters.amountMax || ''}
+                  onChange={(e) => handleFilterChange('amountMax', e.target.value ? parseFloat(e.target.value) : undefined)}
+                />
 
                 {/* Reference Number */}
-                <Grid item xs={12} md={3}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    label="Reference Number"
-                    value={filters.referenceNumber}
-                    onChange={(e) => handleFilterChange('referenceNumber', e.target.value)}
-                  />
-                </Grid>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Reference Number"
+                  value={filters.referenceNumber}
+                  onChange={(e) => handleFilterChange('referenceNumber', e.target.value)}
+                />
 
                 {/* Contact Name */}
-                <Grid item xs={12} md={3}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    label="Contact/Supplier"
-                    value={filters.contactName}
-                    onChange={(e) => handleFilterChange('contactName', e.target.value)}
-                  />
-                </Grid>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Contact/Supplier"
+                  value={filters.contactName}
+                  onChange={(e) => handleFilterChange('contactName', e.target.value)}
+                />
 
-                {/* Description */}
-                <Grid item xs={12}>
+                {/* Description - Full Width */}
+                <Box sx={{ gridColumn: { xs: '1', md: '1 / -1' } }}>
                   <TextField
                     fullWidth
                     size="small"
@@ -467,8 +449,8 @@ export default function JournalEntriesPage() {
                       startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />
                     }}
                   />
-                </Grid>
-              </Grid>
+                </Box>
+              </Box>
             )}
           </CardContent>
         </Card>
