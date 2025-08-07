@@ -1,5 +1,17 @@
 import { apiService } from './apiService';
 
+export interface Category {
+  id: string;
+  name: string;
+  type: string;
+}
+
+export interface Contact {
+  id: string;
+  name: string;
+  type: string;
+}
+
 export interface CashBookEntry {
   id: string;
   transactionDate: Date;
@@ -80,12 +92,12 @@ class CashBookService {
 
       const response = await apiService.post<CashBookSaveResponse>(`${this.baseUrl}/credit-transaction`, dto);
       return response;
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving credit transaction:', error);
       
       return {
         success: false,
-        message: error.response?.data?.message || error.message || 'Failed to save credit transaction'
+        message: error instanceof Error ? error.message : 'Failed to save credit transaction'
       };
     }
   }
@@ -106,12 +118,12 @@ class CashBookService {
 
       const response = await apiService.post<CashBookSaveResponse>(`${this.baseUrl}/debit-transaction`, dto);
       return response;
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving debit transaction:', error);
       
       return {
         success: false,
-        message: error.response?.data?.message || error.message || 'Failed to save debit transaction'
+        message: error instanceof Error ? error.message : 'Failed to save debit transaction'
       };
     }
   }
@@ -119,9 +131,9 @@ class CashBookService {
   /**
    * Get categories for cash book entries
    */
-  async getCategories(): Promise<any[]> {
+  async getCategories(): Promise<Category[]> {
     try {
-      const response = await apiService.get<any[]>(`${this.baseUrl}/categories`);
+      const response = await apiService.get<Category[]>(`${this.baseUrl}/categories`);
       return response;
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -132,9 +144,9 @@ class CashBookService {
   /**
    * Get contacts for cash book entries
    */
-  async getContacts(): Promise<any[]> {
+  async getContacts(): Promise<Contact[]> {
     try {
-      const response = await apiService.get<any[]>(`${this.baseUrl}/contacts`);
+      const response = await apiService.get<Contact[]>(`${this.baseUrl}/contacts`);
       return response;
     } catch (error) {
       console.error('Error fetching contacts:', error);
