@@ -525,7 +525,7 @@ export default function CashBookEntryPage() {
               💾 Recently Saved Transactions
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              These are the transactions you've saved to the database. They persist across sessions.
+              These are the transactions you&apos;ve saved to the database. They persist across sessions.
             </Typography>
             
             {loadingSavedTransactions ? (
@@ -538,7 +538,7 @@ export default function CashBookEntryPage() {
               </Typography>
             ) : (
               <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
-                {savedTransactions.map((transaction, index) => (
+                {savedTransactions.map((transaction) => (
                   <Paper 
                     key={transaction.id} 
                     sx={{ 

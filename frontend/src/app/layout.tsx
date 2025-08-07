@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
-import AuthInitializer from "@/components/auth/AuthInitializer";
 
 // Use system fonts to avoid Google Fonts network dependency during Docker build
 // This prevents build failures due to network timeouts
