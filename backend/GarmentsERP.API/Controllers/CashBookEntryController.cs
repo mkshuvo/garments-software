@@ -474,6 +474,133 @@ namespace GarmentsERP.API.Controllers
             }
         }
 
+        [HttpGet("journal-entries")]
+        public async Task<IActionResult> GetJournalEntries(
+            [FromQuery] int page = 1,
+            [FromQuery] int limit = 20,
+            [FromQuery] DateTime? dateFrom = null,
+            [FromQuery] DateTime? dateTo = null,
+            [FromQuery] string? type = null,
+            [FromQuery] decimal? amountMin = null,
+            [FromQuery] decimal? amountMax = null,
+            [FromQuery] string? category = null,
+            [FromQuery] string? referenceNumber = null,
+            [FromQuery] string? contactName = null,
+            [FromQuery] string? description = null)
+        {
+            try
+            {
+                var query = _context.JournalEntries
+                    .Include(je => je.JournalEntryLines)
+                    .ThenInclude(jel => jel.Account)
+                    .Where(je => je.Description != null && (je.Description.Contains("Credit:") || je.Description.Contains("Debit:")))
+                    .AsQueryable();
+
+                // Apply filters
+                if (dateFrom.HasValue)
+                {
+                    query = query.Where(je => je.TransactionDate >= dateFrom.Value);
+                }
+
+                if (dateTo.HasValue)
+                {
+                    query = query.Where(je => je.TransactionDate <= dateTo.Value);
+                }
+
+                if (!string.IsNullOrEmpty(type) && type != "All")
+                {
+                    if (type == "Credit")
+                    {
+                        query = query.Where(je => je.Description!.StartsWith("Credit:"));
+                    }
+                    else if (type == "Debit")
+                    {
+                        query = query.Where(je => je.Description!.StartsWith("Debit:"));
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(category))
+                {
+                    query = query.Where(je => je.JournalEntryLines.Any(jel => jel.Account!.AccountName.Contains(category)));
+                }
+
+                if (!string.IsNullOrEmpty(referenceNumber))
+                {
+                    query = query.Where(je => je.ReferenceNumber.Contains(referenceNumber));
+                }
+
+                if (!string.IsNullOrEmpty(contactName))
+                {
+                    query = query.Where(je => je.JournalEntryLines.Any(jel => jel.Reference != null && jel.Reference.Contains(contactName)));
+                }
+
+                if (!string.IsNullOrEmpty(description))
+                {
+                    query = query.Where(je => je.Description!.Contains(description));
+                }
+
+                if (amountMin.HasValue)
+                {
+                    query = query.Where(je => je.JournalEntryLines.Any(jel => jel.Credit >= amountMin.Value || jel.Debit >= amountMin.Value));
+                }
+
+                if (amountMax.HasValue)
+                {
+                    query = query.Where(je => je.JournalEntryLines.Any(jel => jel.Credit <= amountMax.Value || jel.Debit <= amountMax.Value));
+                }
+
+                // Get total count for pagination
+                var totalEntries = await query.CountAsync();
+                var totalPages = (int)Math.Ceiling((double)totalEntries / limit);
+
+                // Apply pagination and ordering
+                var journalEntries = await query
+                    .OrderByDescending(je => je.TransactionDate)
+                    .Skip((page - 1) * limit)
+                    .Take(limit)
+                    .ToListAsync();
+
+                var entries = new List<object>();
+
+                foreach (var entry in journalEntries)
+                {
+                    var line = entry.JournalEntryLines.FirstOrDefault();
+                    if (line != null)
+                    {
+                        var isCredit = entry.Description?.StartsWith("Credit:") ?? false;
+                        entries.Add(new
+                        {
+                            Id = entry.Id.ToString(),
+                            JournalNumber = entry.JournalNumber,
+                            TransactionDate = entry.TransactionDate,
+                            Type = isCredit ? "Credit" : "Debit",
+                            CategoryName = line.Account?.AccountName ?? "Unknown",
+                            Particulars = entry.Description?.Replace("Credit: ", "").Replace("Debit: ", "") ?? "",
+                            Amount = isCredit ? line.Credit : line.Debit,
+                            ReferenceNumber = entry.ReferenceNumber,
+                            ContactName = line.Reference,
+                            AccountName = line.Account?.AccountName ?? "Unknown",
+                            CreatedAt = entry.CreatedAt
+                        });
+                    }
+                }
+
+                return Ok(new
+                {
+                    Entries = entries,
+                    TotalEntries = totalEntries,
+                    TotalPages = totalPages,
+                    CurrentPage = page,
+                    PageSize = limit
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching journal entries");
+                return StatusCode(500, new { Success = false, Message = "Internal server error" });
+            }
+        }
+
         private async Task<CashBookProcessResult> ProcessCashBookEntry(CashBookEntryDto request)
         {
             var result = new CashBookProcessResult();
