@@ -134,7 +134,7 @@ export default function JournalEntriesPage() {
         params.append('description', filters.description);
       }
 
-      const response = await fetch(`http://localhost:8080/api/cashbookentry/journal-entries?${params}`);
+      const response = await fetch(`/api/cashbookentry/journal-entries?${params}`);
       if (!response.ok) {
         throw new Error('Failed to load journal entries');
       }
@@ -154,7 +154,7 @@ export default function JournalEntriesPage() {
   // Load categories for filter dropdown
   const loadCategories = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/cashbookentry/categories');
+      const response = await fetch('/api/cashbookentry/categories');
       if (response.ok) {
         const data = await response.json();
         const categoryNames = data.map((cat: { name: string }) => cat.name);
