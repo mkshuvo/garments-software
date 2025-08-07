@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -80,7 +80,7 @@ export default function JournalEntriesPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalEntries, setTotalEntries] = useState(0);
-  
+
   const [filters, setFilters] = useState<JournalFilters>({
     transactionType: 'All',
     category: '',
@@ -95,11 +95,11 @@ export default function JournalEntriesPage() {
   const [exportLoading, setExportLoading] = useState(false);
 
   // Load journal entries
-  const loadJournalEntries = async () => {
+  const loadJournalEntries = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
-      
+
       // Build query parameters
       const params = new URLSearchParams({
         page: page.toString(),
@@ -143,13 +143,13 @@ export default function JournalEntriesPage() {
       setEntries(data.entries || []);
       setTotalPages(data.totalPages || 1);
       setTotalEntries(data.totalEntries || 0);
-      
+
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load journal entries');
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, filters]);
 
   // Load categories for filter dropdown
   const loadCategories = async () => {
@@ -167,7 +167,7 @@ export default function JournalEntriesPage() {
 
   useEffect(() => {
     loadJournalEntries();
-  }, [page, filters]); // loadJournalEntries is stable and doesn't need to be in dependencies
+  }, [loadJournalEntries]);
 
   useEffect(() => {
     loadCategories();
@@ -202,10 +202,10 @@ export default function JournalEntriesPage() {
   const handleExport = async (selectedColumns: string[]) => {
     try {
       setExportLoading(true);
-      
+
       // Build query parameters with current filters
       const params = new URLSearchParams();
-      
+
       if (filters.dateFrom) {
         params.append('dateFrom', filters.dateFrom.toISOString());
       }
@@ -233,13 +233,13 @@ export default function JournalEntriesPage() {
       if (filters.description) {
         params.append('description', filters.description);
       }
-      
+
       // Add selected columns
       params.append('columns', selectedColumns.join(','));
 
       // Create download link
       const url = `/api/cashbookentry/journal-entries/export?${params}`;
-      
+
       // Create a temporary link and trigger download
       const link = document.createElement('a');
       link.href = url;
@@ -247,7 +247,7 @@ export default function JournalEntriesPage() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
+
       setShowExportModal(false);
     } catch {
       setError('Failed to export data. Please try again.');
@@ -462,7 +462,7 @@ export default function JournalEntriesPage() {
           </Typography>
           <Stack direction="row" spacing={1}>
             <Tooltip title="Export to CSV">
-              <IconButton 
+              <IconButton
                 size="small"
                 onClick={() => setShowExportModal(true)}
                 disabled={loading || entries.length === 0}
