@@ -40,26 +40,10 @@ class HealthCheckService {
       retryDelay = 1000
     } = options;
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-    const healthEndpoint = apiUrl ? `${apiUrl}/api/health` : '/api/health';
+    const healthEndpoint = `${process.env.NEXT_PUBLIC_API_URL!}/api/health`;
 
-    // In development, if we're explicitly bypassing auth, don't try to check backend health
-    const isDevelopment = process.env.NODE_ENV === 'development';
-    const shouldBypassAuth = process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true';
-
-    if (isDevelopment && shouldBypassAuth) {
-
-      this.healthStatus = {
-        isHealthy: false,
-        lastChecked: new Date(),
-        error: 'Backend health check skipped - using fallback mode',
-        retryCount: 0,
-        isUsingFallback: true,
-        fallbackReason: 'Explicit auth bypass enabled'
-      };
-      this.notifyListeners();
-      return this.healthStatus;
-    }
+    // Always check backend health regardless of auth bypass setting
+    // Auth bypass only affects authentication, not backend connectivity
 
     let lastError: string | undefined;
 
@@ -239,10 +223,9 @@ class HealthCheckService {
   }
 
   getServiceInfo() {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
     return {
-      apiUrl: apiUrl || 'relative',
-      healthEndpoint: apiUrl ? `${apiUrl}/api/health` : '/api/health',
+      apiUrl: process.env.NEXT_PUBLIC_API_URL!,
+      healthEndpoint: `${process.env.NEXT_PUBLIC_API_URL!}/api/health`,
       isDevelopment: process.env.NODE_ENV === 'development',
       isUsingFallback: this.healthStatus.isUsingFallback,
       shouldUseMockAuth: this.shouldUseMockAuth()
