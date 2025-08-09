@@ -92,7 +92,7 @@ class DevAuthService {
 
   async checkBackendHealth(): Promise<boolean> {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/health`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL!}/api/health`, {
         method: 'GET',
         timeout: 5000,
       } as RequestInit);
@@ -112,7 +112,7 @@ class DevAuthService {
     return {
       isDevelopment: this.isDevelopment(),
       shouldBypassAuth: this.shouldBypassAuth(),
-      apiUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080',
+      apiUrl: process.env.NEXT_PUBLIC_API_URL!,
       nodeEnv: process.env.NODE_ENV
     };
   }

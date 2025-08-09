@@ -198,6 +198,8 @@
     - _Requirements: All requirements_
 
   - [ ] 8.2 Write integration tests for complete workflow
+
+
     - Test complete add credit transaction flow
     - Test complete add debit transaction flow
     - Test edit existing transaction flow
