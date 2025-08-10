@@ -19,6 +19,8 @@ import {
   AccountBalance as AccountBalanceIcon,
   Assessment as AssessmentIcon
 } from '@mui/icons-material'
+import { LocalizationProvider } from '@mui/x-date-pickers'
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
 import { useRouter } from 'next/navigation'
 import { TrialBalanceReport } from '@/components/trial-balance/TrialBalanceReport'
 import { DateRange, UserRole } from '@/types/trialBalance'
@@ -76,7 +78,7 @@ export default function TrialBalancePage() {
               Access Denied
             </Typography>
             <Typography variant="body1">
-              You don't have permission to access the Trial Balance reporting feature. 
+              You don&apos;t have permission to access the Trial Balance reporting feature. 
               This feature is only available to Admin and Manager users.
             </Typography>
           </Alert>
@@ -222,12 +224,14 @@ export default function TrialBalancePage() {
 
         {/* Main Trial Balance Report Component */}
         <Paper sx={{ p: { xs: 2, md: 3 }, borderRadius: 2 }}>
-          <TrialBalanceReport
-            defaultDateRange={defaultDateRange}
-            onAccountClick={handleAccountClick}
-            showCalculationDetails={true}
-            groupByCategory={true}
-          />
+          <LocalizationProvider dateAdapter={AdapterDateFns}>
+            <TrialBalanceReport
+              defaultDateRange={defaultDateRange}
+              onAccountClick={handleAccountClick}
+              showCalculationDetails={true}
+              groupByCategory={true}
+            />
+          </LocalizationProvider>
         </Paper>
 
         {/* Footer Information */}

@@ -10,8 +10,6 @@ import {
     Switch,
     FormControlLabel,
     Stack,
-    useTheme,
-    useMediaQuery,
     Skeleton,
     Fade,
     Collapse,
@@ -58,8 +56,6 @@ export const TrialBalanceReport: React.FC<TrialBalanceReportProps> = ({
     groupByCategory = true,
     className
 }) => {
-    const theme = useTheme()
-
     // State management
     const [dateRange, setDateRange] = useState<DateRange>(() => {
         if (defaultDateRange) {
@@ -208,7 +204,7 @@ export const TrialBalanceReport: React.FC<TrialBalanceReportProps> = ({
     // Initial load
     useEffect(() => {
         generateReport()
-    }, []) // Only run on mount
+    }, [generateReport]) // Include generateReport in dependencies
 
     // Render loading skeleton
     const renderLoadingSkeleton = () => (
