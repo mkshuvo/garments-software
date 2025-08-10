@@ -13,6 +13,12 @@ export const API_CONFIG = {
       BASIC: '/api/health',
       DETAILED: '/api/health/detailed',
     },
+    TRIAL_BALANCE: {
+      BASE: '/api/trial-balance',
+      GENERATE: '/api/trial-balance',
+      ACCOUNT_TRANSACTIONS: '/api/trial-balance/account',
+      COMPARE: '/api/trial-balance/compare',
+    },
   },
   TIMEOUT: 10000, // 10 seconds
 } as const

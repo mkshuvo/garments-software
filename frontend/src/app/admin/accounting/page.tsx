@@ -74,6 +74,14 @@ export default function AccountingPage() {
       bgColor: 'success.light'
     },
     {
+      title: 'Trial Balance',
+      description: 'Generate trial balance reports to verify accounting accuracy',
+      icon: <Assessment />,
+      path: '/admin/accounting/trial-balance',
+      color: 'error.main',
+      bgColor: 'error.light'
+    },
+    {
       title: 'Financial Reports',
       description: 'Generate trial balance, P&L, and balance sheet',
       icon: <Assessment />,
@@ -191,6 +199,13 @@ export default function AccountingPage() {
               onClick={() => router.push('/admin/accounting/cash-book-import')}
             >
               Import CSV Data
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<Assessment />}
+              onClick={() => router.push('/admin/accounting/trial-balance')}
+            >
+              Trial Balance
             </Button>
             <Button
               variant="outlined"

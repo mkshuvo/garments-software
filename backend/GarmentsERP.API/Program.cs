@@ -93,6 +93,7 @@ builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IContactService, ContactService>();
 builder.Services.AddScoped<ITransactionValidator, TransactionValidator>();
 builder.Services.AddScoped<IBusinessRuleValidator, BusinessRuleValidator>();
+builder.Services.AddScoped<ITrialBalanceCalculationService, TrialBalanceCalculationService>();
 builder.Services.AddScoped<ITrialBalanceService, TrialBalanceService>();
 builder.Services.AddScoped<IBalanceService, BalanceService>();
 builder.Services.AddScoped<IEnhancedCashBookService, EnhancedCashBookService>();
@@ -136,8 +137,16 @@ builder.Services.AddSwaggerGen(c =>
     { 
         Title = "Garments ERP API", 
         Version = "v1",
-        Description = "A comprehensive ERP system for garments manufacturing businesses"
+        Description = "A comprehensive ERP system for garments manufacturing businesses with advanced trial balance reporting capabilities"
     });
+
+    // Include XML comments for better API documentation
+    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+    {
+        c.IncludeXmlComments(xmlPath);
+    }
 
     // JWT Authentication in Swagger
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
