@@ -1,6 +1,169 @@
 @GarmentsERP.API_HostAddress = http://localhost:5072
+@authToken = Bearer YOUR_JWT_TOKEN_HERE
 
-GET {{GarmentsERP.API_HostAddress}}/weatherforecast/
+### Health Check
+GET {{GarmentsERP.API_HostAddress}}/api/health
 Accept: application/json
 
 ###
+
+### Authentication - Login (Get JWT Token)
+POST {{GarmentsERP.API_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "Admin123!"
+}
+
+###
+
+### Trial Balance API Endpoints
+
+### 1. Generate Trial Balance Report
+# Generate trial balance for a specific date range with default settings
+GET {{GarmentsERP.API_HostAddress}}/api/trial-balance?startDate=2024-01-01&endDate=2024-01-31
+Accept: application/json
+Authorization: {{authToken}}
+
+###
+
+### 2. Generate Trial Balance with Custom Options
+# Generate trial balance with custom filtering and grouping options
+GET {{GarmentsERP.API_HostAddress}}/api/trial-balance?startDate=2024-01-01&endDate=2024-01-31&groupByCategory=true&includeZeroBalances=false&categoryFilter=Assets&categoryFilter=Liabilities
+Accept: application/json
+Authorization: {{authToken}}
+
+###
+
+### 3. Generate Trial Balance for Current Month
+# Generate trial balance for current month (example with dynamic dates)
+GET {{GarmentsERP.API_HostAddress}}/api/trial-balance?startDate=2024-08-01&endDate=2024-08-31&groupByCategory=true&includeZeroBalances=true
+Accept: application/json
+Authorization: {{authToken}}
+
+###
+
+### 4. Get Account Transaction Details (Drill-down)
+# Get detailed transactions for a specific account within date range
+GET {{GarmentsERP.API_HostAddress}}/api/trial-balance/account/550e8400-e29b-41d4-a716-446655440000/transactions?startDate=2024-01-01&endDate=2024-01-31
+Accept: application/json
+Authorization: {{authToken}}
+
+###
+
+### 5. Compare Trial Balances (Admin Only)
+# Compare trial balances between two different periods
+POST {{GarmentsERP.API_HostAddress}}/api/trial-balance/compare
+Content-Type: application/json
+Authorization: {{authToken}}
+
+{
+  "period1": {
+    "startDate": "2024-01-01",
+    "endDate": "2024-01-31",
+    "groupByCategory": true,
+    "includeZeroBalances": false,
+    "categoryFilter": []
+  },
+  "period2": {
+    "startDate": "2024-02-01",
+    "endDate": "2024-02-29",
+    "groupByCategory": true,
+    "includeZeroBalances": false,
+    "categoryFilter": []
+  }
+}
+
+###
+
+### Error Scenarios for Testing
+
+### 6. Invalid Date Range (Start Date After End Date)
+GET {{GarmentsERP.API_HostAddress}}/api/trial-balance?startDate=2024-01-31&endDate=2024-01-01
+Accept: application/json
+Authorization: {{authToken}}
+
+###
+
+### 7. Missing Required Parameters
+GET {{GarmentsERP.API_HostAddress}}/api/trial-balance
+Accept: application/json
+Authorization: {{authToken}}
+
+###
+
+### 8. Date Range Too Large (Over 365 Days)
+GET {{GarmentsERP.API_HostAddress}}/api/trial-balance?startDate=2023-01-01&endDate=2024-12-31
+Accept: application/json
+Authorization: {{authToken}}
+
+###
+
+### 9. Invalid Account ID for Transaction Details
+GET {{GarmentsERP.API_HostAddress}}/api/trial-balance/account/00000000-0000-0000-0000-000000000000/transactions?startDate=2024-01-01&endDate=2024-01-31
+Accept: application/json
+Authorization: {{authToken}}
+
+###
+
+### 10. Unauthorized Access (No Token)
+GET {{GarmentsERP.API_HostAddress}}/api/trial-balance?startDate=2024-01-01&endDate=2024-01-31
+Accept: application/json
+
+###
+
+### Sample Response Examples
+
+### Expected Success Response for Trial Balance:
+# {
+#   "dateRange": {
+#     "startDate": "2024-01-01T00:00:00Z",
+#     "endDate": "2024-01-31T23:59:59Z"
+#   },
+#   "categories": [
+#     {
+#       "name": "Assets",
+#       "accounts": [
+#         {
+#           "accountId": "550e8400-e29b-41d4-a716-446655440000",
+#           "accountName": "Cash in Bank",
+#           "categoryName": "Assets",
+#           "categoryDescription": "Current Assets - Cash & Bank",
+#           "particulars": "Bank deposit from sales",
+#           "debitAmount": -5000.00,
+#           "creditAmount": 7000.00,
+#           "netBalance": 2000.00,
+#           "transactionCount": 15
+#         }
+#       ],
+#       "subtotal": 2000.00
+#     }
+#   ],
+#   "totalDebits": 25000.00,
+#   "totalCredits": 27000.00,
+#   "finalBalance": 2000.00,
+#   "calculationExpression": "-5000 + 7000 + -3000 + 3000 = 2000",
+#   "generatedAt": "2024-08-09T10:30:00Z",
+#   "totalTransactions": 45
+# }
+
+### Expected Error Response:
+# {
+#   "success": false,
+#   "message": "Invalid date range. Start date must not be later than end date.",
+#   "errorCode": "INVALID_DATE_RANGE",
+#   "timestamp": "2024-08-09T10:30:00Z"
+# }
+
+### Expected Validation Error Response:
+# {
+#   "success": false,
+#   "message": "Validation failed",
+#   "errors": {
+#     "StartDate": ["Start date is required"],
+#     "EndDate": ["End date is required"]
+#   },
+#   "errorCode": "",
+#   "timestamp": "2024-08-09T10:30:00Z"
+# }

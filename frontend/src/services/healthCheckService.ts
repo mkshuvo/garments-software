@@ -98,6 +98,7 @@ class HealthCheckService {
     }
 
     // All attempts failed - determine if we should use fallback
+    const isDevelopment = process.env.NODE_ENV === 'development';
     const shouldUseFallback = isDevelopment && this.shouldActivateFallback(lastError);
 
     this.healthStatus = {
