@@ -14,13 +14,11 @@ import {
   Chip,
   Tooltip,
   Divider,
-  Stack,
   useTheme,
   alpha
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
-  ExpandLess as ExpandLessIcon,
   AccountBalance as AccountBalanceIcon,
   TrendingUp as TrendingUpIcon,
   TrendingDown as TrendingDownIcon,
@@ -246,7 +244,7 @@ export const AccountCategorySection: React.FC<AccountCategorySectionProps> = ({
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredAccounts.map((account, index) => (
+                {filteredAccounts.map((account) => (
                   <TableRow
                     key={account.accountId}
                     onClick={() => handleAccountClick(account)}
