@@ -24,6 +24,7 @@ import {
 import { DateRangeSelector } from './DateRangeSelector'
 import { AccountCategorySection } from './AccountCategorySection'
 import { TrialBalanceCalculation } from './TrialBalanceCalculation'
+import { AccountDrillDown } from './AccountDrillDown'
 import { trialBalanceService } from '@/services/trialBalanceService'
 import {
     TrialBalanceData,
@@ -79,6 +80,17 @@ export const TrialBalanceReport: React.FC<TrialBalanceReportProps> = ({
     const [showZeroBalances, setShowZeroBalances] = useState(false)
     const [expandedCategories] = useState<Set<string>>(new Set())
     const [showFilters, setShowFilters] = useState(false)
+    
+    // Account drill-down modal state
+    const [drillDownState, setDrillDownState] = useState<{
+        isOpen: boolean
+        accountId: string | null
+        accountName: string | null
+    }>({
+        isOpen: false,
+        accountId: null,
+        accountName: null
+    })
 
     // Generate trial balance report
     const generateReport = useCallback(async (dateRangeToUse?: DateRange) => {
@@ -141,10 +153,27 @@ export const TrialBalanceReport: React.FC<TrialBalanceReportProps> = ({
 
     // Handle account click for drill-down
     const handleAccountClick = useCallback((accountId: string, accountName: string) => {
+        // Open the drill-down modal
+        setDrillDownState({
+            isOpen: true,
+            accountId,
+            accountName
+        })
+        
+        // Also call the external handler if provided
         if (onAccountClick) {
             onAccountClick(accountId, accountName)
         }
     }, [onAccountClick])
+    
+    // Handle drill-down modal close
+    const handleDrillDownClose = useCallback(() => {
+        setDrillDownState({
+            isOpen: false,
+            accountId: null,
+            accountName: null
+        })
+    }, [])
 
     // Handle show zero balances toggle
     const handleShowZeroBalancesChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -462,6 +491,17 @@ export const TrialBalanceReport: React.FC<TrialBalanceReportProps> = ({
                         </Paper>
                     </Box>
                 </Fade>
+            )}
+            
+            {/* Account Drill-Down Modal */}
+            {drillDownState.isOpen && drillDownState.accountId && drillDownState.accountName && (
+                <AccountDrillDown
+                    accountId={drillDownState.accountId}
+                    accountName={drillDownState.accountName}
+                    dateRange={dateRange}
+                    isOpen={drillDownState.isOpen}
+                    onClose={handleDrillDownClose}
+                />
             )}
         </Box>
     )

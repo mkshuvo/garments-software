@@ -16,17 +16,17 @@ namespace GarmentsERP.API.Data.Seed
             var adminUser = new ApplicationUser
             {
                 Id = adminUserId,
-                UserName = "superadmin",
-                NormalizedUserName = "SUPERADMIN",
-                Email = "superadmin@erp.com",
-                NormalizedEmail = "SUPERADMIN@ERP.COM",
+                UserName = "admin",
+                NormalizedUserName = "ADMIN",
+                Email = "admin@company.com",
+                NormalizedEmail = "ADMIN@COMPANY.COM",
                 EmailConfirmed = true,
-                FullName = "Super Administrator",
+                FullName = "System Administrator",
                 UserType = UserType.Admin,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow,
                 SecurityStamp = Guid.NewGuid().ToString(),
-                PasswordHash = hasher.HashPassword(new ApplicationUser { UserName = "superadmin" }, "SuperAdmin@123")
+                PasswordHash = hasher.HashPassword(new ApplicationUser { UserName = "admin" }, "Admin@123")
             };
             builder.HasData(adminUser);
         }
