@@ -193,6 +193,24 @@ export interface TransactionDetail {
   runningBalance: number;
 }
 
+// Sorting options for transaction drill-down
+export enum TransactionSortField {
+  DATE = 'date',
+  AMOUNT = 'amount',
+  DESCRIPTION = 'description',
+  REFERENCE = 'reference'
+}
+
+export enum SortDirection {
+  ASC = 'asc',
+  DESC = 'desc'
+}
+
+export interface TransactionSortOptions {
+  field: TransactionSortField;
+  direction: SortDirection;
+}
+
 export interface AccountTransactionResponse {
   accountId: string;
   accountName: string;

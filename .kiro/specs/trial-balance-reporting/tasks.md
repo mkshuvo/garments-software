@@ -147,7 +147,12 @@
   - Add integration with existing navigation menu structure
   - _Requirements: 1.1, 2.1, 5.2_
 
-- [ ] 12. Implement AccountDrillDown modal component
+- [x] 12. Implement AccountDrillDown modal component
+
+
+
+
+
   - Create AccountDrillDown.tsx modal for detailed transaction view
   - Display transaction list with date, category description, particulars, reference number, and amounts
   - Add sorting functionality by date, amount, or description

@@ -45,8 +45,11 @@ class TrialBalanceService {
     };
 
     try {
+      // Use development endpoint if in development mode
+      const endpoint = process.env.NODE_ENV === 'development' ? '/api/dev/trial-balance' : this.baseUrl;
+      
       const response = await this.executeWithRetry<TrialBalanceResponseDto>(
-        () => apiService.get<TrialBalanceResponseDto>(this.baseUrl, { params: request })
+        () => apiService.get<TrialBalanceResponseDto>(endpoint, { params: request })
       );
 
       return this.transformTrialBalanceResponse(response);

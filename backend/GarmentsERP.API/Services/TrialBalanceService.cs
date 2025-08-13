@@ -232,14 +232,16 @@ namespace GarmentsERP.API.Services
 
                     result.Add(new AccountTransactionDto
                     {
-                        TransactionId = transaction.TransactionId,
-                        TransactionDate = transaction.TransactionDate,
+                        Id = transaction.TransactionId,
+                        Date = transaction.TransactionDate,
                         CategoryDescription = enhancedCategoryDescription,
                         Particulars = transaction.Particulars,
                         ReferenceNumber = transaction.ReferenceNumber,
                         DebitAmount = -transaction.DebitAmount, // Negative for debits
                         CreditAmount = transaction.CreditAmount, // Positive for credits
-                        RunningBalance = runningBalance
+                        RunningBalance = runningBalance,
+                        AccountId = accountId,
+                        AccountName = accountInfo?.AccountName ?? "Unknown Account"
                     });
                 }
 
