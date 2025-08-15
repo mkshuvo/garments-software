@@ -122,7 +122,7 @@ export default function AccountingPage() {
           💼 MM Fashion Cash Book Integration
         </Typography>
         <Typography variant="body1">
-          Create and manage accounting transactions manually in the familiar MM Fashion cash book format. 
+          Create and manage accounting transactions manually in the familiar MM Fashion cash book format.
           Enter categories, transactions, suppliers, and buyers with automatic double-entry bookkeeping.
         </Typography>
       </Paper>
@@ -130,9 +130,9 @@ export default function AccountingPage() {
       {/* Accounting Modules Grid */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }, gap: 3 }}>
         {accountingModules.map((module, index) => (
-          <Card 
+          <Card
             key={index}
-            sx={{ 
+            sx={{
               height: '100%',
               cursor: 'pointer',
               transition: 'all 0.3s ease',

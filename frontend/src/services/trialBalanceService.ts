@@ -11,6 +11,9 @@ import {
   TrialBalanceComparison,
   AccountCategoryType
 } from '@/types/trialBalance';
+import { ErrorHandler, RetryHandler } from '@/utils/errorHandling';
+import { TrialBalanceFormValidator } from '@/utils/trialBalanceValidation';
+import { sanitizeString, validateTrialBalanceRequest, ClientRateLimiter } from '@/utils/securityUtils';
 
 /**
  * Trial Balance API Service
@@ -21,6 +24,7 @@ class TrialBalanceService {
   private readonly baseUrl = '/api/trial-balance';
   private readonly maxRetries = 3;
   private readonly retryDelay = 1000; // 1 second
+  private readonly rateLimiter = new ClientRateLimiter();
 
   /**
    * Generate trial balance report for the specified date range
@@ -34,8 +38,39 @@ class TrialBalanceService {
       groupByCategory?: boolean;
       includeZeroBalances?: boolean;
       categoryFilter?: AccountCategoryType[];
+      enableRetry?: boolean;
+      enableFallback?: boolean;
     } = {}
   ): Promise<TrialBalanceData> {
+    // Client-side rate limiting
+    const rateLimitKey = 'trial-balance-generate';
+    if (!this.rateLimiter.isAllowed(rateLimitKey, 30, 60000)) { // 30 requests per minute
+      throw ErrorHandler.createError(
+        new Error('Rate limit exceeded. Please wait before making another request.'),
+        'RATE_LIMIT_EXCEEDED',
+        ErrorHandler.ErrorCategory.VALIDATION,
+        ErrorHandler.ErrorSeverity.MEDIUM
+      );
+    }
+
+    // Enhanced validation before making API call
+    const securityValidation = validateTrialBalanceRequest({
+      startDate: dateRange.startDate,
+      endDate: dateRange.endDate,
+      groupByCategory: options.groupByCategory,
+      includeZeroBalances: options.includeZeroBalances
+    });
+
+    if (!securityValidation.isValid) {
+      const validationErrors = securityValidation.errors.map(error => ({ field: 'security', message: error }));
+      throw ErrorHandler.handleValidationError(validationErrors, { dateRange, options });
+    }
+
+    const validationResult = TrialBalanceFormValidator.validateDateRange(dateRange);
+    if (!validationResult.isValid) {
+      throw ErrorHandler.handleValidationError(validationResult.errors, { dateRange, options });
+    }
+
     const request: TrialBalanceRequestDto = {
       startDate: this.formatDateForApi(dateRange.startDate),
       endDate: this.formatDateForApi(dateRange.endDate),
@@ -44,38 +79,81 @@ class TrialBalanceService {
       categoryFilter: options.categoryFilter
     };
 
-    try {
-      // Use development endpoint if in development mode
-      const endpoint = process.env.NODE_ENV === 'development' ? '/api/dev/trial-balance' : this.baseUrl;
-      
-      const response = await this.executeWithRetry<TrialBalanceResponseDto>(
-        () => apiService.get<TrialBalanceResponseDto>(endpoint, { params: request })
-      );
+    const operation = async (): Promise<TrialBalanceData> => {
+      try {
+        // Use development endpoint if in development mode
+        const endpoint = process.env.NODE_ENV === 'development' ? '/api/dev/trial-balance' : this.baseUrl;
+        
+        const response = await apiService.get<TrialBalanceResponseDto>(endpoint, { params: request });
+        return this.transformTrialBalanceResponse(response);
+      } catch (error) {
+        throw ErrorHandler.handleApiError(error, 'Failed to generate trial balance report');
+      }
+    };
 
-      return this.transformTrialBalanceResponse(response);
-    } catch (error) {
-      throw this.handleApiError(error, 'Failed to generate trial balance report');
+    // Use retry mechanism if enabled
+    if (options.enableRetry !== false) {
+      try {
+        return await RetryHandler.executeWithRetry(operation, {
+          maxAttempts: 3,
+          baseDelay: 1000,
+          onRetry: (attempt, error) => {
+            console.warn(`Trial balance generation attempt ${attempt} failed:`, error);
+          }
+        });
+      } catch (error) {
+        // If retry fails and fallback is enabled, try with cached or simplified data
+        if (options.enableFallback) {
+          return await this.getFallbackTrialBalance(dateRange, options);
+        }
+        throw error;
+      }
     }
+
+    return await operation();
   }
 
   /**
    * Get detailed transaction information for a specific account (drill-down functionality)
    * @param accountId - The unique identifier of the account
-   * @param dateRange - Date range for filtering transactions
+   * @param startDate - Start date for filtering transactions
+   * @param endDate - End date for filtering transactions
    * @param pagination - Optional pagination parameters
-   * @returns Promise<AccountTransactionResponse> - Account transaction details
+   * @returns Promise<TransactionDetail[]> - Account transaction details
    */
   async getAccountTransactions(
     accountId: string,
-    dateRange: DateRange,
+    startDate: Date,
+    endDate: Date,
     pagination?: {
       page?: number;
       pageSize?: number;
     }
-  ): Promise<AccountTransactionResponse> {
+  ): Promise<TransactionDetail[]> {
+    // Client-side rate limiting
+    const rateLimitKey = 'account-transactions';
+    if (!this.rateLimiter.isAllowed(rateLimitKey, 60, 60000)) { // 60 requests per minute
+      throw ErrorHandler.createError(
+        new Error('Rate limit exceeded. Please wait before making another request.'),
+        'RATE_LIMIT_EXCEEDED',
+        ErrorHandler.ErrorCategory.VALIDATION,
+        ErrorHandler.ErrorSeverity.MEDIUM
+      );
+    }
+
+    // Sanitize account ID
+    const sanitizedAccountId = sanitizeString(accountId, 36);
+    if (!sanitizedAccountId || sanitizedAccountId !== accountId) {
+      throw ErrorHandler.createError(
+        new Error('Invalid account ID format'),
+        'INVALID_ACCOUNT_ID',
+        ErrorHandler.ErrorCategory.VALIDATION,
+        ErrorHandler.ErrorSeverity.HIGH
+      );
+    }
     const params = {
-      startDate: this.formatDateForApi(dateRange.startDate),
-      endDate: this.formatDateForApi(dateRange.endDate),
+      startDate: this.formatDateForApi(startDate),
+      endDate: this.formatDateForApi(endDate),
       ...(pagination?.page && { page: pagination.page }),
       ...(pagination?.pageSize && { pageSize: pagination.pageSize })
     };
@@ -88,7 +166,10 @@ class TrialBalanceService {
         )
       );
 
-      return this.transformAccountTransactionResponse(accountId, response, pagination);
+      return response.map(transaction => ({
+        ...transaction,
+        date: this.parseDateFromApi(transaction.date.toString())
+      }));
     } catch (error) {
       throw this.handleApiError(error, `Failed to fetch transactions for account ${accountId}`);
     }
@@ -109,6 +190,37 @@ class TrialBalanceService {
       includeZeroBalances?: boolean;
     } = {}
   ): Promise<TrialBalanceComparison> {
+    // Client-side rate limiting (more restrictive for comparison)
+    const rateLimitKey = 'trial-balance-compare';
+    if (!this.rateLimiter.isAllowed(rateLimitKey, 10, 60000)) { // 10 requests per minute
+      throw ErrorHandler.createError(
+        new Error('Rate limit exceeded. Please wait before making another request.'),
+        'RATE_LIMIT_EXCEEDED',
+        ErrorHandler.ErrorCategory.VALIDATION,
+        ErrorHandler.ErrorSeverity.MEDIUM
+      );
+    }
+
+    // Validate both periods
+    const period1Validation = validateTrialBalanceRequest({
+      startDate: period1.startDate,
+      endDate: period1.endDate,
+      groupByCategory: options.groupByCategory,
+      includeZeroBalances: options.includeZeroBalances
+    });
+
+    const period2Validation = validateTrialBalanceRequest({
+      startDate: period2.startDate,
+      endDate: period2.endDate,
+      groupByCategory: options.groupByCategory,
+      includeZeroBalances: options.includeZeroBalances
+    });
+
+    const allErrors = [...period1Validation.errors, ...period2Validation.errors];
+    if (allErrors.length > 0) {
+      const validationErrors = allErrors.map(error => ({ field: 'dateRange', message: error }));
+      throw ErrorHandler.handleValidationError(validationErrors, { period1, period2, options });
+    }
     const request: TrialBalanceComparisonRequestDto = {
       period1: {
         startDate: this.formatDateForApi(period1.startDate),
@@ -328,34 +440,72 @@ class TrialBalanceService {
   }
 
   /**
-   * Handle and format API errors with user-friendly messages
+   * Fallback trial balance generation for graceful degradation
    */
-  private handleApiError(error: unknown, defaultMessage: string): Error {
-    if (typeof error === 'object' && error !== null && 'message' in error) {
-      const apiError = error as { message: string; status?: number };
-      
-      // Provide specific error messages based on status codes
-      switch (apiError.status) {
-        case 400:
-          return new Error(apiError.message || 'Invalid request parameters. Please check your input.');
-        case 401:
-          return new Error('Authentication required. Please log in and try again.');
-        case 403:
-          return new Error('You do not have permission to access this feature.');
-        case 404:
-          return new Error('The requested resource was not found.');
-        case 429:
-          return new Error('Too many requests. Please wait a moment and try again.');
-        case 500:
-        case 502:
-        case 503:
-          return new Error('Server error. Please try again later.');
-        default:
-          return new Error(apiError.message || defaultMessage);
-      }
+  private async getFallbackTrialBalance(
+    dateRange: DateRange,
+    options: {
+      groupByCategory?: boolean;
+      includeZeroBalances?: boolean;
+      categoryFilter?: AccountCategoryType[];
     }
+  ): Promise<TrialBalanceData> {
+    // Return a basic structure with empty data but proper format
+    // In a real implementation, this might fetch cached data or simplified calculations
+    console.warn('Using fallback trial balance data due to service unavailability');
     
-    return new Error(defaultMessage);
+    return {
+      dateRange,
+      categories: [],
+      totalDebits: 0,
+      totalCredits: 0,
+      finalBalance: 0,
+      calculationExpression: '0 = 0',
+      generatedAt: new Date(),
+      totalTransactions: 0
+    };
+  }
+
+  /**
+   * Handle API errors with enhanced error information
+   */
+  private handleApiError(error: unknown, context: string): Error {
+    return ErrorHandler.handleApiError(error, context);
+  }
+
+  /**
+   * Enhanced error handling with graceful degradation
+   */
+  private async handlePartialDataFailure<T>(
+    operations: Array<() => Promise<T>>,
+    minimumSuccessRate: number = 0.5
+  ): Promise<{ data: Awaited<T>[]; hasFailures: boolean }> {
+    const results = await Promise.allSettled(operations.map(op => op()));
+    
+    const successfulResults = results
+      .filter((result): result is PromiseFulfilledResult<Awaited<T>> => result.status === 'fulfilled')
+      .map(result => result.value);
+    
+    const failures = results
+      .filter((result): result is PromiseRejectedResult => result.status === 'rejected')
+      .map(result => result.reason);
+
+    const successRate = successfulResults.length / results.length;
+
+    if (successRate < minimumSuccessRate) {
+      throw ErrorHandler.createError(
+        new Error(`Too many operations failed. Success rate: ${Math.round(successRate * 100)}%`),
+        'PARTIAL_FAILURE',
+        ErrorHandler.ErrorCategory.DATA,
+        ErrorHandler.ErrorSeverity.HIGH,
+        { failures, successRate }
+      );
+    }
+
+    return {
+      data: successfulResults,
+      hasFailures: failures.length > 0
+    };
   }
 }
 

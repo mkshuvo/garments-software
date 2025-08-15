@@ -70,18 +70,17 @@ export async function getAccountDetails(accountId: string) {
 
     const accountTransactions = await trialBalanceService.getAccountTransactions(
       accountId,
-      dateRange,
+      dateRange.startDate,
+      dateRange.endDate,
       { page: 1, pageSize: 50 }
     );
 
-    console.log(`Account ${accountTransactions.accountName} Details:`, {
-      totalTransactions: accountTransactions.totalCount,
-      currentPage: accountTransactions.currentPage,
-      pageSize: accountTransactions.pageSize,
+    console.log(`Account ${accountId} Transaction Details:`, {
+      totalTransactions: accountTransactions.length,
     });
 
     // Process transactions
-    accountTransactions.transactions.forEach(transaction => {
+    accountTransactions.forEach(transaction => {
       console.log(`${transaction.date.toDateString()}: ${transaction.particulars} - ${transaction.creditAmount - transaction.debitAmount}`);
     });
 
@@ -200,7 +199,7 @@ export function useTrialBalanceExample() {
     try {
       console.log(`Loading transactions for account ${accountId}...`);
       
-      const transactions = await trialBalanceService.getAccountTransactions(accountId, dateRange);
+      const transactions = await trialBalanceService.getAccountTransactions(accountId, dateRange.startDate, dateRange.endDate);
       
       console.log('Account transactions loaded successfully');
       return transactions;

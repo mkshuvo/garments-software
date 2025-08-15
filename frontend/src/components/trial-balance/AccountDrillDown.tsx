@@ -73,14 +73,26 @@ export const AccountDrillDown: React.FC<AccountDrillDownProps> = ({
     setError(null);
 
     try {
-      const data = await trialBalanceService.getAccountTransactions(
+      const transactions = await trialBalanceService.getAccountTransactions(
         accountId,
-        dateRange,
+        dateRange.startDate,
+        dateRange.endDate,
         {
           page: currentPage,
           pageSize: pageSize
         }
       );
+      
+      // Create the expected response structure
+      const data: AccountTransactionResponse = {
+        accountId,
+        accountName,
+        transactions,
+        totalCount: transactions.length,
+        pageSize,
+        currentPage
+      };
+      
       setTransactionData(data);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load transaction data';
@@ -89,7 +101,7 @@ export const AccountDrillDown: React.FC<AccountDrillDownProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [accountId, dateRange, currentPage, pageSize]);
+  }, [accountId, dateRange, currentPage, pageSize, accountName]);
 
   // Load transaction data when modal opens or parameters change
   useEffect(() => {
@@ -97,6 +109,18 @@ export const AccountDrillDown: React.FC<AccountDrillDownProps> = ({
       loadTransactionData();
     }
   }, [isOpen, accountId, dateRange, currentPage, pageSize, sortOptions, loadTransactionData]);
+
+  // Listen for global close modal events (Escape key)
+  useEffect(() => {
+    const handleCloseModal = () => {
+      if (isOpen) {
+        onClose();
+      }
+    };
+
+    window.addEventListener('trialBalanceCloseModal', handleCloseModal);
+    return () => window.removeEventListener('trialBalanceCloseModal', handleCloseModal);
+  }, [isOpen, onClose]);
 
   // Reset state when modal closes
   useEffect(() => {

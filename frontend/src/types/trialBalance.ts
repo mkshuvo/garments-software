@@ -38,6 +38,19 @@ export interface AccountBalance {
   transactionCount: number;
 }
 
+export interface AccountTransaction {
+  id: string;
+  date: Date;
+  categoryDescription: string;
+  particulars: string;
+  referenceNumber: string;
+  debitAmount: number; // Negative for debits
+  creditAmount: number; // Positive for credits
+  runningBalance: number;
+  accountId: string;
+  accountName: string;
+}
+
 export interface AccountCategory {
   name: AccountCategoryType;
   accounts: AccountBalance[];
