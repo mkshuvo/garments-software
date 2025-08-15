@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -25,6 +25,7 @@ import {
   Remove as RemoveIcon
 } from '@mui/icons-material';
 import { AccountCategory, AccountBalance } from '../../types/trialBalance';
+import { VirtualizedAccountList } from './VirtualizedAccountList';
 
 interface AccountCategorySectionProps {
   category: AccountCategory;
@@ -43,9 +44,14 @@ export const AccountCategorySection: React.FC<AccountCategorySectionProps> = ({
   const theme = useTheme();
 
   // Filter accounts based on showZeroBalances preference
-  const filteredAccounts = showZeroBalances 
-    ? category.accounts 
-    : category.accounts.filter(account => account.netBalance !== 0);
+  const filteredAccounts = useMemo(() => {
+    return showZeroBalances 
+      ? category.accounts 
+      : category.accounts.filter(account => account.netBalance !== 0);
+  }, [category.accounts, showZeroBalances]);
+
+  // Determine if we should use virtual scrolling (for lists with more than 50 accounts)
+  const useVirtualScrolling = filteredAccounts.length > 50;
 
   const handleToggleExpanded = () => {
     setExpanded(!expanded);
@@ -205,7 +211,7 @@ export const AccountCategorySection: React.FC<AccountCategorySectionProps> = ({
         </Box>
       </Box>
 
-      {/* Accounts Table */}
+      {/* Accounts Display */}
       <Collapse 
         in={expanded} 
         timeout={300}
@@ -216,153 +222,167 @@ export const AccountCategorySection: React.FC<AccountCategorySectionProps> = ({
         }}
       >
         {filteredAccounts.length > 0 ? (
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow sx={{ backgroundColor: alpha(getCategoryColor(category.name), 0.05) }}>
-                  <TableCell sx={{ fontWeight: 'bold', color: getCategoryColor(category.name) }}>
-                    Account Name
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: 'bold', color: getCategoryColor(category.name) }}>
-                    Category Description
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: 'bold', color: getCategoryColor(category.name) }}>
-                    Particulars
-                  </TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 'bold', color: getCategoryColor(category.name) }}>
-                    Debit Amount
-                  </TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 'bold', color: getCategoryColor(category.name) }}>
-                    Credit Amount
-                  </TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 'bold', color: getCategoryColor(category.name) }}>
-                    Net Balance
-                  </TableCell>
-                  <TableCell align="center" sx={{ fontWeight: 'bold', color: getCategoryColor(category.name) }}>
-                    Transactions
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredAccounts.map((account) => (
-                  <TableRow
-                    key={account.accountId}
-                    onClick={() => handleAccountClick(account)}
-                    sx={{
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                      '&:hover': {
-                        backgroundColor: alpha(getCategoryColor(category.name), 0.08),
-                        transform: 'translateX(4px)'
-                      },
-                      '&:nth-of-type(even)': {
-                        backgroundColor: alpha(theme?.palette?.grey?.[100] || '#f5f5f5', 0.5)
-                      }
-                    }}
-                  >
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Box
-                          sx={{
-                            width: 8,
-                            height: 8,
-                            borderRadius: '50%',
-                            backgroundColor: getCategoryColor(category.name),
-                            opacity: 0.7
-                          }}
-                        />
+          useVirtualScrolling ? (
+            // Use virtual scrolling for large lists
+            <Box sx={{ p: 2 }}>
+              <VirtualizedAccountList
+                accounts={filteredAccounts}
+                onAccountClick={onAccountClick}
+                showZeroBalances={showZeroBalances}
+                height={400}
+                itemHeight={80}
+              />
+            </Box>
+          ) : (
+            // Use regular table for smaller lists
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: alpha(getCategoryColor(category.name), 0.05) }}>
+                    <TableCell sx={{ fontWeight: 'bold', color: getCategoryColor(category.name) }}>
+                      Account Name
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: getCategoryColor(category.name) }}>
+                      Category Description
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: getCategoryColor(category.name) }}>
+                      Particulars
+                    </TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 'bold', color: getCategoryColor(category.name) }}>
+                      Debit Amount
+                    </TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 'bold', color: getCategoryColor(category.name) }}>
+                      Credit Amount
+                    </TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 'bold', color: getCategoryColor(category.name) }}>
+                      Net Balance
+                    </TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 'bold', color: getCategoryColor(category.name) }}>
+                      Transactions
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredAccounts.map((account) => (
+                    <TableRow
+                      key={account.accountId}
+                      onClick={() => handleAccountClick(account)}
+                      sx={{
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          backgroundColor: alpha(getCategoryColor(category.name), 0.08),
+                          transform: 'translateX(4px)'
+                        },
+                        '&:nth-of-type(even)': {
+                          backgroundColor: alpha(theme?.palette?.grey?.[100] || '#f5f5f5', 0.5)
+                        }
+                      }}
+                    >
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Box
+                            sx={{
+                              width: 8,
+                              height: 8,
+                              borderRadius: '50%',
+                              backgroundColor: getCategoryColor(category.name),
+                              opacity: 0.7
+                            }}
+                          />
+                          <Typography 
+                            variant="body2" 
+                            sx={{ 
+                              fontWeight: 'medium',
+                              color: theme?.palette?.text?.primary || '#212121'
+                            }}
+                          >
+                            {account.accountName}
+                          </Typography>
+                        </Box>
+                      </TableCell>
+                      
+                      <TableCell>
+                        <Typography variant="body2" color="text.secondary">
+                          {account.categoryDescription || '-'}
+                        </Typography>
+                      </TableCell>
+                      
+                      <TableCell>
                         <Typography 
                           variant="body2" 
-                          sx={{ 
-                            fontWeight: 'medium',
-                            color: theme?.palette?.text?.primary || '#212121'
+                          color="text.secondary"
+                          sx={{
+                            maxWidth: 200,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
                           }}
                         >
-                          {account.accountName}
+                          {account.particulars || '-'}
                         </Typography>
-                      </Box>
-                    </TableCell>
-                    
-                    <TableCell>
-                      <Typography variant="body2" color="text.secondary">
-                        {account.categoryDescription || '-'}
-                      </Typography>
-                    </TableCell>
-                    
-                    <TableCell>
-                      <Typography 
-                        variant="body2" 
-                        color="text.secondary"
-                        sx={{
-                          maxWidth: 200,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        {account.particulars || '-'}
-                      </Typography>
-                    </TableCell>
-                    
-                    <TableCell align="right">
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color: account.debitAmount !== 0 ? (theme?.palette?.error?.main || '#f44336') : (theme?.palette?.text?.disabled || '#bdbdbd'),
-                          fontFamily: 'monospace',
-                          fontWeight: account.debitAmount !== 0 ? 'medium' : 'normal'
-                        }}
-                      >
-                        {account.debitAmount !== 0 ? formatAmount(account.debitAmount) : '-'}
-                      </Typography>
-                    </TableCell>
-                    
-                    <TableCell align="right">
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color: account.creditAmount !== 0 ? (theme?.palette?.success?.main || '#4caf50') : (theme?.palette?.text?.disabled || '#bdbdbd'),
-                          fontFamily: 'monospace',
-                          fontWeight: account.creditAmount !== 0 ? 'medium' : 'normal'
-                        }}
-                      >
-                        {account.creditAmount !== 0 ? formatAmount(account.creditAmount) : '-'}
-                      </Typography>
-                    </TableCell>
-                    
-                    <TableCell align="right">
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
-                        {getBalanceIcon(account.netBalance)}
+                      </TableCell>
+                      
+                      <TableCell align="right">
                         <Typography
                           variant="body2"
                           sx={{
-                            color: getAmountColor(account.netBalance),
+                            color: account.debitAmount !== 0 ? (theme?.palette?.error?.main || '#f44336') : (theme?.palette?.text?.disabled || '#bdbdbd'),
                             fontFamily: 'monospace',
-                            fontWeight: 'bold'
+                            fontWeight: account.debitAmount !== 0 ? 'medium' : 'normal'
                           }}
                         >
-                          {formatAmount(account.netBalance)}
+                          {account.debitAmount !== 0 ? formatAmount(account.debitAmount) : '-'}
                         </Typography>
-                      </Box>
-                    </TableCell>
-                    
-                    <TableCell align="center">
-                      <Chip
-                        label={account.transactionCount}
-                        size="small"
-                        sx={{
-                          minWidth: 40,
-                          backgroundColor: alpha(getCategoryColor(category.name), 0.1),
-                          color: getCategoryColor(category.name),
-                          fontWeight: 'medium'
-                        }}
-                      />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                      </TableCell>
+                      
+                      <TableCell align="right">
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: account.creditAmount !== 0 ? (theme?.palette?.success?.main || '#4caf50') : (theme?.palette?.text?.disabled || '#bdbdbd'),
+                            fontFamily: 'monospace',
+                            fontWeight: account.creditAmount !== 0 ? 'medium' : 'normal'
+                          }}
+                        >
+                          {account.creditAmount !== 0 ? formatAmount(account.creditAmount) : '-'}
+                        </Typography>
+                      </TableCell>
+                      
+                      <TableCell align="right">
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
+                          {getBalanceIcon(account.netBalance)}
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              color: getAmountColor(account.netBalance),
+                              fontFamily: 'monospace',
+                              fontWeight: 'bold'
+                            }}
+                          >
+                            {formatAmount(account.netBalance)}
+                          </Typography>
+                        </Box>
+                      </TableCell>
+                      
+                      <TableCell align="center">
+                        <Chip
+                          label={account.transactionCount}
+                          size="small"
+                          sx={{
+                            minWidth: 40,
+                            backgroundColor: alpha(getCategoryColor(category.name), 0.1),
+                            color: getCategoryColor(category.name),
+                            fontWeight: 'medium'
+                          }}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )
         ) : (
           <Box sx={{ p: 3, textAlign: 'center' }}>
             <Typography variant="body2" color="text.secondary">

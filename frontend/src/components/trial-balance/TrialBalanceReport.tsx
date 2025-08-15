@@ -5,7 +5,6 @@ import {
     Box,
     Typography,
     Paper,
-    Alert,
     CircularProgress,
     Switch,
     FormControlLabel,
@@ -13,7 +12,8 @@ import {
     Skeleton,
     Fade,
     Collapse,
-    IconButton
+    IconButton,
+    Tooltip
 } from '@mui/material'
 import {
     Refresh as RefreshIcon,
@@ -35,6 +35,11 @@ import {
     startOfMonth,
     endOfMonth
 } from 'date-fns'
+import { ErrorDisplay } from '@/components/common/ErrorDisplay'
+import { RetryWrapper } from '@/components/common/RetryWrapper'
+import { ErrorHandler, EnhancedError } from '@/utils/errorHandling'
+import { TrialBalanceFormValidator, ValidationUtils } from '@/utils/trialBalanceValidation'
+import { ValidationResult } from '@/services/validationService'
 
 export interface TrialBalanceReportProps {
     defaultDateRange?: DateRange
@@ -46,8 +51,9 @@ export interface TrialBalanceReportProps {
 
 interface LoadingState {
     isLoading: boolean
-    error: TrialBalanceError | null
+    error: EnhancedError | null
     lastUpdated: Date | null
+    validationResult: ValidationResult | null
 }
 
 export const TrialBalanceReport: React.FC<TrialBalanceReportProps> = ({
@@ -73,7 +79,8 @@ export const TrialBalanceReport: React.FC<TrialBalanceReportProps> = ({
     const [loadingState, setLoadingState] = useState<LoadingState>({
         isLoading: false,
         error: null,
-        lastUpdated: null
+        lastUpdated: null,
+        validationResult: null
     })
 
     // UI preferences
@@ -92,20 +99,18 @@ export const TrialBalanceReport: React.FC<TrialBalanceReportProps> = ({
         accountName: null
     })
 
-    // Generate trial balance report
+    // Generate trial balance report with enhanced error handling
     const generateReport = useCallback(async (dateRangeToUse?: DateRange) => {
         const targetDateRange = dateRangeToUse || dateRange
 
-        // Validate date range
-        const validationError = trialBalanceService.getDateRangeValidationError(targetDateRange)
-        if (validationError) {
+        // Enhanced validation
+        const validationResult = TrialBalanceFormValidator.validateDateRange(targetDateRange)
+        if (!validationResult.isValid) {
             setLoadingState({
                 isLoading: false,
-                error: {
-                    code: 'VALIDATION_ERROR',
-                    message: validationError
-                },
-                lastUpdated: null
+                error: ErrorHandler.handleValidationError(validationResult.errors, { dateRange: targetDateRange }),
+                lastUpdated: null,
+                validationResult
             })
             return
         }
@@ -113,31 +118,34 @@ export const TrialBalanceReport: React.FC<TrialBalanceReportProps> = ({
         setLoadingState({
             isLoading: true,
             error: null,
-            lastUpdated: null
+            lastUpdated: null,
+            validationResult: null
         })
 
         try {
             const data = await trialBalanceService.generateTrialBalance(targetDateRange, {
                 groupByCategory,
-                includeZeroBalances: showZeroBalances
+                includeZeroBalances: showZeroBalances,
+                enableRetry: true,
+                enableFallback: true
             })
 
             setTrialBalanceData(data)
             setLoadingState({
                 isLoading: false,
                 error: null,
-                lastUpdated: new Date()
+                lastUpdated: new Date(),
+                validationResult: null
             })
         } catch (error) {
             console.error('Failed to generate trial balance:', error)
 
+            const enhancedError = ErrorHandler.handleApiError(error, 'Failed to generate trial balance report')
             setLoadingState({
                 isLoading: false,
-                error: {
-                    code: 'GENERATION_ERROR',
-                    message: error instanceof Error ? error.message : 'Failed to generate trial balance report'
-                },
-                lastUpdated: null
+                error: enhancedError,
+                lastUpdated: null,
+                validationResult: null
             })
         }
     }, [dateRange, groupByCategory, showZeroBalances])
@@ -175,22 +183,20 @@ export const TrialBalanceReport: React.FC<TrialBalanceReportProps> = ({
         })
     }, [])
 
-    // Handle show zero balances toggle
+    // Handle show zero balances toggle with enhanced error handling
     const handleShowZeroBalancesChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         const newValue = event.target.checked
         setShowZeroBalances(newValue)
 
         // Regenerate report with new setting immediately
         const generateWithNewSetting = async () => {
-            const validationError = trialBalanceService.getDateRangeValidationError(dateRange)
-            if (validationError) {
+            const validationResult = TrialBalanceFormValidator.validateDateRange(dateRange)
+            if (!validationResult.isValid) {
                 setLoadingState({
                     isLoading: false,
-                    error: {
-                        code: 'VALIDATION_ERROR',
-                        message: validationError
-                    },
-                    lastUpdated: null
+                    error: ErrorHandler.handleValidationError(validationResult.errors, { dateRange }),
+                    lastUpdated: null,
+                    validationResult
                 })
                 return
             }
@@ -198,31 +204,34 @@ export const TrialBalanceReport: React.FC<TrialBalanceReportProps> = ({
             setLoadingState({
                 isLoading: true,
                 error: null,
-                lastUpdated: null
+                lastUpdated: null,
+                validationResult: null
             })
 
             try {
                 const data = await trialBalanceService.generateTrialBalance(dateRange, {
                     groupByCategory,
-                    includeZeroBalances: newValue // Use the new value directly
+                    includeZeroBalances: newValue,
+                    enableRetry: true,
+                    enableFallback: true
                 })
 
                 setTrialBalanceData(data)
                 setLoadingState({
                     isLoading: false,
                     error: null,
-                    lastUpdated: new Date()
+                    lastUpdated: new Date(),
+                    validationResult: null
                 })
             } catch (error) {
                 console.error('Failed to generate trial balance:', error)
 
+                const enhancedError = ErrorHandler.handleApiError(error, 'Failed to generate trial balance report')
                 setLoadingState({
                     isLoading: false,
-                    error: {
-                        code: 'GENERATION_ERROR',
-                        message: error instanceof Error ? error.message : 'Failed to generate trial balance report'
-                    },
-                    lastUpdated: null
+                    error: enhancedError,
+                    lastUpdated: null,
+                    validationResult: null
                 })
             }
         }
@@ -246,29 +255,16 @@ export const TrialBalanceReport: React.FC<TrialBalanceReportProps> = ({
         </Stack>
     )
 
-    // Render error state
+    // Render error state with enhanced error display
     const renderError = () => (
-        <Alert
-            severity="error"
-            sx={{ mb: 3 }}
-            action={
-                <IconButton
-                    size="small"
-                    aria-label="refresh"
-                    onClick={() => generateReport()}
-                    sx={{ color: 'inherit' }}
-                >
-                    <RefreshIcon />
-                </IconButton>
-            }
-        >
-            <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-                {loadingState.error?.message || 'An error occurred while generating the trial balance report'}
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                Click the refresh icon to try again
-            </Typography>
-        </Alert>
+        <ErrorDisplay
+            error={loadingState.error}
+            validationResult={loadingState.validationResult || undefined}
+            onRetry={() => generateReport()}
+            showDetails={true}
+            showRetryButton={true}
+            variant="outlined"
+        />
     )
 
     // Render empty state
@@ -315,11 +311,35 @@ export const TrialBalanceReport: React.FC<TrialBalanceReportProps> = ({
                         Trial Balance Report
                     </Typography>
 
-                    {loadingState.lastUpdated && (
-                        <Typography variant="caption" color="text.secondary">
-                            Last updated: {loadingState.lastUpdated.toLocaleString()}
-                        </Typography>
-                    )}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        {loadingState.lastUpdated && (
+                            <Typography variant="caption" color="text.secondary">
+                                Last updated: {loadingState.lastUpdated.toLocaleString()}
+                            </Typography>
+                        )}
+                        
+                        <Tooltip 
+                            title="Refresh the trial balance report (Ctrl+R)"
+                            arrow
+                            placement="left"
+                        >
+                            <IconButton
+                                onClick={() => generateReport()}
+                                disabled={loadingState.isLoading}
+                                color="primary"
+                                size="small"
+                                sx={{
+                                    backgroundColor: 'primary.light',
+                                    color: 'primary.contrastText',
+                                    '&:hover': {
+                                        backgroundColor: 'primary.main'
+                                    }
+                                }}
+                            >
+                                <RefreshIcon />
+                            </IconButton>
+                        </Tooltip>
+                    </Box>
                 </Box>
 
                 {/* Controls Section */}
@@ -330,31 +350,43 @@ export const TrialBalanceReport: React.FC<TrialBalanceReportProps> = ({
                         alignItems: { xs: 'stretch', sm: 'center' },
                         gap: 2
                     }}>
-                        <FormControlLabel
-                            control={
-                                <Switch
-                                    checked={showZeroBalances}
-                                    onChange={handleShowZeroBalancesChange}
-                                    disabled={loadingState.isLoading}
-                                    icon={<VisibilityOffIcon />}
-                                    checkedIcon={<VisibilityIcon />}
-                                />
-                            }
-                            label="Show Zero Balance Accounts"
-                            sx={{ mr: { xs: 0, sm: 2 } }}
-                        />
+                        <Tooltip 
+                            title="Toggle to show or hide accounts with zero net balance in the report"
+                            arrow
+                            placement="top"
+                        >
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        checked={showZeroBalances}
+                                        onChange={handleShowZeroBalancesChange}
+                                        disabled={loadingState.isLoading}
+                                        icon={<VisibilityOffIcon />}
+                                        checkedIcon={<VisibilityIcon />}
+                                    />
+                                }
+                                label="Show Zero Balance Accounts"
+                                sx={{ mr: { xs: 0, sm: 2 } }}
+                            />
+                        </Tooltip>
 
-                        <FormControlLabel
-                            control={
-                                <Switch
-                                    checked={showFilters}
-                                    onChange={(e) => setShowFilters(e.target.checked)}
-                                    icon={<FilterIcon />}
-                                    checkedIcon={<FilterIcon />}
-                                />
-                            }
-                            label="Show Filters"
-                        />
+                        <Tooltip 
+                            title="Show additional filtering options for customizing the report"
+                            arrow
+                            placement="top"
+                        >
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        checked={showFilters}
+                                        onChange={(e) => setShowFilters(e.target.checked)}
+                                        icon={<FilterIcon />}
+                                        checkedIcon={<FilterIcon />}
+                                    />
+                                }
+                                label="Show Filters"
+                            />
+                        </Tooltip>
                     </Box>
 
                     <Collapse in={showFilters}>
@@ -373,7 +405,7 @@ export const TrialBalanceReport: React.FC<TrialBalanceReportProps> = ({
                 endDate={dateRange.endDate}
                 onDateChange={handleDateRangeChange}
                 disabled={loadingState.isLoading}
-                error={loadingState.error?.code === 'VALIDATION_ERROR' ? loadingState.error.message : undefined}
+                error={loadingState.error?.category === 'validation' ? loadingState.error.userMessage : undefined}
                 helperText="Select the date range for your trial balance report"
             />
 
