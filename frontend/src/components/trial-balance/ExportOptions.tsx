@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
     Box,
     Button,
@@ -63,20 +63,7 @@ export const ExportOptions: React.FC<ExportOptionsProps> = ({
     const [showSuccessMessage, setShowSuccessMessage] = useState(false);
     const [showErrorMessage, setShowErrorMessage] = useState(false);
 
-    // Listen for keyboard shortcut export events
-    useEffect(() => {
-        const handleExportShortcut = () => {
-            if (!isExporting && !disabled) {
-                // Default to PDF export on Ctrl+E
-                handleExport(ExportFormat.PDF);
-            }
-        };
-
-        window.addEventListener('trialBalanceExport', handleExportShortcut);
-        return () => window.removeEventListener('trialBalanceExport', handleExportShortcut);
-    }, [isExporting, disabled, handleExport]);
-
-    const handleExport = async (format: ExportFormat, options?: ExportRequestOptions) => {
+    const handleExport = useCallback(async (format: ExportFormat, options?: ExportRequestOptions) => {
         setExportState(prev => ({
             ...prev,
             format,
@@ -104,7 +91,7 @@ export const ExportOptions: React.FC<ExportOptionsProps> = ({
             }));
             setShowErrorMessage(true);
         }
-    };
+    }, [onExport]);
 
     const handleRetry = async () => {
         if (exportState.format && exportState.retryCount < 3) {

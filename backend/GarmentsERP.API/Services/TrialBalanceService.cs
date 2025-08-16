@@ -10,11 +10,16 @@ namespace GarmentsERP.API.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<TrialBalanceService> _logger;
+        private readonly ITrialBalanceCacheService _cacheService;
 
-        public TrialBalanceService(ApplicationDbContext context, ILogger<TrialBalanceService> logger)
+        public TrialBalanceService(
+            ApplicationDbContext context, 
+            ILogger<TrialBalanceService> logger,
+            ITrialBalanceCacheService cacheService)
         {
             _context = context;
             _logger = logger;
+            _cacheService = cacheService;
         }
 
         public async Task<TrialBalanceResponseDto> GenerateTrialBalanceAsync(TrialBalanceRequestDto request)
@@ -23,6 +28,16 @@ namespace GarmentsERP.API.Services
             {
                 _logger.LogInformation("Generating trial balance for date range {StartDate} to {EndDate}", 
                     request.StartDate, request.EndDate);
+
+                // Check cache first
+                var cacheKey = _cacheService.GenerateTrialBalanceCacheKey(request);
+                var cachedResult = await _cacheService.GetCachedTrialBalanceAsync(cacheKey);
+                
+                if (cachedResult != null)
+                {
+                    _logger.LogInformation("Returning cached trial balance for key: {CacheKey}", cacheKey);
+                    return cachedResult;
+                }
 
                 // Get all active accounts
                 var accounts = await _context.ChartOfAccounts
@@ -99,6 +114,9 @@ namespace GarmentsERP.API.Services
 
                 _logger.LogInformation("Trial balance generated successfully with {TransactionCount} transactions", 
                     response.TotalTransactions);
+
+                // Cache the result
+                await _cacheService.SetCachedTrialBalanceAsync(cacheKey, response);
 
                 return response;
             }
@@ -191,6 +209,16 @@ namespace GarmentsERP.API.Services
                 _logger.LogInformation("Retrieving transactions for account {AccountId} from {StartDate} to {EndDate}",
                     accountId, startDate, endDate);
 
+                // Check cache first
+                var cacheKey = _cacheService.GenerateAccountTransactionsCacheKey(accountId, startDate, endDate);
+                var cachedResult = await _cacheService.GetCachedAccountTransactionsAsync(cacheKey);
+                
+                if (cachedResult != null)
+                {
+                    _logger.LogInformation("Returning cached account transactions for key: {CacheKey}", cacheKey);
+                    return cachedResult;
+                }
+
                 // Enhanced query with better performance and proper indexing usage
                 var transactions = await (from line in _context.JournalEntryLines
                                          join journal in _context.JournalEntries on line.JournalEntryId equals journal.Id
@@ -247,6 +275,9 @@ namespace GarmentsERP.API.Services
 
                 _logger.LogInformation("Retrieved {TransactionCount} transactions for account {AccountId}",
                     result.Count, accountId);
+
+                // Cache the result
+                await _cacheService.SetCachedAccountTransactionsAsync(cacheKey, result);
 
                 return result;
             }

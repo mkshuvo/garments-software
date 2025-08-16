@@ -77,6 +77,12 @@ builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddScoped<IPermissionSeederService, PermissionSeederService>();
 builder.Services.AddScoped<IRoleManagementService, RoleManagementService>();
 
+// Register security and audit services
+builder.Services.AddScoped<ITrialBalanceAuditService, TrialBalanceAuditService>();
+builder.Services.AddScoped<IRateLimitingService, RateLimitingService>();
+builder.Services.AddScoped<IDataEncryptionService, DataEncryptionService>();
+builder.Services.AddScoped<IInputSanitizationService, InputSanitizationService>();
+
 // Register independent model services
 builder.Services.AddScoped<ICurrencyService, CurrencyService>();
 builder.Services.AddScoped<IProductCategoryService, ProductCategoryService>();
@@ -94,6 +100,8 @@ builder.Services.AddScoped<IContactService, ContactService>();
 builder.Services.AddScoped<ITransactionValidator, TransactionValidator>();
 builder.Services.AddScoped<IBusinessRuleValidator, BusinessRuleValidator>();
 builder.Services.AddScoped<ITrialBalanceCalculationService, TrialBalanceCalculationService>();
+builder.Services.AddScoped<ITrialBalanceCalculationMemoizationService, TrialBalanceCalculationMemoizationService>();
+builder.Services.AddScoped<ITrialBalanceCacheService, TrialBalanceCacheService>();
 builder.Services.AddScoped<ITrialBalanceService, TrialBalanceService>();
 builder.Services.AddScoped<IBalanceService, BalanceService>();
 builder.Services.AddScoped<IEnhancedCashBookService, EnhancedCashBookService>();
@@ -193,6 +201,9 @@ app.UseCors("AllowedOrigins");
 
 // Add dependency check middleware
 app.UseMiddleware<DependencyCheckMiddleware>();
+
+// Add rate limiting middleware
+app.UseMiddleware<RateLimitingMiddleware>();
 
 app.UseAuthentication();
 app.UseAuthorization();

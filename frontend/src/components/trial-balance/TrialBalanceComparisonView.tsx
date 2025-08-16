@@ -15,8 +15,7 @@ import {
   TableCell,
   TableContainer,
   TableHead,
-  TableRow,
-  useTheme
+  TableRow
 } from '@mui/material'
 import {
   ExpandMore as ExpandMoreIcon,
@@ -26,7 +25,8 @@ import {
 } from '@mui/icons-material'
 import { format } from 'date-fns'
 import {
-  TrialBalanceComparison
+  TrialBalanceComparison,
+  AccountVariance
 } from '@/types/trialBalance'
 
 export interface TrialBalanceComparisonViewProps {

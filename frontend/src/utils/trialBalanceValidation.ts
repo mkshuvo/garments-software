@@ -26,35 +26,35 @@ export class TrialBalanceValidationRules {
     return ValidationRules.custom(
       (value: unknown) => {
         if (!value || typeof value !== 'object') return false;
-        
+
         const dateRange = value as DateRange;
-        
+
         // Check if both dates are provided
         if (!dateRange.startDate || !dateRange.endDate) return false;
-        
+
         // Check if dates are valid
         if (!(dateRange.startDate instanceof Date) || !(dateRange.endDate instanceof Date)) return false;
         if (isNaN(dateRange.startDate.getTime()) || isNaN(dateRange.endDate.getTime())) return false;
-        
+
         // Check if start date is not after end date
         if (isAfter(dateRange.startDate, dateRange.endDate)) return false;
-        
+
         // Check future dates if not allowed
         if (!allowFutureDates) {
           const today = endOfDay(new Date());
           if (isAfter(dateRange.startDate, today) || isAfter(dateRange.endDate, today)) return false;
         }
-        
+
         // Check minimum date constraint
         if (minDate && isBefore(dateRange.startDate, startOfDay(minDate))) return false;
-        
+
         // Check maximum date constraint
         if (maxDate && isAfter(dateRange.endDate, endOfDay(maxDate))) return false;
-        
+
         // Check maximum range
         const daysDiff = differenceInDays(dateRange.endDate, dateRange.startDate);
         if (daysDiff > maxRangeDays) return false;
-        
+
         return true;
       },
       'Invalid date range. Please ensure dates are valid, start date is not after end date, and range does not exceed limits.',
@@ -83,7 +83,7 @@ export class TrialBalanceValidationRules {
         // Handle required validation
         if (required && (!value || value === '')) return false;
         if (!required && (!value || value === '')) return true;
-        
+
         // Parse date
         let date: Date;
         if (value instanceof Date) {
@@ -93,19 +93,19 @@ export class TrialBalanceValidationRules {
         } else {
           return false;
         }
-        
+
         // Check if date is valid
         if (isNaN(date.getTime())) return false;
-        
+
         // Check future dates
         if (!allowFuture && isAfter(date, endOfDay(new Date()))) return false;
-        
+
         // Check minimum date
         if (minDate && isBefore(date, startOfDay(minDate))) return false;
-        
+
         // Check maximum date
         if (maxDate && isAfter(date, endOfDay(maxDate))) return false;
-        
+
         return true;
       },
       'Please enter a valid date within the allowed range.',
@@ -120,12 +120,12 @@ export class TrialBalanceValidationRules {
     return ValidationRules.custom(
       (value: unknown) => {
         if (!value) return true; // Optional field
-        
+
         if (!Array.isArray(value)) return false;
-        
+
         // Check if all values are valid account category types
-        return value.every(category => 
-          typeof category === 'string' && 
+        return value.every(category =>
+          typeof category === 'string' &&
           Object.values(AccountCategoryType).includes(category as AccountCategoryType)
         );
       },
@@ -139,7 +139,7 @@ export class TrialBalanceValidationRules {
    */
   static exportFormat(): ValidationRule {
     const validFormats = ['pdf', 'csv'];
-    
+
     return ValidationRules.custom(
       (value: unknown) => {
         if (!value) return false;
@@ -157,30 +157,30 @@ export class TrialBalanceValidationRules {
     return ValidationRules.custom(
       (value: unknown) => {
         if (!value || typeof value !== 'object') return false;
-        
+
         const periods = value as { period1: DateRange; period2: DateRange };
-        
+
         // Validate both periods individually
         if (!periods.period1 || !periods.period2) return false;
-        
+
         // Both periods should be valid date ranges
         const period1Valid = TrialBalanceFormValidator.validateDateRange(periods.period1).isValid;
         const period2Valid = TrialBalanceFormValidator.validateDateRange(periods.period2).isValid;
-        
+
         if (!period1Valid || !period2Valid) return false;
-        
+
         // Periods should not overlap for meaningful comparison
         const period1End = periods.period1.endDate;
         const period2Start = periods.period2.startDate;
         const period2End = periods.period2.endDate;
         const period1Start = periods.period1.startDate;
-        
+
         // Check for overlap
         const hasOverlap = (
           (period1Start <= period2End && period2Start <= period1End) ||
           (period2Start <= period1End && period1Start <= period2End)
         );
-        
+
         return !hasOverlap;
       },
       'Comparison periods should not overlap for meaningful analysis.',
@@ -269,8 +269,8 @@ export class TrialBalanceFormValidator {
       };
     }
 
-    const errors = [];
-    const warnings = [];
+    const errors: Array<{ field: string; message: string }> = [];
+    const warnings: Array<{ field: string; message: string }> = [];
 
     // Check if date is in the future
     if (isAfter(endDate, new Date())) {
@@ -419,7 +419,7 @@ export const ValidationUtils = {
    */
   formatErrorsForForm(result: ValidationResult): Record<string, string> {
     const formattedErrors: Record<string, string> = {};
-    
+
     result.errors.forEach(error => {
       if (!formattedErrors[error.field]) {
         formattedErrors[error.field] = error.message;

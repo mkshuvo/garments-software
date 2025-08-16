@@ -444,7 +444,7 @@ class TrialBalanceService {
    */
   private async getFallbackTrialBalance(
     dateRange: DateRange,
-    options: {
+    _options: { // eslint-disable-line @typescript-eslint/no-unused-vars
       groupByCategory?: boolean;
       includeZeroBalances?: boolean;
       categoryFilter?: AccountCategoryType[];

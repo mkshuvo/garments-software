@@ -13,7 +13,7 @@ import { trialBalanceExportService } from '../../services/trialBalanceExportServ
 export const ExportOptionsExample: React.FC = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
-  const [exportError, setExportError] = useState<string | null>(null);
+
 
   // Mock trial balance data for demonstration
   const mockTrialBalanceData: TrialBalanceData = {
@@ -101,7 +101,6 @@ export const ExportOptionsExample: React.FC = () => {
   ) => {
     setIsExporting(true);
     setExportProgress(0);
-    setExportError(null);
 
     try {
       // Simulate export progress
@@ -115,10 +114,8 @@ export const ExportOptionsExample: React.FC = () => {
       );
 
       console.log(`Export completed successfully as ${format.toUpperCase()}`);
-      
+
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Export failed';
-      setExportError(errorMessage);
       throw error; // Re-throw to let ExportOptions handle the error display
     } finally {
       setIsExporting(false);
@@ -148,7 +145,7 @@ export const ExportOptionsExample: React.FC = () => {
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Full-featured export options with progress tracking and error handling.
           </Typography>
-          
+
           <ExportOptions
             onExport={handleExport}
             isExporting={isExporting}
@@ -166,7 +163,7 @@ export const ExportOptionsExample: React.FC = () => {
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Space-efficient export options with icon buttons and progress chip.
           </Typography>
-          
+
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Typography variant="body2">Export:</Typography>
             <ExportOptions
@@ -186,7 +183,7 @@ export const ExportOptionsExample: React.FC = () => {
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Export options when disabled (e.g., no data available).
           </Typography>
-          
+
           <ExportOptions
             onExport={handleExport}
             isExporting={false}
@@ -203,9 +200,9 @@ export const ExportOptionsExample: React.FC = () => {
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             This export will fail to demonstrate error handling and retry functionality.
           </Typography>
-          
+
           <ExportOptions
-            onExport={async (format) => {
+            onExport={async (_format) => { // eslint-disable-line @typescript-eslint/no-unused-vars
               setIsExporting(true);
               await new Promise(resolve => setTimeout(resolve, 1000));
               setIsExporting(false);

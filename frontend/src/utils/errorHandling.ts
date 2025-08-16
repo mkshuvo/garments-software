@@ -88,7 +88,7 @@ export class ErrorHandler {
   /**
    * Handle API errors with specific error codes and messages
    */
-  static handleApiError(error: unknown, defaultMessage: string = 'API request failed'): EnhancedError {
+  static handleApiError(error: unknown, _defaultMessage: string = 'API request failed'): EnhancedError { // eslint-disable-line @typescript-eslint/no-unused-vars
     if (this.isNetworkError(error)) {
       return this.createError(
         new Error('Network connection failed'),

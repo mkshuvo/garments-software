@@ -185,18 +185,6 @@ export function RetryWrapper<T>({
     executeOperation(true)
   }, [executeOperation])
 
-  const _handleCancelRetry = useCallback(() => {
-    if (retryTimeoutRef.current) {
-      clearTimeout(retryTimeoutRef.current)
-      retryTimeoutRef.current = null
-    }
-    if (countdownIntervalRef.current) {
-      clearInterval(countdownIntervalRef.current)
-      countdownIntervalRef.current = null
-    }
-
-    setState(prev => ({ ...prev, nextRetryIn: 0 }))
-  }, [])
 
   // Initial execution
   useEffect(() => {

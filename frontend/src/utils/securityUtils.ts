@@ -211,7 +211,7 @@ export class ClientRateLimiter {
 export class SecureStorage {
   private static readonly PREFIX = 'garments_erp_';
   
-  static setItem(key: string, value: any): void {
+  static setItem(key: string, value: unknown): void {
     try {
       const sanitizedKey = sanitizeString(key, 100);
       const serializedValue = JSON.stringify(value);
