@@ -387,5 +387,223 @@ namespace GarmentsERP.API.Tests
             // Assert
             Assert.Equal("-1000 - 500 + 200 = -1300", expression);
         }
+
+        // Additional comprehensive mathematical accuracy tests
+        [Fact]
+        public void CalculateTrialBalance_WithVariousScenarios_ReturnsCorrectBalance()
+        {
+            // Test scenario 1: Mixed positive and negative amounts
+            var scenario1 = new List<TransactionData>
+            {
+                new TransactionData { TransactionId = Guid.NewGuid(), CreditAmount = 1000, DebitAmount = 0, Description = "Credit 1000" },
+                new TransactionData { TransactionId = Guid.NewGuid(), DebitAmount = 500, CreditAmount = 0, Description = "Debit 500" },
+                new TransactionData { TransactionId = Guid.NewGuid(), CreditAmount = 2000, DebitAmount = 0, Description = "Credit 2000" },
+                new TransactionData { TransactionId = Guid.NewGuid(), DebitAmount = 300, CreditAmount = 0, Description = "Debit 300" }
+            };
+            var result1 = _calculationService.CalculateTrialBalance(scenario1);
+            Assert.Equal(2200, result1.FinalBalance); // 1000 - 500 + 2000 - 300 = 2200
+
+            // Test scenario 2: All negative amounts
+            var scenario2 = new List<TransactionData>
+            {
+                new TransactionData { TransactionId = Guid.NewGuid(), DebitAmount = 1000, CreditAmount = 0, Description = "Debit 1000" },
+                new TransactionData { TransactionId = Guid.NewGuid(), DebitAmount = 500, CreditAmount = 0, Description = "Debit 500" },
+                new TransactionData { TransactionId = Guid.NewGuid(), DebitAmount = 300, CreditAmount = 0, Description = "Debit 300" }
+            };
+            var result2 = _calculationService.CalculateTrialBalance(scenario2);
+            Assert.Equal(-1800, result2.FinalBalance); // -1000 - 500 - 300 = -1800
+
+            // Test scenario 3: All positive amounts
+            var scenario3 = new List<TransactionData>
+            {
+                new TransactionData { TransactionId = Guid.NewGuid(), CreditAmount = 5000, DebitAmount = 0, Description = "Credit 5000" },
+                new TransactionData { TransactionId = Guid.NewGuid(), CreditAmount = 3000, DebitAmount = 0, Description = "Credit 3000" },
+                new TransactionData { TransactionId = Guid.NewGuid(), CreditAmount = 2000, DebitAmount = 0, Description = "Credit 2000" }
+            };
+            var result3 = _calculationService.CalculateTrialBalance(scenario3);
+            Assert.Equal(10000, result3.FinalBalance); // 5000 + 3000 + 2000 = 10000
+
+            // Test scenario 4: Zero amounts
+            var scenario4 = new List<TransactionData>
+            {
+                new TransactionData { TransactionId = Guid.NewGuid(), CreditAmount = 0, DebitAmount = 0, Description = "Zero 1" },
+                new TransactionData { TransactionId = Guid.NewGuid(), CreditAmount = 0, DebitAmount = 0, Description = "Zero 2" }
+            };
+            var result4 = _calculationService.CalculateTrialBalance(scenario4);
+            Assert.Equal(0, result4.FinalBalance);
+
+            // Test scenario 5: Balancing amounts
+            var scenario5 = new List<TransactionData>
+            {
+                new TransactionData { TransactionId = Guid.NewGuid(), CreditAmount = 999.99m, DebitAmount = 0, Description = "Credit 999.99" },
+                new TransactionData { TransactionId = Guid.NewGuid(), DebitAmount = 999.99m, CreditAmount = 0, Description = "Debit 999.99" }
+            };
+            var result5 = _calculationService.CalculateTrialBalance(scenario5);
+            Assert.Equal(0, result5.FinalBalance); // 999.99 - 999.99 = 0
+        }
+
+        [Fact]
+        public void CalculateTrialBalance_WithExtremelyLargeNumbers_HandlesCorrectly()
+        {
+            // Arrange - Test with very large decimal values
+            var transactions = new List<TransactionData>
+            {
+                new TransactionData { TransactionId = Guid.NewGuid(), CreditAmount = 999999999999.99m, DebitAmount = 0, Description = "Large Credit" },
+                new TransactionData { TransactionId = Guid.NewGuid(), DebitAmount = 999999999999.98m, CreditAmount = 0, Description = "Large Debit" }
+            };
+
+            // Act
+            var result = _calculationService.CalculateTrialBalance(transactions);
+
+            // Assert
+            Assert.Equal(0.01m, result.FinalBalance); // 999999999999.99 - 999999999999.98 = 0.01
+            Assert.Equal(999999999999.98m, result.TotalDebits);
+            Assert.Equal(999999999999.99m, result.TotalCredits);
+        }
+
+        [Fact]
+        public void CalculateTrialBalance_WithManySmallTransactions_MaintainsPrecision()
+        {
+            // Arrange - Test precision with many small decimal transactions
+            var transactions = new List<TransactionData>();
+            decimal expectedBalance = 0;
+
+            for (int i = 1; i <= 100; i++)
+            {
+                var amount = 0.01m * i; // 0.01, 0.02, 0.03, ... 1.00
+                if (i % 2 == 0) // Even numbers as credits
+                {
+                    transactions.Add(new TransactionData 
+                    { 
+                        TransactionId = Guid.NewGuid(), 
+                        CreditAmount = amount, 
+                        DebitAmount = 0, 
+                        Description = $"Credit {amount}" 
+                    });
+                    expectedBalance += amount;
+                }
+                else // Odd numbers as debits
+                {
+                    transactions.Add(new TransactionData 
+                    { 
+                        TransactionId = Guid.NewGuid(), 
+                        DebitAmount = amount, 
+                        CreditAmount = 0, 
+                        Description = $"Debit {amount}" 
+                    });
+                    expectedBalance -= amount;
+                }
+            }
+
+            // Act
+            var result = _calculationService.CalculateTrialBalance(transactions);
+
+            // Assert
+            Assert.Equal(expectedBalance, result.FinalBalance);
+            Assert.Equal(100, result.TransactionCount);
+        }
+
+        [Fact]
+        public void CalculateTrialBalance_WithZeroAmountTransactions_HandlesCorrectly()
+        {
+            // Arrange - Test with zero amount transactions
+            var transactions = new List<TransactionData>
+            {
+                new TransactionData { TransactionId = Guid.NewGuid(), CreditAmount = 0, DebitAmount = 0, Description = "Zero Transaction" },
+                new TransactionData { TransactionId = Guid.NewGuid(), CreditAmount = 1000, DebitAmount = 0, Description = "Credit 1000" },
+                new TransactionData { TransactionId = Guid.NewGuid(), DebitAmount = 500, CreditAmount = 0, Description = "Debit 500" }
+            };
+
+            // Act
+            var result = _calculationService.CalculateTrialBalance(transactions);
+
+            // Assert
+            Assert.Equal(500, result.FinalBalance); // 0 + 1000 - 500 = 500
+            Assert.Equal(2, result.TransactionCount); // Zero transactions should not be counted
+        }
+
+        [Fact]
+        public void CalculateTrialBalance_PerformanceTest_CompletesWithinTimeLimit()
+        {
+            // Arrange - Performance test with 10,000 transactions
+            var transactions = new List<TransactionData>();
+            var random = new Random(42); // Fixed seed for reproducible results
+
+            for (int i = 0; i < 10000; i++)
+            {
+                var amount = (decimal)(random.NextDouble() * 10000);
+                if (i % 2 == 0)
+                {
+                    transactions.Add(new TransactionData 
+                    { 
+                        TransactionId = Guid.NewGuid(), 
+                        CreditAmount = amount, 
+                        DebitAmount = 0, 
+                        Description = $"Credit {amount}" 
+                    });
+                }
+                else
+                {
+                    transactions.Add(new TransactionData 
+                    { 
+                        TransactionId = Guid.NewGuid(), 
+                        DebitAmount = amount, 
+                        CreditAmount = 0, 
+                        Description = $"Debit {amount}" 
+                    });
+                }
+            }
+
+            // Act & Assert - Should complete within 1 second
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            var result = _calculationService.CalculateTrialBalance(transactions);
+            stopwatch.Stop();
+
+            Assert.True(stopwatch.ElapsedMilliseconds < 1000, $"Calculation took {stopwatch.ElapsedMilliseconds}ms, expected < 1000ms");
+            Assert.Equal(10000, result.TransactionCount);
+            Assert.True(result.TotalDebits > 0);
+            Assert.True(result.TotalCredits > 0);
+        }
+
+        [Fact]
+        public void GenerateCalculationExpression_WithComplexScenario_FormatsCorrectly()
+        {
+            // Arrange - Test complex expression formatting
+            var values = new List<decimal> { 1500.50m, -750.25m, 2000.00m, -500.75m, 1000.00m };
+            var finalBalance = 3250.50m;
+
+            // Act
+            var expression = _calculationService.GenerateCalculationExpression(values, finalBalance);
+
+            // Assert
+            Assert.Contains("1500.50", expression);
+            Assert.Contains("- 750.25", expression);
+            Assert.Contains("+ 2000.00", expression);
+            Assert.Contains("- 500.75", expression);
+            Assert.Contains("+ 1000.00", expression);
+            Assert.Contains("= 3250.50", expression);
+        }
+
+        [Fact]
+        public void ValidateTransactionSigns_WithEdgeCases_ValidatesCorrectly()
+        {
+            // Test with maximum decimal values
+            var maxValueTransactions = new List<TransactionData>
+            {
+                new TransactionData { DebitAmount = decimal.MaxValue, CreditAmount = 0 },
+                new TransactionData { DebitAmount = 0, CreditAmount = decimal.MaxValue }
+            };
+
+            Assert.True(_calculationService.ValidateTransactionSigns(maxValueTransactions));
+
+            // Test with minimum positive values
+            var minValueTransactions = new List<TransactionData>
+            {
+                new TransactionData { DebitAmount = 0.01m, CreditAmount = 0 },
+                new TransactionData { DebitAmount = 0, CreditAmount = 0.01m }
+            };
+
+            Assert.True(_calculationService.ValidateTransactionSigns(minValueTransactions));
+        }
     }
 }

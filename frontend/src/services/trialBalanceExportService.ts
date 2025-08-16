@@ -1,10 +1,7 @@
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import { saveAs } from 'file-saver';
 import {
   TrialBalanceData,
-  AccountBalance,
-  AccountCategory,
   ExportFormat,
   DateRange
 } from '@/types/trialBalance';
@@ -102,7 +99,7 @@ class TrialBalanceExportService {
 
     // Add calculation details if requested
     if (options.includeCalculationDetails) {
-      yPosition = this.addPDFCalculationDetails(pdf, data, pageWidth, pageHeight, margin, yPosition);
+      this.addPDFCalculationDetails(pdf, data, pageWidth, pageHeight, margin, yPosition);
     }
 
     // Add footer
@@ -248,7 +245,6 @@ class TrialBalanceExportService {
     }
   ): Promise<number> {
     const lineHeight = 6;
-    const maxWidth = pageWidth - (margin * 2);
 
     // Table headers
     pdf.setFontSize(9);

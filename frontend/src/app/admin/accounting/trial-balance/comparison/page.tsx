@@ -61,39 +61,6 @@ export default function TrialBalanceComparisonPage() {
     router.push(path)
   }, [router])
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // Only handle shortcuts when not typing in input fields
-      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
-        return
-      }
-
-      // Ctrl/Cmd + R: Refresh comparison
-      if ((event.ctrlKey || event.metaKey) && event.key === 'r') {
-        event.preventDefault()
-        if (hasGenerated) {
-          handleGenerateComparison()
-        }
-      }
-
-      // Ctrl/Cmd + G: Generate comparison
-      if ((event.ctrlKey || event.metaKey) && event.key === 'g') {
-        event.preventDefault()
-        handleGenerateComparison()
-      }
-
-      // Escape: Close any open modals
-      if (event.key === 'Escape') {
-        const closeEvent = new CustomEvent('trialBalanceCloseModal')
-        window.dispatchEvent(closeEvent)
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [hasGenerated, handleGenerateComparison])
-
   // Generate comparison report
   const handleGenerateComparison = useCallback(async () => {
     setIsLoading(true)
@@ -128,6 +95,39 @@ export default function TrialBalanceComparisonPage() {
     
     return errors
   }, [period1, period2])
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Only handle shortcuts when not typing in input fields
+      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
+        return
+      }
+
+      // Ctrl/Cmd + R: Refresh comparison
+      if ((event.ctrlKey || event.metaKey) && event.key === 'r') {
+        event.preventDefault()
+        if (hasGenerated) {
+          handleGenerateComparison()
+        }
+      }
+
+      // Ctrl/Cmd + G: Generate comparison
+      if ((event.ctrlKey || event.metaKey) && event.key === 'g') {
+        event.preventDefault()
+        handleGenerateComparison()
+      }
+
+      // Escape: Close any open modals
+      if (event.key === 'Escape') {
+        const closeEvent = new CustomEvent('trialBalanceCloseModal')
+        window.dispatchEvent(closeEvent)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [hasGenerated, handleGenerateComparison])
 
   // Check if user is still loading or doesn't have admin access
   if (isRolesLoading()) {

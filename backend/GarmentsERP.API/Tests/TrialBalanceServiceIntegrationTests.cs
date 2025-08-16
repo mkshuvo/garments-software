@@ -138,7 +138,8 @@ namespace GarmentsERP.API.Tests
         {
             // Note: This would normally require a mock DbContext, but for this test
             // we're only testing the public methods that don't require database access
-            return new TrialBalanceService(null!, _mockLogger.Object);
+            var mockCacheService = new Mock<ITrialBalanceCacheService>();
+            return new TrialBalanceService(null!, _mockLogger.Object, mockCacheService.Object);
         }
     }
 }

@@ -5,9 +5,7 @@ import {
     Box,
     Typography,
     Paper,
-    List,
-    ListItem,
-    ListItemText,
+
     ListItemButton,
     Chip,
     Skeleton,
