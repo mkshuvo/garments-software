@@ -52,7 +52,7 @@ const createDefaultPresets = (): DateRangePreset[] => {
     {
       label: 'This Month',
       startDate: startOfMonth(now),
-      endDate: endOfMonth(now)
+      endDate: now // Use current date instead of end of month to avoid future dates
     },
     {
       label: 'Last Month',
@@ -62,7 +62,7 @@ const createDefaultPresets = (): DateRangePreset[] => {
     {
       label: 'This Quarter',
       startDate: startOfQuarter(now),
-      endDate: endOfQuarter(now)
+      endDate: now // Use current date instead of end of quarter to avoid future dates
     },
     {
       label: 'Last Quarter',
@@ -72,7 +72,7 @@ const createDefaultPresets = (): DateRangePreset[] => {
     {
       label: 'This Year',
       startDate: startOfYear(now),
-      endDate: endOfYear(now)
+      endDate: now // Use current date instead of end of year to avoid future dates
     },
     {
       label: 'Last Year',

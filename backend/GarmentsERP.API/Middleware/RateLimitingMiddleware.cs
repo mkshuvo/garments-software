@@ -10,7 +10,6 @@ namespace GarmentsERP.API.Middleware
     public class RateLimitingMiddleware
     {
         private readonly RequestDelegate _next;
-        private readonly IRateLimitingService _rateLimitingService;
         private readonly ILogger<RateLimitingMiddleware> _logger;
 
         // Rate limiting configuration for different endpoints
@@ -24,11 +23,9 @@ namespace GarmentsERP.API.Middleware
 
         public RateLimitingMiddleware(
             RequestDelegate next,
-            IRateLimitingService rateLimitingService,
             ILogger<RateLimitingMiddleware> logger)
         {
             _next = next;
-            _rateLimitingService = rateLimitingService;
             _logger = logger;
         }
 
@@ -47,7 +44,9 @@ namespace GarmentsERP.API.Middleware
 
             try
             {
-                var rateLimitInfo = await _rateLimitingService.GetRateLimitInfoAsync(
+                // Get the scoped service from the request's service provider
+                var rateLimitingService = context.RequestServices.GetRequiredService<IRateLimitingService>();
+                var rateLimitInfo = await rateLimitingService.GetRateLimitInfoAsync(
                     clientId, endpoint, config.MaxRequests, config.TimeWindow);
 
                 // Add rate limit headers

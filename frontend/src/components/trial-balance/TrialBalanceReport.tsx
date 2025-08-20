@@ -69,7 +69,7 @@ export const TrialBalanceReport: React.FC<TrialBalanceReportProps> = ({
         const now = new Date()
         return {
             startDate: startOfMonth(now),
-            endDate: endOfMonth(now)
+            endDate: now // Use current date instead of end of month to avoid future dates
         }
     })
 

@@ -181,13 +181,26 @@ export class ErrorHandler {
       ? validationErrors[0].message
       : `${validationErrors.length} validation errors occurred`;
 
-    return this.createError(
-      new Error(message),
+    // Create a validation error with enhanced details
+    const validationError = new Error(message);
+    
+    const enhancedError = this.createError(
+      validationError,
       'VALIDATION_ERROR',
       ErrorCategory.VALIDATION,
       ErrorSeverity.MEDIUM,
       { ...context, validationErrors }
     );
+
+    // Override details for validation errors to include validation-specific information
+    enhancedError.details = {
+      ...enhancedError.details,
+      validationErrorCount: validationErrors.length,
+      affectedFields: validationErrors.map(err => err.field),
+      validationMessages: validationErrors.map(err => `${err.field}: ${err.message}`)
+    };
+
+    return enhancedError;
   }
 
   /**
@@ -293,6 +306,12 @@ export class ErrorHandler {
       }
     }
 
+    // For simple Error objects without additional properties, include basic info
+    if (error instanceof Error && Object.keys(details).length === 0) {
+      details.errorType = error.constructor.name;
+      details.timestamp = new Date().toISOString();
+    }
+
     return details;
   }
 
@@ -309,14 +328,20 @@ export class ErrorHandler {
 
     // Log to console in development
     if (process.env.NODE_ENV === 'development') {
-      console.group(`🚨 ${error.category.toUpperCase()} ERROR [${error.code}]`);
+      console.error(`🚨 ${error.category.toUpperCase()} ERROR [${error.code}]`);
       console.error('User Message:', error.userMessage);
       console.error('Technical Message:', error.technicalMessage);
       console.error('Severity:', error.severity);
       console.error('Retryable:', error.retryable);
-      if (error.context) console.error('Context:', error.context);
-      if (error.details) console.error('Details:', error.details);
-      console.groupEnd();
+      
+      // Always log context and details for validation errors
+      if (error.context && Object.keys(error.context).length > 0) {
+        console.error('Context:', JSON.stringify(error.context, null, 2));
+      }
+      
+      if (error.details && Object.keys(error.details).length > 0) {
+        console.error('Details:', JSON.stringify(error.details, null, 2));
+      }
     }
   }
 
