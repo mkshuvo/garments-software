@@ -314,11 +314,6 @@ export default function CashBookEntryPage() {
     }
   };
 
-  const calculateTotals = () => {
-    const totalCredits = entry.creditTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
-    const totalDebits = entry.debitTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
-    return { totalCredits, totalDebits, difference: Math.abs(totalCredits - totalDebits) };
-  };
 
   const refreshSavedTransactions = async () => {
     try {
@@ -333,8 +328,6 @@ export default function CashBookEntryPage() {
 
 
 
-  const { totalCredits, totalDebits, difference } = calculateTotals();
-  const isBalanced = difference < 0.01;
   const hasTransactions = entry.creditTransactions.length > 0 || entry.debitTransactions.length > 0;
 
   return (
@@ -401,64 +394,7 @@ export default function CashBookEntryPage() {
           </Alert>
         )}
 
-        {/* Balance Status Alert */}
-        {hasTransactions && (
-          <Alert
-            severity={isBalanced ? 'success' : 'warning'}
-            sx={{ mb: 3 }}
-            icon={<AccountBalanceIcon />}
-          >
-            <Typography variant="subtitle2">
-              {isBalanced ? '✅ Entry is Balanced' : '⚠️ Entry Not Balanced'}
-            </Typography>
-            <Typography variant="body2">
-              Credits: ৳{totalCredits.toFixed(2)} | Debits: ৳{totalDebits.toFixed(2)} |
-              Difference: ৳{difference.toFixed(2)}
-            </Typography>
-            {!isBalanced && (
-              <Typography variant="body2" sx={{ mt: 1 }}>
-                💡 <strong>Tip:</strong> Add matching debit and credit transactions to balance the entry.
-                Total credits must equal total debits for proper double-entry bookkeeping.
-              </Typography>
-            )}
-          </Alert>
-        )}
 
-        {/* Header Information */}
-        <Card sx={{ mb: 3 }}>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              Transaction Header
-            </Typography>
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={3}>
-              <Box sx={{ flex: 1 }}>
-                <DatePicker
-                  label="Transaction Date"
-                  value={entry.transactionDate}
-                  onChange={(date) => setEntry(prev => ({ ...prev, transactionDate: date || new Date() }))}
-                  slotProps={{ textField: { fullWidth: true } }}
-                />
-              </Box>
-              <Box sx={{ flex: 1 }}>
-                <TextField
-                  fullWidth
-                  label="Reference Number"
-                  value={entry.referenceNumber}
-                  onChange={(e) => setEntry(prev => ({ ...prev, referenceNumber: e.target.value }))}
-                />
-              </Box>
-              <Box sx={{ flex: 2 }}>
-                <TextField
-                  fullWidth
-                  label="Description (Optional)"
-                  value={entry.description}
-                  onChange={(e) => setEntry(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Overall transaction description"
-                />
-              </Box>
-            </Stack>
-          </CardContent>
-        </Card>
 
         {/* Categories Loading State */}
         {categoriesLoading && (
@@ -469,28 +405,24 @@ export default function CashBookEntryPage() {
           </Alert>
         )}
 
-        {/* Quick Help - Double Entry Bookkeeping */}
+        {/* Quick Help - Transaction Guide */}
         <Card sx={{ mb: 3, backgroundColor: 'info.light', color: 'info.dark' }}>
           <CardContent>
             <Typography variant="h6" gutterBottom>
-              💡 Double-Entry Bookkeeping Guide
+              💡 Cash Book Transaction Guide
             </Typography>
             <Typography variant="body2" sx={{ mb: 2 }}>
-              <strong>Credit Transactions (Money In):</strong> Money received, income, or liability increases
+              <strong>Credit Transactions (Money In):</strong> Money received, income, sales revenue
             </Typography>
             <Typography variant="body2" sx={{ mb: 2 }}>
-              <strong>Debit Transactions (Money Out):</strong> Money paid, expenses, or asset increases
-            </Typography>
-            <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 2 }}>
-              ⚖️ <strong>Balance Rule:</strong> Total Credits must equal Total Debits for the entry to be saved
+              <strong>Debit Transactions (Money Out):</strong> Money paid, expenses, purchases
             </Typography>
             <Typography variant="body2" sx={{ mb: 2, fontStyle: 'italic' }}>
-              📝 <strong>New:</strong> Categories are now managed through the dedicated Category Management system.
-              Only active Credit categories will appear in Credit transactions, and only active Debit categories in Debit transactions.
+              📝 Categories are managed through the dedicated Category Management system.
+              Only active categories will appear in their respective transaction types.
             </Typography>
             <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'success.main' }}>
-              💾 <strong>Save Behavior:</strong> Each credit and debit transaction is saved independently when you click Save in the respective modal.
-              📊 No balance validation required - save transactions as needed.
+              💾 Each transaction is saved independently - no balance validation required.
             </Typography>
           </CardContent>
         </Card>
@@ -588,86 +520,39 @@ export default function CashBookEntryPage() {
           </CardContent>
         </Card>
 
-        {/* Summary and Actions */}
-        <Card sx={{ mt: 3 }}>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              📊 Transaction Summary
-            </Typography>
+        {/* Error Messages */}
+        {errors.length > 0 && (
+          <Alert severity="error" sx={{ mt: 2, mb: 3 }}>
+            <Typography variant="subtitle2">Please fix the following errors:</Typography>
+            <ul style={{ margin: '8px 0', paddingLeft: '20px' }}>
+              {errors.map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+            </ul>
+          </Alert>
+        )}
 
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={3}>
-              <Paper sx={{ p: 2, bgcolor: 'success.50', textAlign: 'center', flex: 1 }}>
-                <Typography variant="h6" color="success.main">
-                  ৳{totalCredits.toFixed(2)}
-                </Typography>
-                <Typography variant="body2">Total Credits</Typography>
-              </Paper>
-              <Paper sx={{ p: 2, bgcolor: 'error.50', textAlign: 'center', flex: 1 }}>
-                <Typography variant="h6" color="error.main">
-                  ৳{totalDebits.toFixed(2)}
-                </Typography>
-                <Typography variant="body2">Total Debits</Typography>
-              </Paper>
-              <Paper sx={{ p: 2, bgcolor: difference < 0.01 ? 'success.50' : 'warning.50', textAlign: 'center', flex: 1 }}>
-                <Typography variant="h6" color={isBalanced ? 'success.main' : 'warning.main'}>
-                  ৳{difference.toFixed(2)}
-                </Typography>
-                <Typography variant="body2">Difference</Typography>
-              </Paper>
-              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1 }}>
-                <Chip
-                  label={isBalanced ? "Balanced" : "Not Balanced"}
-                  color={isBalanced ? "success" : "warning"}
-                  variant={isBalanced ? "filled" : "outlined"}
-                />
-              </Box>
-            </Stack>
-
-            {/* Error Messages */}
-            {errors.length > 0 && (
-              <Alert severity="error" sx={{ mt: 2 }}>
-                <Typography variant="subtitle2">Please fix the following errors:</Typography>
-                <ul style={{ margin: '8px 0', paddingLeft: '20px' }}>
-                  {errors.map((error, index) => (
-                    <li key={index}>{error}</li>
-                  ))}
-                </ul>
-              </Alert>
-            )}
-
-            {/* Balance Warning */}
-            {!isBalanced && totalCredits > 0 && totalDebits > 0 && (
-              <Alert severity="warning" sx={{ mt: 2 }}>
-                <Typography variant="subtitle2">Entry Not Balanced</Typography>
-                <Typography variant="body2">
-                  Total Credits (৳{totalCredits.toFixed(2)}) must equal Total Debits (৳{totalDebits.toFixed(2)}) for proper double-entry bookkeeping.
-                </Typography>
-              </Alert>
-            )}
-
-            {/* Action Buttons */}
-            <Box sx={{ display: 'flex', gap: 2, mt: 3 }}>
-              <Button
-                variant="outlined"
-                startIcon={<CancelIcon />}
-                onClick={() => window.location.reload()}
-                disabled={loading}
-                size="large"
-              >
-                Reset Form
-              </Button>
-              <Button
-                variant="text"
-                startIcon={<ArrowBackIcon />}
-                onClick={() => router.push('/admin/accounting')}
-                disabled={loading}
-                size="large"
-              >
-                Back to Accounting
-              </Button>
-            </Box>
-          </CardContent>
-        </Card>
+        {/* Action Buttons */}
+        <Box sx={{ display: 'flex', gap: 2, mt: 3, mb: 3 }}>
+          <Button
+            variant="outlined"
+            startIcon={<CancelIcon />}
+            onClick={() => window.location.reload()}
+            disabled={loading}
+            size="large"
+          >
+            Reset Form
+          </Button>
+          <Button
+            variant="text"
+            startIcon={<ArrowBackIcon />}
+            onClick={() => router.push('/admin/accounting')}
+            disabled={loading}
+            size="large"
+          >
+            Back to Accounting
+          </Button>
+        </Box>
 
         {/* Credit Transaction Modal */}
         <CreditTransactionModal
