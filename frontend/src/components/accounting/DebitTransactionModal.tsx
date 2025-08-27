@@ -349,44 +349,64 @@ export const DebitTransactionModal: React.FC<DebitTransactionModalProps> = ({
           )}
 
           <Stack spacing={3}>
-            {/* Date and Amount Row */}
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-              <Box sx={{ flex: 1 }}>
-                <DatePicker
-                  label="Transaction Date"
-                  value={values.date}
-                  onChange={(date) => setValueWithValidation('date', date || new Date())}
-                  slotProps={{ 
-                    textField: { 
-                      fullWidth: true,
-                      error: !!errors.date,
-                      helperText: errors.date || 'Select the transaction date'
-                    } 
-                  }}
-                />
-              </Box>
-              <Box sx={{ flex: 1 }}>
-                <TextField
-                  fullWidth
-                  label="Amount (৳)"
-                  type="number"
-                  value={values.amount || ''}
-                  onChange={(e) => {
-                    const numValue = parseFloat(e.target.value) || 0;
-                    setValueWithValidation('amount', numValue);
-                  }}
-                  onBlur={(e) => {
-                    const numValue = parseFloat(e.target.value) || 0;
-                    validateField('amount', numValue);
-                  }}
-                  error={!!errors.amount}
-                  helperText={errors.amount || 'Enter the debit amount (must be positive)'}
-                  InputProps={{ 
-                    inputProps: { min: 0, step: 0.01 } 
-                  }}
-                />
-              </Box>
-            </Stack>
+            {/* Amount Field - Prominent Display */}
+            <Box>
+              <TextField
+                fullWidth
+                label="Debit Amount (৳)"
+                type="number"
+                value={values.amount || ''}
+                onChange={(e) => {
+                  const numValue = parseFloat(e.target.value) || 0;
+                  setValueWithValidation('amount', numValue);
+                }}
+                onBlur={(e) => {
+                  const numValue = parseFloat(e.target.value) || 0;
+                  validateField('amount', numValue);
+                }}
+                error={!!errors.amount}
+                helperText={errors.amount || 'Enter the debit amount (must be positive)'}
+                InputProps={{ 
+                  inputProps: { min: 0, step: 0.01 },
+                  style: { fontSize: '1.1rem', fontWeight: 500 }
+                }}
+                InputLabelProps={{
+                  style: { fontSize: '1rem', fontWeight: 500 }
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': {
+                      borderWidth: 2,
+                      borderColor: 'error.main'
+                    },
+                    '&:hover fieldset': {
+                      borderColor: 'error.dark'
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: 'error.main'
+                    }
+                  }
+                }}
+                required
+              />
+            </Box>
+
+            {/* Transaction Date */}
+            <Box>
+              <DatePicker
+                label="Transaction Date"
+                value={values.date}
+                onChange={(date) => setValueWithValidation('date', date || new Date())}
+                slotProps={{ 
+                  textField: { 
+                    fullWidth: true,
+                    error: !!errors.date,
+                    helperText: errors.date || 'Select the transaction date',
+                    required: true
+                  } 
+                }}
+              />
+            </Box>
 
             {/* Category Selection */}
             <Autocomplete
@@ -424,20 +444,35 @@ export const DebitTransactionModal: React.FC<DebitTransactionModalProps> = ({
               }}
             />
 
-            {/* Particulars */}
-            <TextField
-              fullWidth
-              label="Particulars"
-              multiline
-              rows={2}
-              value={values.particulars}
-              onChange={(e) => setValueWithValidation('particulars', e.target.value)}
-              onBlur={(e) => validateField('particulars', e.target.value)}
-              error={!!errors.particulars}
-              helperText={errors.particulars || 'Describe the transaction details (required)'}
-              placeholder="Transaction description"
-              required
-            />
+            {/* Transaction Details - Prominent Display */}
+            <Box>
+              <TextField
+                fullWidth
+                label="Transaction Details"
+                multiline
+                rows={3}
+                value={values.particulars}
+                onChange={(e) => setValueWithValidation('particulars', e.target.value)}
+                onBlur={(e) => validateField('particulars', e.target.value)}
+                error={!!errors.particulars}
+                helperText={errors.particulars || 'Describe what this debit transaction is for (required)'}
+                placeholder="e.g., Payment to supplier, Office rent, Salary payment, Equipment purchase"
+                InputProps={{
+                  style: { fontSize: '1rem' }
+                }}
+                InputLabelProps={{
+                  style: { fontSize: '1rem', fontWeight: 500 }
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': {
+                      borderWidth: 2
+                    }
+                  }
+                }}
+                required
+              />
+            </Box>
 
             {/* Supplier and Buyer Names Row */}
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
