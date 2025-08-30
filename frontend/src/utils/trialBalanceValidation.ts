@@ -41,8 +41,11 @@ export class TrialBalanceValidationRules {
 
         // Check future dates if not allowed
         if (!allowFutureDates) {
-          const today = endOfDay(new Date());
-          if (isAfter(dateRange.startDate, today) || isAfter(dateRange.endDate, today)) return false;
+          // Normalize both dates to start of day for consistent comparison
+          const normalizedStartDate = startOfDay(dateRange.startDate);
+          const normalizedEndDate = startOfDay(dateRange.endDate);
+          const normalizedToday = startOfDay(new Date());
+          if (isAfter(normalizedStartDate, normalizedToday) || isAfter(normalizedEndDate, normalizedToday)) return false;
         }
 
         // Check minimum date constraint
@@ -98,7 +101,12 @@ export class TrialBalanceValidationRules {
         if (isNaN(date.getTime())) return false;
 
         // Check future dates
-        if (!allowFuture && isAfter(date, endOfDay(new Date()))) return false;
+        if (!allowFuture) {
+          // Normalize both dates to start of day for consistent comparison
+          const normalizedDate = startOfDay(date);
+          const normalizedToday = startOfDay(new Date());
+          if (isAfter(normalizedDate, normalizedToday)) return false;
+        }
 
         // Check minimum date
         if (minDate && isBefore(date, startOfDay(minDate))) return false;
@@ -224,8 +232,11 @@ export class TrialBalanceFormValidator {
     const errors = [];
     const warnings = [];
 
-    // Check if date is in the future
-    if (isAfter(startDate, new Date())) {
+    // Check if date is in the future (allow current date)
+    // Normalize both dates to start of day for consistent comparison
+    const normalizedStartDate = startOfDay(startDate);
+    const normalizedToday = startOfDay(new Date());
+    if (isAfter(normalizedStartDate, normalizedToday)) {
       errors.push({
         field: 'startDate',
         message: 'Start date cannot be in the future'
@@ -272,8 +283,11 @@ export class TrialBalanceFormValidator {
     const errors: Array<{ field: string; message: string }> = [];
     const warnings: Array<{ field: string; message: string }> = [];
 
-    // Check if date is in the future
-    if (isAfter(endDate, new Date())) {
+    // Check if date is in the future (allow current date)
+    // Normalize both dates to start of day for consistent comparison
+    const normalizedEndDate = startOfDay(endDate);
+    const normalizedToday = startOfDay(new Date());
+    if (isAfter(normalizedEndDate, normalizedToday)) {
       errors.push({
         field: 'endDate',
         message: 'End date cannot be in the future'

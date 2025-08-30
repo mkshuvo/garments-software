@@ -65,6 +65,34 @@ export interface DebitTransactionDto {
   amount: number;
 }
 
+export interface SingleTransactionResponse {
+  success: boolean;
+  message: string;
+  transactionId?: string;
+  referenceNumber?: string;
+}
+
+export interface SavedTransaction {
+  id: string;
+  type: 'Credit' | 'Debit';
+  date: string;
+  categoryName: string;
+  particulars: string;
+  amount: number;
+  referenceNumber: string;
+  contactName?: string;
+  supplierName?: string;
+}
+
+export interface RecentTransactionsResponse {
+  success: boolean;
+  message: string;
+  transactions: SavedTransaction[];
+  totalCount: number;
+  totalCredits: number;
+  totalDebits: number;
+}
+
 export interface CashBookSaveResponse {
   success: boolean;
   message: string;
@@ -78,9 +106,9 @@ class CashBookService {
   private readonly baseUrl = '/api/cashbookentry';
 
   /**
-   * Save a single credit transaction to the database
+   * Save a single credit transaction to the database (independent)
    */
-  async saveCreditTransaction(transaction: CreditTransaction): Promise<CashBookSaveResponse> {
+  async saveCreditTransaction(transaction: CreditTransaction): Promise<SingleTransactionResponse> {
     try {
       const dto: CreditTransactionDto = {
         date: transaction.date.toISOString(),
@@ -90,7 +118,7 @@ class CashBookService {
         contactName: transaction.contactName
       };
 
-      const response = await apiService.post<CashBookSaveResponse>(`${this.baseUrl}/credit-transaction`, dto);
+      const response = await apiService.post<SingleTransactionResponse>(`${this.baseUrl}/independent-credit-transaction`, dto);
       return response;
     } catch (error) {
       console.error('Error saving credit transaction:', error);
@@ -103,9 +131,9 @@ class CashBookService {
   }
 
   /**
-   * Save a single debit transaction to the database
+   * Save a single debit transaction to the database (independent)
    */
-  async saveDebitTransaction(transaction: DebitTransaction): Promise<CashBookSaveResponse> {
+  async saveDebitTransaction(transaction: DebitTransaction): Promise<SingleTransactionResponse> {
     try {
       const dto: DebitTransactionDto = {
         date: transaction.date.toISOString(),
@@ -116,7 +144,7 @@ class CashBookService {
         amount: transaction.amount
       };
 
-      const response = await apiService.post<CashBookSaveResponse>(`${this.baseUrl}/debit-transaction`, dto);
+      const response = await apiService.post<SingleTransactionResponse>(`${this.baseUrl}/independent-debit-transaction`, dto);
       return response;
     } catch (error) {
       console.error('Error saving debit transaction:', error);
@@ -151,6 +179,27 @@ class CashBookService {
     } catch (error) {
       console.error('Error fetching contacts:', error);
       return [];
+    }
+  }
+
+  /**
+   * Get recent transactions for display
+   */
+  async getRecentTransactions(limit: number = 20): Promise<RecentTransactionsResponse> {
+    try {
+      const response = await apiService.get<RecentTransactionsResponse>(`${this.baseUrl}/recent-independent-transactions?limit=${limit}`);
+      return response;
+    } catch (error) {
+      console.error('Error fetching recent transactions:', error);
+      
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to fetch recent transactions',
+        transactions: [],
+        totalCount: 0,
+        totalCredits: 0,
+        totalDebits: 0
+      };
     }
   }
 }

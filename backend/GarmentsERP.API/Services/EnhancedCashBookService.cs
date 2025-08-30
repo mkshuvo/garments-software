@@ -336,6 +336,232 @@ namespace GarmentsERP.API.Services
             return Task.FromResult(totalDebits - totalCredits);
         }
 
+        #region Independent Transaction Methods
+
+        public async Task<DTOs.SingleTransactionResult> SaveCreditTransactionAsync(DTOs.CreditTransactionDto request)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // Get or create category and corresponding account
+                var category = await GetOrCreateCategoryAsync(request.CategoryName, Models.Accounting.CategoryType.Credit);
+                
+                // Find the corresponding ChartOfAccount for this category
+                var account = await _context.ChartOfAccounts
+                    .FirstOrDefaultAsync(a => a.AccountName == category.Name && a.AccountType == AccountType.Revenue);
+                
+                if (account == null)
+                {
+                    throw new InvalidOperationException($"No ChartOfAccount found for category: {category.Name}");
+                }
+                
+                // Get or create contact if provided
+                var contactId = (Guid?)null;
+                if (!string.IsNullOrWhiteSpace(request.ContactName))
+                {
+                    var contact = await GetOrCreateContactAsync(request.ContactName, Models.Contacts.ContactType.Customer);
+                    contactId = contact.Id;
+                }
+
+                // Create journal entry
+                var journalEntry = new JournalEntry
+                {
+                    Id = Guid.NewGuid(),
+                    JournalNumber = await GenerateJournalNumberAsync(),
+                    TransactionDate = request.Date.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(request.Date, DateTimeKind.Utc) : request.Date.ToUniversalTime(),
+                    JournalType = JournalType.CashReceipt,
+                    ReferenceNumber = $"CB-{DateTime.Now:yyyyMMdd}-{Guid.NewGuid().ToString()[..8]}",
+                    Description = request.Particulars,
+                    Status = JournalStatus.Posted,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedByUserId = Guid.NewGuid() // TODO: Get from current user context
+                };
+
+                _context.JournalEntries.Add(journalEntry);
+
+                // Create single journal entry line (credit only)
+                var journalLine = new JournalEntryLine
+                {
+                    Id = Guid.NewGuid(),
+                    JournalEntryId = journalEntry.Id,
+                    AccountId = account.Id,
+                    ContactId = contactId,
+                    Debit = 0,
+                    Credit = request.Amount,
+                    Description = request.Particulars,
+                    Reference = request.ContactName,
+                    LineOrder = 1
+                };
+
+                _context.JournalEntryLines.Add(journalLine);
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return DTOs.SingleTransactionResult.SuccessResult(
+                    journalEntry.Id,
+                    journalEntry.ReferenceNumber,
+                    "Credit transaction saved successfully"
+                );
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error saving credit transaction");
+                return DTOs.SingleTransactionResult.FailedResult("Failed to save credit transaction", new List<string> { ex.Message });
+            }
+        }
+
+        public async Task<DTOs.SingleTransactionResult> SaveDebitTransactionAsync(DTOs.DebitTransactionDto request)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // Get or create category and corresponding account
+                var category = await GetOrCreateCategoryAsync(request.CategoryName, Models.Accounting.CategoryType.Debit);
+                
+                // Find the corresponding ChartOfAccount for this category
+                var account = await _context.ChartOfAccounts
+                    .FirstOrDefaultAsync(a => a.AccountName == category.Name && a.AccountType == AccountType.Expense);
+                
+                if (account == null)
+                {
+                    throw new InvalidOperationException($"No ChartOfAccount found for category: {category.Name}");
+                }
+                
+                // Get or create contact if provided
+                var contactId = (Guid?)null;
+                if (!string.IsNullOrWhiteSpace(request.SupplierName))
+                {
+                    var contact = await GetOrCreateContactAsync(request.SupplierName, Models.Contacts.ContactType.Supplier);
+                    contactId = contact.Id;
+                }
+                else if (!string.IsNullOrWhiteSpace(request.BuyerName))
+                {
+                    var contact = await GetOrCreateContactAsync(request.BuyerName, Models.Contacts.ContactType.Customer);
+                    contactId = contact.Id;
+                }
+
+                // Create journal entry
+                var journalEntry = new JournalEntry
+                {
+                    Id = Guid.NewGuid(),
+                    JournalNumber = await GenerateJournalNumberAsync(),
+                    TransactionDate = request.Date.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(request.Date, DateTimeKind.Utc) : request.Date.ToUniversalTime(),
+                    JournalType = JournalType.CashPayment,
+                    ReferenceNumber = $"CB-{DateTime.Now:yyyyMMdd}-{Guid.NewGuid().ToString()[..8]}",
+                    Description = request.Particulars,
+                    Status = JournalStatus.Posted,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedByUserId = Guid.NewGuid() // TODO: Get from current user context
+                };
+
+                _context.JournalEntries.Add(journalEntry);
+
+                // Create single journal entry line (debit only)
+                var journalLine = new JournalEntryLine
+                {
+                    Id = Guid.NewGuid(),
+                    JournalEntryId = journalEntry.Id,
+                    AccountId = account.Id,
+                    ContactId = contactId,
+                    Debit = request.Amount,
+                    Credit = 0,
+                    Description = request.Particulars,
+                    Reference = request.SupplierName ?? request.BuyerName,
+                    LineOrder = 1
+                };
+
+                _context.JournalEntryLines.Add(journalLine);
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return DTOs.SingleTransactionResult.SuccessResult(
+                    journalEntry.Id,
+                    journalEntry.ReferenceNumber,
+                    "Debit transaction saved successfully"
+                );
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error saving debit transaction");
+                return DTOs.SingleTransactionResult.FailedResult("Failed to save debit transaction", new List<string> { ex.Message });
+            }
+        }
+
+        public async Task<DTOs.RecentTransactionsResponse> GetRecentTransactionsAsync(int limit = 20)
+        {
+            try
+            {
+                var recentEntries = await _context.JournalEntries
+                    .Include(je => je.JournalEntryLines)
+                    .ThenInclude(jel => jel.Account)
+                    .Where(je => je.JournalType == JournalType.CashReceipt || je.JournalType == JournalType.CashPayment)
+                    .OrderByDescending(je => je.TransactionDate)
+                    .Take(limit)
+                    .ToListAsync();
+
+                var transactions = new List<DTOs.SavedTransactionDto>();
+                decimal totalCredits = 0;
+                decimal totalDebits = 0;
+
+                foreach (var entry in recentEntries)
+                {
+                    var line = entry.JournalEntryLines.FirstOrDefault();
+                    if (line != null)
+                    {
+                                            var isCredit = entry.JournalType == JournalType.CashReceipt;
+                    if (isCredit)
+                        totalCredits += line.Credit;
+                    else
+                        totalDebits += line.Debit;
+
+                    transactions.Add(new DTOs.SavedTransactionDto
+                    {
+                        Id = entry.Id,
+                        Type = isCredit ? "Credit" : "Debit",
+                        Date = entry.TransactionDate,
+                        CategoryName = line.Account?.AccountName ?? "Unknown",
+                        Particulars = entry.Description ?? "",
+                        Amount = isCredit ? line.Credit : line.Debit,
+                        ReferenceNumber = entry.ReferenceNumber,
+                        ContactName = null, // TODO: Get contact name from ContactId if needed
+                        SupplierName = !isCredit ? line.Reference : null,
+                        BuyerName = isCredit ? line.Reference : null,
+                        CreatedAt = entry.CreatedAt
+                    });
+                    }
+                }
+
+                return new DTOs.RecentTransactionsResponse
+                {
+                    Success = true,
+                    Message = "Recent transactions retrieved successfully",
+                    Transactions = transactions,
+                    TotalCount = transactions.Count,
+                    TotalCredits = totalCredits,
+                    TotalDebits = totalDebits
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving recent transactions");
+                return new DTOs.RecentTransactionsResponse
+                {
+                    Success = false,
+                    Message = "Failed to retrieve recent transactions",
+                    Transactions = new List<DTOs.SavedTransactionDto>(),
+                    TotalCount = 0,
+                    TotalCredits = 0,
+                    TotalDebits = 0
+                };
+            }
+        }
+
+        #endregion
+
         #region Not Yet Implemented Methods
 
         public Task<CashBookEntryResult> UpdateCashBookEntryAsync(Guid entryId, UpdateCashBookEntryRequest request)
@@ -361,6 +587,81 @@ namespace GarmentsERP.API.Services
         #endregion
 
         #region Private Methods
+
+        private async Task<Models.Accounting.Category> GetOrCreateCategoryAsync(string categoryName, Models.Accounting.CategoryType type)
+        {
+            var existingCategory = await _context.Categories
+                .FirstOrDefaultAsync(c => c.Name.ToLower() == categoryName.ToLower() && c.Type == type);
+
+            if (existingCategory != null)
+                return existingCategory;
+
+            var newCategory = new Models.Accounting.Category
+            {
+                Id = Guid.NewGuid(),
+                Name = categoryName,
+                Type = type,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Categories.Add(newCategory);
+
+            // Also create a corresponding ChartOfAccount
+            var accountType = type == Models.Accounting.CategoryType.Credit ? AccountType.Revenue : AccountType.Expense;
+            var accountCode = type == Models.Accounting.CategoryType.Credit ? "4" : "5"; // Revenue accounts start with 4, Expense with 5
+            
+            var newAccount = new ChartOfAccount
+            {
+                Id = Guid.NewGuid(),
+                AccountCode = $"{accountCode}{DateTime.UtcNow:MMdd}{new Random().Next(100, 999)}",
+                AccountName = categoryName,
+                AccountType = accountType,
+                Description = $"Auto-created account for category: {categoryName}",
+                IsActive = true,
+                IsDynamic = true,
+                AllowTransactions = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.ChartOfAccounts.Add(newAccount);
+            await _context.SaveChangesAsync();
+
+            return newCategory;
+        }
+
+        private async Task<Models.Contacts.Contact> GetOrCreateContactAsync(string contactName, Models.Contacts.ContactType type)
+        {
+            var existingContact = await _context.Contacts
+                .FirstOrDefaultAsync(c => c.Name.ToLower() == contactName.ToLower() && c.ContactType == type);
+
+            if (existingContact != null)
+                return existingContact;
+
+            var newContact = new Models.Contacts.Contact
+            {
+                Id = Guid.NewGuid(),
+                Name = contactName,
+                ContactType = type,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Contacts.Add(newContact);
+            await _context.SaveChangesAsync();
+
+            return newContact;
+        }
+
+        private async Task<string> GenerateJournalNumberAsync()
+        {
+            var today = DateTime.UtcNow.Date;
+            var count = await _context.JournalEntries
+                .Where(je => je.TransactionDate.Date == today)
+                .CountAsync();
+
+            return $"CB-{today:yyyyMMdd}-{(count + 1):D3}";
+        }
 
         private async Task<CashBookEntryDto> MapToDto(JournalEntry journalEntry, List<JournalEntryLine> lines)
         {

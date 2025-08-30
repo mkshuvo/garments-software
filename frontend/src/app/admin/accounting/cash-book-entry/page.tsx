@@ -149,8 +149,10 @@ export default function CashBookEntryPage() {
     const loadSavedTransactions = async () => {
       try {
         setLoadingSavedTransactions(true);
-        const transactions = await transactionService.getRecentTransactions(20);
-        setSavedTransactions(transactions);
+        const response = await transactionService.getRecentTransactions(20);
+        if (response.success) {
+          setSavedTransactions(response.transactions);
+        }
       } catch (error) {
         console.error('Failed to load saved transactions:', error);
       } finally {
@@ -317,8 +319,10 @@ export default function CashBookEntryPage() {
 
   const refreshSavedTransactions = async () => {
     try {
-      const transactions = await transactionService.getRecentTransactions(20);
-      setSavedTransactions(transactions);
+      const response = await transactionService.getRecentTransactions(20);
+      if (response.success) {
+        setSavedTransactions(response.transactions);
+      }
     } catch (error) {
       console.error('Failed to refresh saved transactions:', error);
     }

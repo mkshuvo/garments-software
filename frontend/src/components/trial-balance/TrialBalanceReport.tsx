@@ -31,8 +31,7 @@ import {
     DateRange
 } from '@/types/trialBalance'
 import {
-    startOfMonth,
-    endOfMonth
+    startOfMonth
 } from 'date-fns'
 import { ErrorDisplay } from '@/components/common/ErrorDisplay'
 import { ErrorHandler, EnhancedError } from '@/utils/errorHandling'
