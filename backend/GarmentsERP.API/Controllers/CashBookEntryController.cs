@@ -1192,6 +1192,69 @@ namespace GarmentsERP.API.Controllers
             // TODO: Get from JWT token or authentication context
             return Guid.Parse("00000000-0000-0000-0000-000000000001");
         }
+
+        /// <summary>
+        /// Save a single credit transaction (independent)
+        /// </summary>
+        [HttpPost("independent-credit-transaction")]
+        public async Task<IActionResult> SaveIndependentCreditTransaction([FromBody] DTOs.CreditTransactionDto request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                var result = await _enhancedCashBookService.SaveCreditTransactionAsync(request);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error saving credit transaction");
+                return StatusCode(500, DTOs.SingleTransactionResult.FailedResult("Internal server error"));
+            }
+        }
+
+        /// <summary>
+        /// Save a single debit transaction (independent)
+        /// </summary>
+        [HttpPost("independent-debit-transaction")]
+        public async Task<IActionResult> SaveIndependentDebitTransaction([FromBody] DTOs.DebitTransactionDto request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                var result = await _enhancedCashBookService.SaveDebitTransactionAsync(request);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error saving debit transaction");
+                return StatusCode(500, DTOs.SingleTransactionResult.FailedResult("Internal server error"));
+            }
+        }
+
+        /// <summary>
+        /// Get recent transactions for display (independent transactions)
+        /// </summary>
+        [HttpGet("recent-independent-transactions")]
+        public async Task<IActionResult> GetRecentIndependentTransactions([FromQuery] int limit = 20)
+        {
+            try
+            {
+                var result = await _enhancedCashBookService.GetRecentTransactionsAsync(limit);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving recent transactions");
+                return StatusCode(500, new { Success = false, Message = "Internal server error" });
+            }
+        }
     }
 
     // DTOs

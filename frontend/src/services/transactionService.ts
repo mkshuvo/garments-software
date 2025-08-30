@@ -1,132 +1,154 @@
 import { apiService } from './apiService';
 
-export interface CreditTransactionDto {
-  date: string; // ISO date string
-  categoryName: string;
-  particulars: string;
-  amount: number;
-  contactName?: string;
-  referenceNumber?: string;
-}
-
-export interface DebitTransactionDto {
-  date: string; // ISO date string
-  categoryName: string;
-  supplierName?: string;
-  buyerName?: string;
-  particulars: string;
-  amount: number;
-  referenceNumber?: string;
-}
-
-export interface TransactionSaveResponse {
-  success: boolean;
-  message: string;
-  transactionId?: string;
-  journalEntryId?: string;
-}
-
 export interface SavedTransaction {
   id: string;
-  date: string;
   type: 'Credit' | 'Debit';
+  date: string;
   categoryName: string;
   particulars: string;
   amount: number;
   referenceNumber: string;
   contactName?: string;
-  createdAt: string;
+  supplierName?: string;
+}
+
+export interface RecentTransactionsResponse {
+  success: boolean;
+  message: string;
+  transactions: SavedTransaction[];
+  totalCount: number;
+  totalCredits: number;
+  totalDebits: number;
 }
 
 class TransactionService {
   private readonly baseUrl = '/api/cashbookentry';
+  private cache: {
+    transactions: SavedTransaction[];
+    lastFetched: number;
+    cacheDuration: number;
+  } = {
+    transactions: [],
+    lastFetched: 0,
+    cacheDuration: 30000 // 30 seconds
+  };
 
   /**
-   * Save a credit transaction independently
+   * Get recent transactions with caching
    */
-  async saveCreditTransaction(transaction: {
-    date: Date;
-    categoryName: string;
-    particulars: string;
-    amount: number;
-    contactName?: string;
-  }): Promise<TransactionSaveResponse> {
+  async getRecentTransactions(limit: number = 20, forceRefresh: boolean = false): Promise<RecentTransactionsResponse> {
     try {
-      const dto: CreditTransactionDto = {
-        date: transaction.date.toISOString(),
-        categoryName: transaction.categoryName,
-        particulars: transaction.particulars,
-        amount: transaction.amount,
-        contactName: transaction.contactName,
-        referenceNumber: this.generateReferenceNumber('CR')
-      };
+      // Check cache first
+      const now = Date.now();
+      if (!forceRefresh && 
+          this.cache.transactions.length > 0 && 
+          (now - this.cache.lastFetched) < this.cache.cacheDuration) {
+        return {
+          success: true,
+          message: 'Transactions loaded from cache',
+          transactions: this.cache.transactions.slice(0, limit),
+          totalCount: this.cache.transactions.length,
+          totalCredits: this.cache.transactions
+            .filter(t => t.type === 'Credit')
+            .reduce((sum, t) => sum + t.amount, 0),
+          totalDebits: this.cache.transactions
+            .filter(t => t.type === 'Debit')
+            .reduce((sum, t) => sum + t.amount, 0)
+        };
+      }
 
-      const response = await apiService.post<TransactionSaveResponse>(`${this.baseUrl}/credit-transaction`, dto);
-      return response;
-    } catch (error) {
-      console.error('Error saving credit transaction:', error);
-      
-      return {
-        success: false,
-        message: error instanceof Error ? error.message : 'Failed to save credit transaction'
-      };
-    }
-  }
+      // Fetch from API
+      const response = await apiService.get<RecentTransactionsResponse>(
+        `${this.baseUrl}/recent-independent-transactions?limit=${limit}`
+      );
 
-  /**
-   * Save a debit transaction independently
-   */
-  async saveDebitTransaction(transaction: {
-    date: Date;
-    categoryName: string;
-    supplierName?: string;
-    buyerName?: string;
-    particulars: string;
-    amount: number;
-  }): Promise<TransactionSaveResponse> {
-    try {
-      const dto: DebitTransactionDto = {
-        date: transaction.date.toISOString(),
-        categoryName: transaction.categoryName,
-        supplierName: transaction.supplierName,
-        buyerName: transaction.buyerName,
-        particulars: transaction.particulars,
-        amount: transaction.amount,
-        referenceNumber: this.generateReferenceNumber('DR')
-      };
+      // Update cache
+      if (response.success) {
+        this.cache.transactions = response.transactions;
+        this.cache.lastFetched = now;
+      }
 
-      const response = await apiService.post<TransactionSaveResponse>(`${this.baseUrl}/debit-transaction`, dto);
-      return response;
-    } catch (error) {
-      console.error('Error saving debit transaction:', error);
-      
-      return {
-        success: false,
-        message: error instanceof Error ? error.message : 'Failed to save debit transaction'
-      };
-    }
-  }
-
-  /**
-   * Get recent transactions from the database
-   */
-  async getRecentTransactions(limit: number = 50): Promise<SavedTransaction[]> {
-    try {
-      const response = await apiService.get<SavedTransaction[]>(`${this.baseUrl}/recent-transactions?limit=${limit}`);
       return response;
     } catch (error) {
       console.error('Error fetching recent transactions:', error);
-      return [];
+      
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to fetch recent transactions',
+        transactions: [],
+        totalCount: 0,
+        totalCredits: 0,
+        totalDebits: 0
+      };
     }
   }
 
   /**
-   * Generate a reference number for transactions
+   * Clear the transaction cache
    */
-  private generateReferenceNumber(type: 'CR' | 'DR'): string {
-    const now = new Date();
-    const timestamp = now.getTime().toString().slice(-6);
-    return `${type}-${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}-${timestamp}`;
+  clearCache(): void {
+    this.cache.transactions = [];
+    this.cache.lastFetched = 0;
+  }
+
+  /**
+   * Get transactions by type
+   */
+  async getTransactionsByType(type: 'Credit' | 'Debit', limit: number = 20): Promise<SavedTransaction[]> {
+    const response = await this.getRecentTransactions(limit * 2); // Get more to filter
+    if (response.success) {
+      return response.transactions
+        .filter(t => t.type === type)
+        .slice(0, limit);
+    }
+    return [];
+  }
+
+  /**
+   * Get transactions by date range
+   */
+  async getTransactionsByDateRange(startDate: Date, endDate: Date): Promise<SavedTransaction[]> {
+    const response = await this.getRecentTransactions(100); // Get more to filter
+    if (response.success) {
+      return response.transactions.filter(t => {
+        const transactionDate = new Date(t.date);
+        return transactionDate >= startDate && transactionDate <= endDate;
+      });
+    }
+    return [];
+  }
+
+  /**
+   * Get running totals
+   */
+  async getRunningTotals(): Promise<{ totalCredits: number; totalDebits: number; netAmount: number }> {
+    const response = await this.getRecentTransactions(1000); // Get all transactions
+    if (response.success) {
+      const totalCredits = response.totalCredits;
+      const totalDebits = response.totalDebits;
+      const netAmount = totalCredits - totalDebits;
+      
+      return { totalCredits, totalDebits, netAmount };
+    }
+    
+    return { totalCredits: 0, totalDebits: 0, netAmount: 0 };
+  }
+
+  /**
+   * Search transactions by category or particulars
+   */
+  async searchTransactions(searchTerm: string): Promise<SavedTransaction[]> {
+    const response = await this.getRecentTransactions(1000); // Get all transactions
+    if (response.success) {
+      const lowerSearchTerm = searchTerm.toLowerCase();
+      return response.transactions.filter(t => 
+        t.categoryName.toLowerCase().includes(lowerSearchTerm) ||
+        t.particulars.toLowerCase().includes(lowerSearchTerm) ||
+        (t.contactName && t.contactName.toLowerCase().includes(lowerSearchTerm)) ||
+        (t.supplierName && t.supplierName.toLowerCase().includes(lowerSearchTerm))
+      );
+    }
+    return [];
   }
 }
 

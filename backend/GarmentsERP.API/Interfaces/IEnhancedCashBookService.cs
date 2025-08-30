@@ -15,6 +15,11 @@ namespace GarmentsERP.API.Interfaces
         Task<CashBookEntryDto?> GetCashBookEntryByIdAsync(Guid entryId);
         Task<bool> ValidateDoubleEntryAsync(List<CashBookLineDto> lines);
         Task<decimal> CalculateBalanceAsync(List<CashBookLineDto> lines);
+        
+        // New methods for independent transactions
+        Task<DTOs.SingleTransactionResult> SaveCreditTransactionAsync(DTOs.CreditTransactionDto request);
+        Task<DTOs.SingleTransactionResult> SaveDebitTransactionAsync(DTOs.DebitTransactionDto request);
+        Task<DTOs.RecentTransactionsResponse> GetRecentTransactionsAsync(int limit = 20);
     }
 
     // Request/Response DTOs

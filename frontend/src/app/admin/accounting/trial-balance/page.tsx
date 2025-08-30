@@ -32,7 +32,7 @@ import { TrialBalanceReport } from '@/components/trial-balance/TrialBalanceRepor
 import { TrialBalanceHelp } from '@/components/trial-balance/TrialBalanceHelp'
 import { DateRange, UserRole } from '@/types/trialBalance'
 import { useRoles } from '@/hooks/useRoles'
-import { startOfMonth, endOfMonth } from 'date-fns'
+import { startOfMonth } from 'date-fns'
 
 // Mock user role for now - in a real app this would come from auth context
 const getCurrentUserRole = (): UserRole => {
@@ -61,7 +61,7 @@ export default function TrialBalancePage() {
   // Default date range - current month
   const [defaultDateRange] = useState<DateRange>({
     startDate: startOfMonth(new Date()),
-    endDate: endOfMonth(new Date())
+    endDate: new Date() // Use current date instead of end of month to avoid future dates
   })
 
   // Loading state for skeleton screens
