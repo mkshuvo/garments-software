@@ -12,6 +12,7 @@ using GarmentsERP.API.Services.Auth;
 using GarmentsERP.API.Services.Interfaces;
 using GarmentsERP.API.Interfaces;
 using GarmentsERP.API.Middleware;
+using GarmentsERP.API.Config;
 using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,8 +21,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 
 // Database Configuration
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDatabaseConfiguration(builder.Configuration);
 
 // Identity Configuration
 builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
@@ -105,6 +105,8 @@ builder.Services.AddScoped<ITrialBalanceCacheService, TrialBalanceCacheService>(
 builder.Services.AddScoped<ITrialBalanceService, TrialBalanceService>();
 builder.Services.AddScoped<IBalanceService, BalanceService>();
 builder.Services.AddScoped<IEnhancedCashBookService, EnhancedCashBookService>();
+builder.Services.AddScoped<IJournalEntryService, JournalEntryService>();
+builder.Services.AddScoped<IDatabasePerformanceService, DatabasePerformanceService>();
 
 // Redis Configuration
 builder.Services.AddSingleton<IConnectionMultiplexer>(provider =>

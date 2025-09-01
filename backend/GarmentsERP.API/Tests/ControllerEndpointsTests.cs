@@ -3,6 +3,8 @@ using GarmentsERP.API.Controllers;
 using GarmentsERP.API.DTOs;
 using GarmentsERP.API.Interfaces;
 using GarmentsERP.API.Data;
+using GarmentsERP.API.Services;
+using GarmentsERP.API.Services.Interfaces;
 using Moq;
 using Xunit;
 
@@ -17,8 +19,10 @@ namespace GarmentsERP.API.Tests
         {
             _mockService = new Mock<IEnhancedCashBookService>();
             var mockContext = new Mock<ApplicationDbContext>();
+            var mockJournalEntryService = new Mock<IJournalEntryService>();
+            var mockDatabasePerformanceService = new Mock<IDatabasePerformanceService>();
             var mockLogger = new Mock<ILogger<CashBookEntryController>>();
-            _controller = new CashBookEntryController(mockContext.Object, _mockService.Object, mockLogger.Object);
+            _controller = new CashBookEntryController(mockContext.Object, _mockService.Object, mockJournalEntryService.Object, mockDatabasePerformanceService.Object, mockLogger.Object);
         }
 
         [Fact]

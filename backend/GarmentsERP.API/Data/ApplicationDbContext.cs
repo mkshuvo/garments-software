@@ -13,6 +13,7 @@ using GarmentsERP.API.Models.Products;
 using GarmentsERP.API.Models.Reports;
 using GarmentsERP.API.Models.Settings;
 using GarmentsERP.API.Models.Tax;
+using GarmentsERP.API.Config;
 
 namespace GarmentsERP.API.Data
 {
@@ -393,6 +394,9 @@ namespace GarmentsERP.API.Data
 
             // REMOVED ALL SEEDING - Use setup endpoints for initial data
             // No hardcoded users or roles - all data created via API endpoints
+
+            // Configure journal entry optimizations
+            modelBuilder.ConfigureJournalEntryOptimizations();
         }
     }
 }

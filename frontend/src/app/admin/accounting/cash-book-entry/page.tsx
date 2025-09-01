@@ -6,7 +6,6 @@ import {
   Typography,
   Card,
   CardContent,
-  TextField,
   Button,
   Alert,
   Paper,
@@ -23,7 +22,6 @@ import {
   AccountBalanceWallet as AccountBalanceWalletIcon
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { categoryService, CategoryType, Category as CategoryModel } from '@/services/categoryService';
@@ -329,10 +327,6 @@ export default function CashBookEntryPage() {
   };
 
   // Removed validateEntry function as transactions are now saved independently without validation
-
-
-
-  const hasTransactions = entry.creditTransactions.length > 0 || entry.debitTransactions.length > 0;
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>

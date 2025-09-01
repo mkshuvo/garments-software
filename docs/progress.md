@@ -3,6 +3,19 @@
 ## Project Overview
 Building a comprehensive Garments ERP system with ASP.NET Core Web API backend and Next.js frontend.
 
+## Latest Progress — Journal Entry Management (2025-09-01)
+- Frontend enhancements:
+  - Implemented `PrintModal` with page size/orientation options and integrated on `journal-entries` page.
+  - Added `SummarySection` and `StatusFilter`; refactored page to use `journalEntryService` (typed DTOs, export, stats).
+  - Fixed Material-UI `Grid` usage across new components; removed duplicate interfaces; unified filter state with status.
+  - Resolved all TypeScript/ESLint warnings; frontend builds clean.
+- UX and reliability:
+  - Added `ErrorBoundary`, `TableSkeletonLoader`, `LoadingSpinner`, `ProgressIndicator`, `ConfirmationDialog`, `EnhancedTooltip`, and `KeyboardShortcuts` (installed `react-hotkeys-hook`).
+- Planning updates (.plan/journal-entry-management/tasks.md):
+  - Marked complete: `TASK-005.1`, `TASK-004.1`, `TASK-004.3`, `TASK-006.1`, `TASK-006.2`, `TASK-006.3`. `TASK-003.2` partially (StatusFilter).
+- Next steps to pick up:
+  - `TASK-005.3` client-side caching; `TASK-007` security; `TASK-008` performance; `TASK-009` testing; finalize `TASK-003.x` refinements and `TASK-004.2` enhancements.
+
 ## ✅ Completed Tasks
 
 ### Phase 1: Project Setup & Infrastructure
