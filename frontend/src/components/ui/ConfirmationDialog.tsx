@@ -9,11 +9,13 @@ import {
   Button,
   Typography,
   Box,
-  useTheme,
-  useMediaQuery,
-  CircularProgress
+  Alert
 } from '@mui/material';
-import { Warning as WarningIcon, Error as ErrorIcon, Info as InfoIcon } from '@mui/icons-material';
+import {
+  Warning as WarningIcon,
+  Delete as DeleteIcon,
+  Info as InfoIcon
+} from '@mui/icons-material';
 
 interface ConfirmationDialogProps {
   open: boolean;
@@ -23,11 +25,11 @@ interface ConfirmationDialogProps {
   message: string;
   confirmText?: string;
   cancelText?: string;
-  severity?: 'warning' | 'error' | 'info';
+  type?: 'delete' | 'confirm' | 'info';
   loading?: boolean;
 }
 
-export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
+export function ConfirmationDialog({
   open,
   onClose,
   onConfirm,
@@ -35,113 +37,94 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   message,
   confirmText = 'Confirm',
   cancelText = 'Cancel',
-  severity = 'warning',
+  type = 'confirm',
   loading = false
-}) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-
-  const getSeverityColor = () => {
-    switch (severity) {
-      case 'error':
-        return theme.palette.error.main;
-      case 'warning':
-        return theme.palette.warning.main;
+}: ConfirmationDialogProps) {
+  const getIcon = () => {
+    switch (type) {
+      case 'delete':
+        return <DeleteIcon color="error" />;
       case 'info':
-        return theme.palette.info.main;
+        return <InfoIcon color="info" />;
       default:
-        return theme.palette.warning.main;
-    }
-  };
-
-  const getSeverityIcon = () => {
-    switch (severity) {
-      case 'error':
-        return <ErrorIcon sx={{ color: getSeverityColor(), fontSize: 48 }} />;
-      case 'warning':
-        return <WarningIcon sx={{ color: getSeverityColor(), fontSize: 48 }} />;
-      case 'info':
-        return <InfoIcon sx={{ color: getSeverityColor(), fontSize: 48 }} />;
-      default:
-        return <WarningIcon sx={{ color: getSeverityColor(), fontSize: 48 }} />;
+        return <WarningIcon color="warning" />;
     }
   };
 
   const getConfirmButtonColor = () => {
-    switch (severity) {
-      case 'error':
-        return 'error' as const;
-      case 'warning':
-        return 'warning' as const;
+    switch (type) {
+      case 'delete':
+        return 'error';
       case 'info':
-        return 'primary' as const;
+        return 'primary';
       default:
-        return 'warning' as const;
+        return 'warning';
+    }
+  };
+
+  const getSeverity = () => {
+    switch (type) {
+      case 'delete':
+        return 'error';
+      case 'info':
+        return 'info';
+      default:
+        return 'warning';
     }
   };
 
   return (
     <Dialog
       open={open}
-      onClose={loading ? undefined : onClose}
-      maxWidth="xs"
+      onClose={onClose}
+      maxWidth="sm"
       fullWidth
-      fullScreen={isMobile}
       PaperProps={{
         sx: {
-          borderRadius: isMobile ? 0 : 2,
-          textAlign: 'center'
+          borderRadius: 2,
+          boxShadow: 3
         }
       }}
-      aria-labelledby="confirmation-dialog-title"
-      aria-describedby="confirmation-dialog-description"
     >
-      <DialogTitle
-        id="confirmation-dialog-title"
-        sx={{
-          pb: 1,
-          pt: 4
-        }}
-      >
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-          {getSeverityIcon()}
-          <Typography variant="h6" component="span" sx={{ fontWeight: 600 }}>
+      <DialogTitle>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {getIcon()}
+          <Typography variant="h6" component="span">
             {title}
           </Typography>
         </Box>
       </DialogTitle>
-      <DialogContent sx={{ px: 3, pb: 2 }}>
-        <Typography
-          id="confirmation-dialog-description"
-          variant="body1"
-          color="text.secondary"
-          sx={{ textAlign: 'center' }}
-        >
-          {message}
-        </Typography>
+
+      <DialogContent>
+        <Alert severity={getSeverity()} sx={{ mb: 2 }}>
+          <Typography variant="body1">
+            {message}
+          </Typography>
+        </Alert>
       </DialogContent>
-      <DialogActions sx={{ p: 3, gap: 2, justifyContent: 'center' }}>
+
+      <DialogActions sx={{ p: 2, gap: 1 }}>
         <Button
           onClick={onClose}
-          variant="outlined"
           disabled={loading}
-          sx={{ minWidth: 100 }}
+          variant="outlined"
+          size="large"
         >
           {cancelText}
         </Button>
         <Button
           onClick={onConfirm}
+          disabled={loading}
           variant="contained"
           color={getConfirmButtonColor()}
-          disabled={loading}
-          sx={{ minWidth: 100 }}
-          startIcon={loading ? <CircularProgress size={16} color="inherit" /> : undefined}
+          size="large"
+          autoFocus
         >
           {loading ? 'Processing...' : confirmText}
         </Button>
       </DialogActions>
     </Dialog>
   );
-};
+}
 
 export default ConfirmationDialog;

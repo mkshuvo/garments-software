@@ -543,7 +543,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
         message={`Are you sure you want to delete this ${deleteConfirmation.transactionType} transaction of ৳${deleteConfirmation.transactionAmount.toFixed(2)}? This action cannot be undone.`}
         confirmText="Delete"
         cancelText="Cancel"
-        severity="error"
+        type="delete"
       />
     </Stack>
   );

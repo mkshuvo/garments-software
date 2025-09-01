@@ -4,6 +4,9 @@ using GarmentsERP.API.Data;
 using GarmentsERP.API.Models.Accounting;
 using GarmentsERP.API.Models.Contacts;
 using GarmentsERP.API.Interfaces;
+using GarmentsERP.API.Services;
+using GarmentsERP.API.DTOs;
+using GarmentsERP.API.Validators;
 using System.ComponentModel.DataAnnotations;
 
 namespace GarmentsERP.API.Controllers
@@ -14,15 +17,21 @@ namespace GarmentsERP.API.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IEnhancedCashBookService _enhancedCashBookService;
+        private readonly IJournalEntryService _journalEntryService;
+        private readonly IDatabasePerformanceService _databasePerformanceService;
         private readonly ILogger<CashBookEntryController> _logger;
 
         public CashBookEntryController(
             ApplicationDbContext context, 
             IEnhancedCashBookService enhancedCashBookService,
+            IJournalEntryService journalEntryService,
+            IDatabasePerformanceService databasePerformanceService,
             ILogger<CashBookEntryController> logger)
         {
             _context = context;
             _enhancedCashBookService = enhancedCashBookService;
+            _journalEntryService = journalEntryService;
+            _databasePerformanceService = databasePerformanceService;
             _logger = logger;
         }
 
@@ -474,125 +483,27 @@ namespace GarmentsERP.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Get journal entries with advanced filtering, pagination, and optimization
+        /// </summary>
         [HttpGet("journal-entries")]
-        public async Task<IActionResult> GetJournalEntries(
-            [FromQuery] int page = 1,
-            [FromQuery] int limit = 20,
-            [FromQuery] DateTime? dateFrom = null,
-            [FromQuery] DateTime? dateTo = null,
-            [FromQuery] string? type = null,
-            [FromQuery] decimal? amountMin = null,
-            [FromQuery] decimal? amountMax = null,
-            [FromQuery] string? category = null,
-            [FromQuery] string? referenceNumber = null,
-            [FromQuery] string? contactName = null,
-            [FromQuery] string? description = null)
+        public async Task<IActionResult> GetJournalEntries([FromQuery] GetJournalEntriesRequest request)
         {
             try
             {
-                var query = _context.JournalEntries
-                    .Include(je => je.JournalEntryLines)
-                    .ThenInclude(jel => jel.Account)
-                    .Where(je => je.Description != null && (je.Description.Contains("Credit:") || je.Description.Contains("Debit:")))
-                    .AsQueryable();
+                // Validate request using FluentValidation
+                var validator = new GetJournalEntriesRequestValidator();
+                var validationResult = await validator.ValidateAsync(request);
 
-                // Apply filters
-                if (dateFrom.HasValue)
+                if (!validationResult.IsValid)
                 {
-                    query = query.Where(je => je.TransactionDate >= dateFrom.Value);
+                    var errors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
+                    return BadRequest(new { Success = false, Message = "Validation failed", Errors = errors });
                 }
 
-                if (dateTo.HasValue)
-                {
-                    query = query.Where(je => je.TransactionDate <= dateTo.Value);
-                }
-
-                if (!string.IsNullOrEmpty(type) && type != "All")
-                {
-                    if (type == "Credit")
-                    {
-                        query = query.Where(je => je.Description!.StartsWith("Credit:"));
-                    }
-                    else if (type == "Debit")
-                    {
-                        query = query.Where(je => je.Description!.StartsWith("Debit:"));
-                    }
-                }
-
-                if (!string.IsNullOrEmpty(category))
-                {
-                    query = query.Where(je => je.JournalEntryLines.Any(jel => jel.Account!.AccountName.Contains(category)));
-                }
-
-                if (!string.IsNullOrEmpty(referenceNumber))
-                {
-                    query = query.Where(je => je.ReferenceNumber.Contains(referenceNumber));
-                }
-
-                if (!string.IsNullOrEmpty(contactName))
-                {
-                    query = query.Where(je => je.JournalEntryLines.Any(jel => jel.Reference != null && jel.Reference.Contains(contactName)));
-                }
-
-                if (!string.IsNullOrEmpty(description))
-                {
-                    query = query.Where(je => je.Description!.Contains(description));
-                }
-
-                if (amountMin.HasValue)
-                {
-                    query = query.Where(je => je.JournalEntryLines.Any(jel => jel.Credit >= amountMin.Value || jel.Debit >= amountMin.Value));
-                }
-
-                if (amountMax.HasValue)
-                {
-                    query = query.Where(je => je.JournalEntryLines.Any(jel => jel.Credit <= amountMax.Value || jel.Debit <= amountMax.Value));
-                }
-
-                // Get total count for pagination
-                var totalEntries = await query.CountAsync();
-                var totalPages = (int)Math.Ceiling((double)totalEntries / limit);
-
-                // Apply pagination and ordering
-                var journalEntries = await query
-                    .OrderByDescending(je => je.TransactionDate)
-                    .Skip((page - 1) * limit)
-                    .Take(limit)
-                    .ToListAsync();
-
-                var entries = new List<object>();
-
-                foreach (var entry in journalEntries)
-                {
-                    var line = entry.JournalEntryLines.FirstOrDefault();
-                    if (line != null)
-                    {
-                        var isCredit = entry.Description?.StartsWith("Credit:") ?? false;
-                        entries.Add(new
-                        {
-                            Id = entry.Id.ToString(),
-                            JournalNumber = entry.JournalNumber,
-                            TransactionDate = entry.TransactionDate,
-                            Type = isCredit ? "Credit" : "Debit",
-                            CategoryName = line.Account?.AccountName ?? "Unknown",
-                            Particulars = entry.Description?.Replace("Credit: ", "").Replace("Debit: ", "") ?? "",
-                            Amount = isCredit ? line.Credit : line.Debit,
-                            ReferenceNumber = entry.ReferenceNumber,
-                            ContactName = line.Reference,
-                            AccountName = line.Account?.AccountName ?? "Unknown",
-                            CreatedAt = entry.CreatedAt
-                        });
-                    }
-                }
-
-                return Ok(new
-                {
-                    Entries = entries,
-                    TotalEntries = totalEntries,
-                    TotalPages = totalPages,
-                    CurrentPage = page,
-                    PageSize = limit
-                });
+                // Use the enhanced service
+                var result = await _journalEntryService.GetJournalEntriesAsync(request);
+                return Ok(result);
             }
             catch (Exception ex)
             {
@@ -601,156 +512,58 @@ namespace GarmentsERP.API.Controllers
             }
         }
 
-        [HttpGet("journal-entries/export")]
-        public async Task<IActionResult> ExportJournalEntries(
-            [FromQuery] DateTime? dateFrom = null,
-            [FromQuery] DateTime? dateTo = null,
-            [FromQuery] string? type = null,
-            [FromQuery] decimal? amountMin = null,
-            [FromQuery] decimal? amountMax = null,
-            [FromQuery] string? category = null,
-            [FromQuery] string? referenceNumber = null,
-            [FromQuery] string? contactName = null,
-            [FromQuery] string? description = null,
-            [FromQuery] string? columns = null)
+        /// <summary>
+        /// Get detailed journal entry by ID
+        /// </summary>
+        [HttpGet("journal-entries/{id:guid}")]
+        public async Task<IActionResult> GetJournalEntryById(Guid id)
         {
             try
             {
-                var query = _context.JournalEntries
-                    .Include(je => je.JournalEntryLines)
-                    .ThenInclude(jel => jel.Account)
-                    .Where(je => je.Description != null && (je.Description.Contains("Credit:") || je.Description.Contains("Debit:")))
-                    .AsQueryable();
-
-                // Apply the same filters as the main endpoint
-                if (dateFrom.HasValue)
-                {
-                    query = query.Where(je => je.TransactionDate >= dateFrom.Value);
-                }
-
-                if (dateTo.HasValue)
-                {
-                    query = query.Where(je => je.TransactionDate <= dateTo.Value);
-                }
-
-                if (!string.IsNullOrEmpty(type) && type != "All")
-                {
-                    if (type == "Credit")
-                    {
-                        query = query.Where(je => je.Description!.StartsWith("Credit:"));
-                    }
-                    else if (type == "Debit")
-                    {
-                        query = query.Where(je => je.Description!.StartsWith("Debit:"));
-                    }
-                }
-
-                if (!string.IsNullOrEmpty(category))
-                {
-                    query = query.Where(je => je.JournalEntryLines.Any(jel => jel.Account!.AccountName.Contains(category)));
-                }
-
-                if (!string.IsNullOrEmpty(referenceNumber))
-                {
-                    query = query.Where(je => je.ReferenceNumber.Contains(referenceNumber));
-                }
-
-                if (!string.IsNullOrEmpty(contactName))
-                {
-                    query = query.Where(je => je.JournalEntryLines.Any(jel => jel.Reference != null && jel.Reference.Contains(contactName)));
-                }
-
-                if (!string.IsNullOrEmpty(description))
-                {
-                    query = query.Where(je => je.Description!.Contains(description));
-                }
-
-                if (amountMin.HasValue)
-                {
-                    query = query.Where(je => je.JournalEntryLines.Any(jel => jel.Credit >= amountMin.Value || jel.Debit >= amountMin.Value));
-                }
-
-                if (amountMax.HasValue)
-                {
-                    query = query.Where(je => je.JournalEntryLines.Any(jel => jel.Credit <= amountMax.Value || jel.Debit <= amountMax.Value));
-                }
-
-                // Get all matching entries (no pagination for export)
-                var journalEntries = await query
-                    .OrderByDescending(je => je.TransactionDate)
-                    .ToListAsync();
-
-                // Parse selected columns
-                var selectedColumns = new List<string>();
-                if (!string.IsNullOrEmpty(columns))
-                {
-                    selectedColumns = columns.Split(',').Select(c => c.Trim()).ToList();
-                }
-                else
-                {
-                    // Default columns if none specified
-                    selectedColumns = new List<string> { "journalNumber", "transactionDate", "type", "categoryName", "particulars", "amount", "referenceNumber", "contactName", "accountName" };
-                }
-
-                // Build CSV content
-                var csvContent = new System.Text.StringBuilder();
+                var result = await _journalEntryService.GetJournalEntryByIdAsync(id);
                 
-                // Add header row
-                var headers = new List<string>();
-                foreach (var column in selectedColumns)
+                if (result == null)
                 {
-                    headers.Add(column switch
-                    {
-                        "journalNumber" => "Journal Number",
-                        "transactionDate" => "Transaction Date",
-                        "type" => "Type",
-                        "categoryName" => "Category",
-                        "particulars" => "Particulars",
-                        "amount" => "Amount",
-                        "referenceNumber" => "Reference Number",
-                        "contactName" => "Contact Name",
-                        "accountName" => "Account Name",
-                        "createdAt" => "Created At",
-                        _ => column
-                    });
-                }
-                csvContent.AppendLine(string.Join(",", headers.Select(h => $"\"{h}\"")));
-
-                // Add data rows
-                foreach (var entry in journalEntries)
-                {
-                    var line = entry.JournalEntryLines.FirstOrDefault();
-                    if (line != null)
-                    {
-                        var isCredit = entry.Description?.StartsWith("Credit:") ?? false;
-                        var values = new List<string>();
-
-                        foreach (var column in selectedColumns)
-                        {
-                            var value = column switch
-                            {
-                                "journalNumber" => entry.JournalNumber,
-                                "transactionDate" => entry.TransactionDate.ToString("yyyy-MM-dd"),
-                                "type" => isCredit ? "Credit" : "Debit",
-                                "categoryName" => line.Account?.AccountName ?? "Unknown",
-                                "particulars" => entry.Description?.Replace("Credit: ", "").Replace("Debit: ", "") ?? "",
-                                "amount" => (isCredit ? line.Credit : line.Debit).ToString("F2"),
-                                "referenceNumber" => entry.ReferenceNumber,
-                                "contactName" => line.Reference ?? "",
-                                "accountName" => line.Account?.AccountName ?? "Unknown",
-                                "createdAt" => entry.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"),
-                                _ => ""
-                            };
-                            values.Add($"\"{value}\"");
-                        }
-                        csvContent.AppendLine(string.Join(",", values));
-                    }
+                    return NotFound(new { Success = false, Message = "Journal entry not found" });
                 }
 
-                var fileName = $"journal-entries-{DateTime.Now:yyyyMMdd-HHmmss}.csv";
-                var bytes = System.Text.Encoding.UTF8.GetBytes(csvContent.ToString());
+                return Ok(new { Success = true, Data = result });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching journal entry by ID: {Id}", id);
+                return StatusCode(500, new { Success = false, Message = "Internal server error" });
+            }
+        }
 
-                return File(bytes, "text/csv", fileName);
+        /// <summary>
+        /// Get journal entry statistics
+        /// </summary>
+        [HttpGet("journal-entries/statistics")]
+        public async Task<IActionResult> GetJournalEntryStatistics([FromQuery] JournalEntryStatisticsRequest request)
+        {
+            try
+            {
+                var result = await _journalEntryService.GetStatisticsAsync(request);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching journal entry statistics");
+                return StatusCode(500, new { Success = false, Message = "Internal server error" });
+            }
+        }
+
+        /// <summary>
+        /// Export journal entries
+        /// </summary>
+        [HttpPost("journal-entries/export")]
+        public async Task<IActionResult> ExportJournalEntries([FromBody] ExportJournalEntriesRequest request)
+        {
+            try
+            {
+                var result = await _journalEntryService.ExportJournalEntriesAsync(request);
+                return Ok(result);
             }
             catch (Exception ex)
             {
@@ -1255,6 +1068,82 @@ namespace GarmentsERP.API.Controllers
                 return StatusCode(500, new { Success = false, Message = "Internal server error" });
             }
         }
+
+        #region Database Performance Endpoints
+
+        /// <summary>
+        /// Get database performance metrics for journal entries
+        /// </summary>
+        [HttpGet("database/performance")]
+        public async Task<IActionResult> GetDatabasePerformance()
+        {
+            try
+            {
+                var metrics = await _databasePerformanceService.GetPerformanceMetricsAsync();
+                return Ok(new { Success = true, Data = metrics });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting database performance metrics");
+                return StatusCode(500, new { Success = false, Message = "Internal server error" });
+            }
+        }
+
+        /// <summary>
+        /// Optimize database queries for journal entries
+        /// </summary>
+        [HttpPost("database/optimize")]
+        public async Task<IActionResult> OptimizeDatabaseQueries()
+        {
+            try
+            {
+                var result = await _databasePerformanceService.OptimizeJournalEntryQueriesAsync();
+                return Ok(new { Success = true, Data = result });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error optimizing database queries");
+                return StatusCode(500, new { Success = false, Message = "Internal server error" });
+            }
+        }
+
+        /// <summary>
+        /// Get index performance report
+        /// </summary>
+        [HttpGet("database/indexes")]
+        public async Task<IActionResult> GetIndexPerformanceReport()
+        {
+            try
+            {
+                var report = await _databasePerformanceService.GetIndexPerformanceReportAsync();
+                return Ok(new { Success = true, Data = report });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting index performance report");
+                return StatusCode(500, new { Success = false, Message = "Internal server error" });
+            }
+        }
+
+        /// <summary>
+        /// Run database maintenance tasks
+        /// </summary>
+        [HttpPost("database/maintenance")]
+        public async Task<IActionResult> RunDatabaseMaintenance()
+        {
+            try
+            {
+                var result = await _databasePerformanceService.RunMaintenanceAsync();
+                return Ok(new { Success = true, Data = result });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error running database maintenance");
+                return StatusCode(500, new { Success = false, Message = "Internal server error" });
+            }
+        }
+
+        #endregion
     }
 
     // DTOs

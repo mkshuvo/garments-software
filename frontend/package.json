@@ -38,6 +38,7 @@
     "react-dom": "^19.0.0",
     "react-error-boundary": "^6.0.0",
     "react-hook-form": "^7.58.1",
+    "react-hotkeys-hook": "^5.1.0",
     "react-window": "^1.8.11",
     "sonner": "^2.0.6",
     "yup": "^1.6.1",

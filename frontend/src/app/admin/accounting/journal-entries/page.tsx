@@ -45,32 +45,12 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useRouter } from 'next/navigation';
 import ServiceStatusBanner from '@/components/ui/ServiceStatusBanner';
 import { ExportModal } from '@/components/accounting/ExportModal';
+import { SummarySection } from '@/components/accounting/SummarySection';
+import { StatusFilter } from '@/components/accounting/StatusFilter';
+import { PrintModal } from '@/components/accounting/PrintModal';
+import { journalEntryService, type JournalEntry, type JournalEntryFilters, type SummaryInfo } from '@/services/journalEntryService';
 
-interface JournalEntry {
-  id: string;
-  journalNumber: string;
-  transactionDate: string;
-  type: 'Credit' | 'Debit';
-  categoryName: string;
-  particulars: string;
-  amount: number;
-  referenceNumber: string;
-  contactName?: string;
-  accountName: string;
-  createdAt: string;
-}
-
-interface JournalFilters {
-  dateFrom?: Date;
-  dateTo?: Date;
-  transactionType: 'All' | 'Credit' | 'Debit';
-  amountMin?: number;
-  amountMax?: number;
-  category: string;
-  referenceNumber: string;
-  contactName: string;
-  description: string;
-}
+// Using types from the service
 
 export default function JournalEntriesPage() {
   const router = useRouter();
@@ -80,18 +60,21 @@ export default function JournalEntriesPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalEntries, setTotalEntries] = useState(0);
+  const [summary, setSummary] = useState<SummaryInfo | null>(null);
 
-  const [filters, setFilters] = useState<JournalFilters>({
+  const [filters, setFilters] = useState<JournalEntryFilters>({
     transactionType: 'All',
     category: '',
     referenceNumber: '',
     contactName: '',
-    description: ''
+    description: '',
+    status: 'All'
   });
 
   const [categories, setCategories] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [showPrintModal, setShowPrintModal] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
 
   // Load journal entries
@@ -100,49 +83,12 @@ export default function JournalEntriesPage() {
       setLoading(true);
       setError('');
 
-      // Build query parameters
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: '20'
-      });
-
-      if (filters.dateFrom) {
-        params.append('dateFrom', filters.dateFrom.toISOString());
-      }
-      if (filters.dateTo) {
-        params.append('dateTo', filters.dateTo.toISOString());
-      }
-      if (filters.transactionType !== 'All') {
-        params.append('type', filters.transactionType);
-      }
-      if (filters.amountMin !== undefined) {
-        params.append('amountMin', filters.amountMin.toString());
-      }
-      if (filters.amountMax !== undefined) {
-        params.append('amountMax', filters.amountMax.toString());
-      }
-      if (filters.category) {
-        params.append('category', filters.category);
-      }
-      if (filters.referenceNumber) {
-        params.append('referenceNumber', filters.referenceNumber);
-      }
-      if (filters.contactName) {
-        params.append('contactName', filters.contactName);
-      }
-      if (filters.description) {
-        params.append('description', filters.description);
-      }
-
-      const response = await fetch(`/api/cashbookentry/journal-entries?${params}`);
-      if (!response.ok) {
-        throw new Error('Failed to load journal entries');
-      }
-
-      const data = await response.json();
-      setEntries(data.entries || []);
-      setTotalPages(data.totalPages || 1);
-      setTotalEntries(data.totalEntries || 0);
+      const response = await journalEntryService.getJournalEntries(filters, page, 20);
+      
+      setEntries(response.entries);
+      setTotalPages(response.pagination.totalPages);
+      setTotalEntries(response.pagination.totalEntries);
+      setSummary(response.summary);
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load journal entries');
@@ -173,7 +119,7 @@ export default function JournalEntriesPage() {
     loadCategories();
   }, []);
 
-  const handleFilterChange = (field: keyof JournalFilters, value: string | number | Date | undefined | null) => {
+  const handleFilterChange = (field: keyof JournalEntryFilters, value: string | number | Date | undefined | null) => {
     setFilters(prev => ({ ...prev, [field]: value }));
     setPage(1); // Reset to first page when filtering
   };
@@ -184,7 +130,8 @@ export default function JournalEntriesPage() {
       category: '',
       referenceNumber: '',
       contactName: '',
-      description: ''
+      description: '',
+      status: 'All'
     });
     setPage(1);
   };
@@ -203,54 +150,38 @@ export default function JournalEntriesPage() {
     try {
       setExportLoading(true);
 
-      // Build query parameters with current filters
-      const params = new URLSearchParams();
+      const exportRequest = {
+        format: 'csv' as const,
+        columns: selectedColumns,
+        dateFrom: filters.dateFrom?.toISOString(),
+        dateTo: filters.dateTo?.toISOString(),
+        type: filters.transactionType !== 'All' ? filters.transactionType : undefined,
+        amountMin: filters.amountMin,
+        amountMax: filters.amountMax,
+        category: filters.category || undefined,
+        referenceNumber: filters.referenceNumber || undefined,
+        contactName: filters.contactName || undefined,
+        description: filters.description || undefined,
+        status: filters.status !== 'All' ? filters.status : undefined
+      };
 
-      if (filters.dateFrom) {
-        params.append('dateFrom', filters.dateFrom.toISOString());
+      const response = await journalEntryService.exportJournalEntries(exportRequest);
+      
+      if (response.success && response.downloadUrl) {
+        // Create a temporary link and trigger download
+        const link = document.createElement('a');
+        link.href = response.downloadUrl;
+        link.download = response.fileName || `journal-entries-${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        throw new Error(response.message || 'Export failed');
       }
-      if (filters.dateTo) {
-        params.append('dateTo', filters.dateTo.toISOString());
-      }
-      if (filters.transactionType !== 'All') {
-        params.append('type', filters.transactionType);
-      }
-      if (filters.amountMin !== undefined) {
-        params.append('amountMin', filters.amountMin.toString());
-      }
-      if (filters.amountMax !== undefined) {
-        params.append('amountMax', filters.amountMax.toString());
-      }
-      if (filters.category) {
-        params.append('category', filters.category);
-      }
-      if (filters.referenceNumber) {
-        params.append('referenceNumber', filters.referenceNumber);
-      }
-      if (filters.contactName) {
-        params.append('contactName', filters.contactName);
-      }
-      if (filters.description) {
-        params.append('description', filters.description);
-      }
-
-      // Add selected columns
-      params.append('columns', selectedColumns.join(','));
-
-      // Create download link
-      const url = `/api/cashbookentry/journal-entries/export?${params}`;
-
-      // Create a temporary link and trigger download
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `journal-entries-${new Date().toISOString().split('T')[0]}.csv`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
 
       setShowExportModal(false);
-    } catch {
-      setError('Failed to export data. Please try again.');
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to export data. Please try again.');
     } finally {
       setExportLoading(false);
     }
@@ -450,10 +381,25 @@ export default function JournalEntriesPage() {
                     }}
                   />
                 </Box>
+
+                {/* Status Filter */}
+                <Box sx={{ gridColumn: { xs: '1', md: '1 / -1' } }}>
+                  <StatusFilter
+                    value={filters.status || 'All'}
+                    onChange={(status) => handleFilterChange('status', status)}
+                  />
+                </Box>
               </Box>
             )}
           </CardContent>
         </Card>
+
+        {/* Summary Section */}
+        <SummarySection
+          summary={summary}
+          loading={loading}
+          error={error}
+        />
 
         {/* Results Summary */}
         <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -471,7 +417,11 @@ export default function JournalEntriesPage() {
               </IconButton>
             </Tooltip>
             <Tooltip title="Print">
-              <IconButton size="small">
+              <IconButton 
+                size="small"
+                onClick={() => setShowPrintModal(true)}
+                disabled={loading || entries.length === 0}
+              >
                 <PrintIcon />
               </IconButton>
             </Tooltip>
@@ -598,6 +548,15 @@ export default function JournalEntriesPage() {
           onExport={handleExport}
           loading={exportLoading}
           activeFilters={filters}
+          totalEntries={totalEntries}
+        />
+
+        {/* Print Modal */}
+        <PrintModal
+          isOpen={showPrintModal}
+          onClose={() => setShowPrintModal(false)}
+          entries={entries}
+          filters={filters}
           totalEntries={totalEntries}
         />
       </Box>
