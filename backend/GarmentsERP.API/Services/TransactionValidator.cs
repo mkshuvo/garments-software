@@ -2,6 +2,7 @@ using GarmentsERP.API.Data;
 using GarmentsERP.API.Interfaces;
 using GarmentsERP.API.Models.Accounting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace GarmentsERP.API.Services
 {
@@ -16,19 +17,19 @@ namespace GarmentsERP.API.Services
             _logger = logger;
         }
 
-        public Task<ValidationResult> ValidateDoubleEntryAsync(List<TransactionLineDto> lines)
+        public Task<TransactionValidationResult> ValidateDoubleEntryAsync(List<TransactionLineDto> lines)
         {
             try
             {
                 if (lines == null || !lines.Any())
                 {
-                    return Task.FromResult(ValidationResult.Failure("Transaction must have at least one line"));
+                    return Task.FromResult(TransactionValidationResult.Failure("Transaction must have at least one line"));
                 }
 
                 var totalDebits = lines.Sum(l => l.Debit);
                 var totalCredits = lines.Sum(l => l.Credit);
 
-                var result = new ValidationResult { IsValid = true };
+                var result = new TransactionValidationResult { IsValid = true };
 
                 // Check if debits equal credits
                 if (Math.Abs(totalDebits - totalCredits) > 0.01m)
@@ -77,15 +78,15 @@ namespace GarmentsERP.API.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error validating double entry");
-                return Task.FromResult(ValidationResult.Failure("Error validating transaction balance"));
+                return Task.FromResult(TransactionValidationResult.Failure("Error validating transaction balance"));
             }
         }
 
-        public async Task<ValidationResult> ValidateAccountTypeRulesAsync(List<TransactionLineDto> lines)
+        public async Task<TransactionValidationResult> ValidateAccountTypeRulesAsync(List<TransactionLineDto> lines)
         {
             try
             {
-                var result = new ValidationResult { IsValid = true };
+                var result = new TransactionValidationResult { IsValid = true };
 
                 foreach (var line in lines.Select((value, index) => new { value, index }))
                 {
@@ -149,15 +150,15 @@ namespace GarmentsERP.API.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error validating account type rules");
-                return ValidationResult.Failure("Error validating account rules");
+                return TransactionValidationResult.Failure("Error validating account rules");
             }
         }
 
-        public Task<ValidationResult> ValidateTransactionDateAsync(DateTime transactionDate)
+        public Task<TransactionValidationResult> ValidateTransactionDateAsync(DateTime transactionDate)
         {
             try
             {
-                var result = new ValidationResult { IsValid = true };
+                var result = new TransactionValidationResult { IsValid = true };
 
                 // Check if date is not in the future
                 if (transactionDate.Date > DateTime.Today)
@@ -189,15 +190,15 @@ namespace GarmentsERP.API.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error validating transaction date");
-                return Task.FromResult(ValidationResult.Failure("Error validating transaction date"));
+                return Task.FromResult(TransactionValidationResult.Failure("Error validating transaction date"));
             }
         }
 
-        public async Task<ValidationResult> ValidateContactCategoryAssignmentAsync(Guid? contactId, Guid accountId)
+        public async Task<TransactionValidationResult> ValidateContactCategoryAssignmentAsync(Guid? contactId, Guid accountId)
         {
             try
             {
-                var result = new ValidationResult { IsValid = true };
+                var result = new TransactionValidationResult { IsValid = true };
 
                 if (!contactId.HasValue)
                 {
@@ -242,11 +243,11 @@ namespace GarmentsERP.API.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error validating contact-category assignment");
-                return ValidationResult.Failure("Error validating contact assignment");
+                return TransactionValidationResult.Failure("Error validating contact assignment");
             }
         }
 
-        public async Task<ValidationResult> ValidateImmutabilityAsync(Guid journalEntryId)
+        public async Task<TransactionValidationResult> ValidateImmutabilityAsync(Guid journalEntryId)
         {
             try
             {
@@ -255,14 +256,14 @@ namespace GarmentsERP.API.Services
 
                 if (journalEntry == null)
                 {
-                    return ValidationResult.Failure("Journal entry not found", 
+                    return TransactionValidationResult.Failure("Journal entry not found", 
                         new List<ValidationError> 
                         { 
                             new ValidationError { Field = "JournalEntryId", Message = "Journal entry does not exist", Code = "NOT_FOUND" } 
                         });
                 }
 
-                var result = new ValidationResult { IsValid = true };
+                var result = new TransactionValidationResult { IsValid = true };
 
                 // Check if transaction is in a state that allows modification
                 switch (journalEntry.TransactionStatus)
@@ -304,15 +305,15 @@ namespace GarmentsERP.API.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error validating immutability for journal entry: {JournalEntryId}", journalEntryId);
-                return ValidationResult.Failure("Error validating transaction immutability");
+                return TransactionValidationResult.Failure("Error validating transaction immutability");
             }
         }
 
-        public async Task<ValidationResult> ValidateCompleteTransactionAsync(JournalEntry journalEntry, List<JournalEntryLine> lines)
+        public async Task<TransactionValidationResult> ValidateCompleteTransactionAsync(JournalEntry journalEntry, List<JournalEntryLine> lines)
         {
             try
             {
-                var result = new ValidationResult { IsValid = true };
+                var result = new TransactionValidationResult { IsValid = true };
 
                 // Convert to TransactionLineDto for validation
                 var transactionLines = new List<TransactionLineDto>();
@@ -384,15 +385,15 @@ namespace GarmentsERP.API.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error validating complete transaction");
-                return ValidationResult.Failure("Error validating transaction for completion");
+                return TransactionValidationResult.Failure("Error validating transaction for completion");
             }
         }
 
-        public async Task<ValidationResult> ValidateBusinessRulesAsync(CreateTransactionRequest request)
+        public async Task<TransactionValidationResult> ValidateBusinessRulesAsync(CreateTransactionRequest request)
         {
             try
             {
-                var result = new ValidationResult { IsValid = true };
+                var result = new TransactionValidationResult { IsValid = true };
 
                 // Validate basic requirements
                 if (request.Lines == null || !request.Lines.Any())
@@ -459,7 +460,7 @@ namespace GarmentsERP.API.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error validating business rules");
-                return ValidationResult.Failure("Error validating business rules");
+                return TransactionValidationResult.Failure("Error validating business rules");
             }
         }
     }
