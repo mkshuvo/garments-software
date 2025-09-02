@@ -1,173 +1,181 @@
-using GarmentsERP.API.Interfaces;
-using System.Net;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System.Text.Json;
 
 namespace GarmentsERP.API.Middleware
 {
-    /// <summary>
-    /// Middleware for implementing rate limiting on API endpoints
-    /// </summary>
     public class RateLimitingMiddleware
     {
         private readonly RequestDelegate _next;
+        private readonly IMemoryCache _cache;
+        private readonly IConfiguration _configuration;
         private readonly ILogger<RateLimitingMiddleware> _logger;
-
-        // Rate limiting configuration for different endpoints
-        private readonly Dictionary<string, RateLimitConfig> _endpointConfigs = new()
-        {
-            { "/api/trial-balance", new RateLimitConfig { MaxRequests = 30, TimeWindow = TimeSpan.FromMinutes(1) } },
-            { "/api/trial-balance/account", new RateLimitConfig { MaxRequests = 60, TimeWindow = TimeSpan.FromMinutes(1) } },
-            { "/api/trial-balance/compare", new RateLimitConfig { MaxRequests = 10, TimeWindow = TimeSpan.FromMinutes(1) } },
-            { "/api/trial-balance/export", new RateLimitConfig { MaxRequests = 5, TimeWindow = TimeSpan.FromMinutes(1) } }
-        };
+        private readonly int _maxRequestsPerMinute;
+        private readonly int _maxRequestsPerHour;
+        private readonly int _maxRequestsPerDay;
 
         public RateLimitingMiddleware(
             RequestDelegate next,
+            IMemoryCache cache,
+            IConfiguration configuration,
             ILogger<RateLimitingMiddleware> logger)
         {
             _next = next;
+            _cache = cache;
+            _configuration = configuration;
             _logger = logger;
+            
+            _maxRequestsPerMinute = _configuration.GetValue<int>("RateLimiting:MaxRequestsPerMinute", 60);
+            _maxRequestsPerHour = _configuration.GetValue<int>("RateLimiting:MaxRequestsPerHour", 1000);
+            _maxRequestsPerDay = _configuration.GetValue<int>("RateLimiting:MaxRequestsPerDay", 10000);
         }
 
         public async Task InvokeAsync(HttpContext context)
         {
-            // Only apply rate limiting to trial balance endpoints
-            if (!ShouldApplyRateLimit(context.Request.Path))
+            var clientIP = GetClientIPAddress(context);
+            var endpoint = context.Request.Path.Value ?? "/";
+
+            // Skip rate limiting for health checks and static files
+            if (ShouldSkipRateLimiting(endpoint))
             {
                 await _next(context);
                 return;
             }
 
-            var clientId = GetClientIdentifier(context);
-            var endpoint = GetEndpointKey(context.Request.Path);
-            var config = GetRateLimitConfig(endpoint);
-
-            try
+            // Check rate limits
+            if (!await CheckRateLimits(clientIP, endpoint))
             {
-                // Get the scoped service from the request's service provider
-                var rateLimitingService = context.RequestServices.GetRequiredService<IRateLimitingService>();
-                var rateLimitInfo = await rateLimitingService.GetRateLimitInfoAsync(
-                    clientId, endpoint, config.MaxRequests, config.TimeWindow);
-
-                // Add rate limit headers
-                context.Response.Headers["X-RateLimit-Limit"] = config.MaxRequests.ToString();
-                context.Response.Headers["X-RateLimit-Remaining"] = rateLimitInfo.RemainingRequests.ToString();
-                context.Response.Headers["X-RateLimit-Reset"] = ((DateTimeOffset)rateLimitInfo.WindowEnd).ToUnixTimeSeconds().ToString();
-
-                if (!rateLimitInfo.IsAllowed)
-                {
-                    _logger.LogWarning("Rate limit exceeded for client {ClientId} on endpoint {Endpoint}. " +
-                                     "Requests: {CurrentRequests}/{MaxRequests}", 
-                                     clientId, endpoint, rateLimitInfo.MaxRequests - rateLimitInfo.RemainingRequests, rateLimitInfo.MaxRequests);
-
-                    context.Response.StatusCode = (int)HttpStatusCode.TooManyRequests;
-                    context.Response.ContentType = "application/json";
-
-                    var errorResponse = new
-                    {
-                        success = false,
-                        message = "Rate limit exceeded. Please try again later.",
-                        errorCode = "RATE_LIMIT_EXCEEDED",
-                        details = new
-                        {
-                            maxRequests = rateLimitInfo.MaxRequests,
-                            remainingRequests = rateLimitInfo.RemainingRequests,
-                            resetTime = rateLimitInfo.WindowEnd,
-                            retryAfterSeconds = (int)(rateLimitInfo.WindowEnd - DateTime.UtcNow).TotalSeconds
-                        }
-                    };
-
-                    await context.Response.WriteAsync(JsonSerializer.Serialize(errorResponse));
-                    return;
-                }
-
-                await _next(context);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error in rate limiting middleware for client {ClientId} and endpoint {Endpoint}", 
-                    clientId, endpoint);
-                
-                // Continue processing the request if rate limiting fails
-                await _next(context);
-            }
-        }
-
-        private bool ShouldApplyRateLimit(string path)
-        {
-            return path.StartsWith("/api/trial-balance", StringComparison.OrdinalIgnoreCase);
-        }
-
-        private string GetClientIdentifier(HttpContext context)
-        {
-            // Try to get user ID from claims first
-            var userId = context.User?.FindFirst("sub")?.Value ?? 
-                        context.User?.FindFirst("id")?.Value ?? 
-                        context.User?.FindFirst("userId")?.Value;
-
-            if (!string.IsNullOrEmpty(userId))
-            {
-                return $"user:{userId}";
+                _logger.LogWarning("Rate limit exceeded for IP: {ClientIP} on endpoint: {Endpoint}", clientIP, endpoint);
+                await ReturnRateLimitExceededResponse(context);
+                return;
             }
 
-            // Fall back to IP address
-            var ipAddress = GetClientIpAddress(context);
-            return $"ip:{ipAddress}";
+            // Increment request counters
+            await IncrementRequestCounters(clientIP, endpoint);
+
+            await _next(context);
         }
 
-        private string GetClientIpAddress(HttpContext context)
+        private bool ShouldSkipRateLimiting(string endpoint)
         {
-            // Check for forwarded IP addresses (common in load balancer scenarios)
-            var forwardedFor = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-            if (!string.IsNullOrEmpty(forwardedFor))
+            return endpoint.StartsWith("/api/health") ||
+                   endpoint.StartsWith("/api/status") ||
+                   endpoint.StartsWith("/favicon.ico") ||
+                   endpoint.StartsWith("/_next") ||
+                   endpoint.StartsWith("/static");
+        }
+
+        private async Task<bool> CheckRateLimits(string clientIP, string endpoint)
+        {
+            var now = DateTime.UtcNow;
+            var minuteKey = $"rate_limit_minute_{clientIP}_{endpoint}_{now:yyyyMMddHHmm}";
+            var hourKey = $"rate_limit_hour_{clientIP}_{endpoint}_{now:yyyyMMddHH}";
+            var dayKey = $"rate_limit_day_{clientIP}_{endpoint}_{now:yyyyMMdd}";
+
+            // Check minute limit
+            var minuteCount = await _cache.GetOrCreateAsync(minuteKey, entry =>
             {
-                var ips = forwardedFor.Split(',', StringSplitOptions.RemoveEmptyEntries);
-                if (ips.Length > 0)
-                {
-                    return ips[0].Trim();
-                }
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1);
+                return Task.FromResult(0);
+            });
+
+            if (minuteCount >= _maxRequestsPerMinute)
+                return false;
+
+            // Check hour limit
+            var hourCount = await _cache.GetOrCreateAsync(hourKey, entry =>
+            {
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1);
+                return Task.FromResult(0);
+            });
+
+            if (hourCount >= _maxRequestsPerHour)
+                return false;
+
+            // Check day limit
+            var dayCount = await _cache.GetOrCreateAsync(dayKey, entry =>
+            {
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1);
+                return Task.FromResult(0);
+            });
+
+            return dayCount < _maxRequestsPerDay;
+        }
+
+        private async Task IncrementRequestCounters(string clientIP, string endpoint)
+        {
+            var now = DateTime.UtcNow;
+            var minuteKey = $"rate_limit_minute_{clientIP}_{endpoint}_{now:yyyyMMddHHmm}";
+            var hourKey = $"rate_limit_hour_{clientIP}_{endpoint}_{now:yyyyMMddHH}";
+            var dayKey = $"rate_limit_day_{clientIP}_{endpoint}_{now:yyyyMMdd}";
+
+            // Increment minute counter
+            if (_cache.TryGetValue(minuteKey, out int minuteCount))
+            {
+                _cache.Set(minuteKey, minuteCount + 1, TimeSpan.FromMinutes(1));
             }
 
-            var realIp = context.Request.Headers["X-Real-IP"].FirstOrDefault();
-            if (!string.IsNullOrEmpty(realIp))
+            // Increment hour counter
+            if (_cache.TryGetValue(hourKey, out int hourCount))
             {
-                return realIp;
+                _cache.Set(hourKey, hourCount + 1, TimeSpan.FromHours(1));
             }
 
-            return context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            // Increment day counter
+            if (_cache.TryGetValue(dayKey, out int dayCount))
+            {
+                _cache.Set(dayKey, dayCount + 1, TimeSpan.FromDays(1));
+            }
         }
 
-        private string GetEndpointKey(string path)
+        private string GetClientIPAddress(HttpContext context)
         {
-            // Normalize the path to match our configuration keys
-            var normalizedPath = path.ToLowerInvariant();
+            // Check for forwarded headers (when behind proxy/load balancer)
+            var forwardedHeader = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+            if (!string.IsNullOrEmpty(forwardedHeader))
+            {
+                return forwardedHeader.Split(',')[0].Trim();
+            }
 
-            if (normalizedPath.StartsWith("/api/trial-balance/account"))
-                return "/api/trial-balance/account";
-            
-            if (normalizedPath.StartsWith("/api/trial-balance/compare"))
-                return "/api/trial-balance/compare";
-            
-            if (normalizedPath.Contains("export"))
-                return "/api/trial-balance/export";
-            
-            if (normalizedPath.StartsWith("/api/trial-balance"))
-                return "/api/trial-balance";
+            // Check for real IP header
+            var realIpHeader = context.Request.Headers["X-Real-IP"].FirstOrDefault();
+            if (!string.IsNullOrEmpty(realIpHeader))
+            {
+                return realIpHeader;
+            }
 
-            return normalizedPath;
+            // Fall back to connection remote IP
+            return context.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
         }
 
-        private RateLimitConfig GetRateLimitConfig(string endpoint)
+        private async Task ReturnRateLimitExceededResponse(HttpContext context)
         {
-            return _endpointConfigs.TryGetValue(endpoint, out var config) 
-                ? config 
-                : new RateLimitConfig { MaxRequests = 20, TimeWindow = TimeSpan.FromMinutes(1) }; // Default config
-        }
+            context.Response.StatusCode = 429; // Too Many Requests
+            context.Response.ContentType = "application/json";
+            context.Response.Headers.Add("Retry-After", "60"); // Retry after 1 minute
 
-        private class RateLimitConfig
+            var response = new
+            {
+                Success = false,
+                Message = "Rate limit exceeded. Please try again later.",
+                Timestamp = DateTime.UtcNow,
+                RequestId = context.TraceIdentifier,
+                RetryAfter = 60
+            };
+
+            var jsonResponse = JsonSerializer.Serialize(response);
+            await context.Response.WriteAsync(jsonResponse);
+        }
+    }
+
+    // Extension method for easy middleware registration
+    public static class RateLimitingMiddlewareExtensions
+    {
+        public static IApplicationBuilder UseRateLimiting(this IApplicationBuilder builder)
         {
-            public int MaxRequests { get; set; }
-            public TimeSpan TimeWindow { get; set; }
+            return builder.UseMiddleware<RateLimitingMiddleware>();
         }
     }
 }

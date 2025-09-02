@@ -4,31 +4,31 @@ namespace GarmentsERP.API.Interfaces
 {
     public interface ITransactionValidator
     {
-        Task<ValidationResult> ValidateDoubleEntryAsync(List<TransactionLineDto> lines);
-        Task<ValidationResult> ValidateAccountTypeRulesAsync(List<TransactionLineDto> lines);
-        Task<ValidationResult> ValidateTransactionDateAsync(DateTime transactionDate);
-        Task<ValidationResult> ValidateContactCategoryAssignmentAsync(Guid? contactId, Guid accountId);
-        Task<ValidationResult> ValidateImmutabilityAsync(Guid journalEntryId);
-        Task<ValidationResult> ValidateCompleteTransactionAsync(JournalEntry journalEntry, List<JournalEntryLine> lines);
-        Task<ValidationResult> ValidateBusinessRulesAsync(CreateTransactionRequest request);
+        Task<TransactionValidationResult> ValidateDoubleEntryAsync(List<TransactionLineDto> lines);
+        Task<TransactionValidationResult> ValidateAccountTypeRulesAsync(List<TransactionLineDto> lines);
+        Task<TransactionValidationResult> ValidateTransactionDateAsync(DateTime transactionDate);
+        Task<TransactionValidationResult> ValidateContactCategoryAssignmentAsync(Guid? contactId, Guid accountId);
+        Task<TransactionValidationResult> ValidateImmutabilityAsync(Guid journalEntryId);
+        Task<TransactionValidationResult> ValidateCompleteTransactionAsync(JournalEntry journalEntry, List<JournalEntryLine> lines);
+        Task<TransactionValidationResult> ValidateBusinessRulesAsync(CreateTransactionRequest request);
     }
 
     // Validation DTOs
-    public class ValidationResult
+    public class TransactionValidationResult
     {
         public bool IsValid { get; set; }
         public List<ValidationError> Errors { get; set; } = new();
         public List<ValidationWarning> Warnings { get; set; } = new();
         public string? Message { get; set; }
 
-        public static ValidationResult Success(string? message = null)
+        public static TransactionValidationResult Success(string? message = null)
         {
-            return new ValidationResult { IsValid = true, Message = message };
+            return new TransactionValidationResult { IsValid = true, Message = message };
         }
 
-        public static ValidationResult Failure(string message, List<ValidationError>? errors = null)
+        public static TransactionValidationResult Failure(string message, List<ValidationError>? errors = null)
         {
-            return new ValidationResult 
+            return new TransactionValidationResult 
             { 
                 IsValid = false, 
                 Message = message, 

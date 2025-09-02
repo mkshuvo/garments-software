@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using GarmentsERP.API.Models;
 using GarmentsERP.API.Models.Users;
 using GarmentsERP.API.Models.Accounting;
+using GarmentsERP.API.Models.Audit;
 using GarmentsERP.API.Models.Banking;
 using GarmentsERP.API.Models.Contacts;
 using GarmentsERP.API.Models.Currency;
@@ -35,6 +36,9 @@ namespace GarmentsERP.API.Data
         public DbSet<UserPermission> UserPermissions { get; set; }
         public DbSet<RoleAuditLog> RoleAuditLogs { get; set; }
         public DbSet<TrialBalanceAuditLog> TrialBalanceAuditLogs { get; set; }
+
+        // Audit System
+        public DbSet<AuditLogEntry> AuditLogs { get; set; }
 
         // Enterprise Accounting Models
         // Accounting

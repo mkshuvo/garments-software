@@ -1,4 +1,5 @@
 import { apiService } from './apiService';
+import { cacheService } from './cacheService';
 
 // Types based on backend DTOs
 export interface JournalEntry {
@@ -107,6 +108,15 @@ class JournalEntryService {
     limit: number = 20
   ): Promise<GetJournalEntriesResponse> {
     try {
+      // Create cache key based on filters and pagination
+      const cacheKey = `journal-entries:${JSON.stringify({ filters, page, limit })}`;
+      
+      // Check cache first
+      const cached = cacheService.get<GetJournalEntriesResponse>(cacheKey);
+      if (cached) {
+        return cached;
+      }
+
       const request: GetJournalEntriesRequest = {
         page,
         limit,
@@ -150,6 +160,9 @@ class JournalEntryService {
         `${this.baseUrl}/journal-entries`,
         { params: request }
       );
+
+      // Cache the response for 2 minutes
+      cacheService.set(cacheKey, response, { ttl: 2 * 60 * 1000 });
 
       return response;
     } catch (error) {
@@ -238,6 +251,20 @@ class JournalEntryService {
       console.error('Error downloading file:', error);
       throw new Error('Failed to download file. Please try again.');
     }
+  }
+
+  /**
+   * Invalidate cache for journal entries
+   */
+  invalidateCache(): void {
+    cacheService.invalidatePrefix('journal-entries:');
+  }
+
+  /**
+   * Get cache statistics
+   */
+  getCacheStats() {
+    return cacheService.getStats();
   }
 }
 

@@ -148,12 +148,12 @@ services:
 
   # Nginx Reverse Proxy - Development
   nginx:
-    image: nginx:1.29.0-alpine3.22
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
     container_name: garments-nginx-dev
     ports:
       - "80:80"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - backend
       - frontend

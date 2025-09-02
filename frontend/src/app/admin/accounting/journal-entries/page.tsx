@@ -6,25 +6,11 @@ import {
   Typography,
   Card,
   CardContent,
-  TextField,
   Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Chip,
   Stack,
   Breadcrumbs,
   Link,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Alert,
-  CircularProgress,
-  Pagination,
   IconButton,
   Tooltip
 } from '@mui/material';
@@ -39,15 +25,22 @@ import {
   AccountBalance as AccountBalanceIcon,
   Receipt as ReceiptIcon
 } from '@mui/icons-material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+
 import { useRouter } from 'next/navigation';
 import ServiceStatusBanner from '@/components/ui/ServiceStatusBanner';
 import { ExportModal } from '@/components/accounting/ExportModal';
 import { SummarySection } from '@/components/accounting/SummarySection';
 import { StatusFilter } from '@/components/accounting/StatusFilter';
 import { PrintModal } from '@/components/accounting/PrintModal';
+import { DateRangeFilter } from '@/components/accounting/DateRangeFilter';
+import { TransactionTypeFilter } from '@/components/accounting/TransactionTypeFilter';
+import { AmountRangeFilter } from '@/components/accounting/AmountRangeFilter';
+import { CategoryFilter } from '@/components/accounting/CategoryFilter';
+import { ReferenceFilter } from '@/components/accounting/ReferenceFilter';
+import { ContactFilter } from '@/components/accounting/ContactFilter';
+import { DescriptionFilter } from '@/components/accounting/DescriptionFilter';
+import { SearchSection } from '@/components/accounting/SearchSection';
+import { JournalEntriesTable } from '@/components/accounting/JournalEntriesTable';
 import { journalEntryService, type JournalEntry, type JournalEntryFilters, type SummaryInfo } from '@/services/journalEntryService';
 
 // Using types from the service
@@ -76,6 +69,14 @@ export default function JournalEntriesPage() {
   const [showExportModal, setShowExportModal] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
+  const [searchHistory, setSearchHistory] = useState<string[]>([]);
+  const [popularSearches] = useState<string[]>([
+    'Today',
+    'This Week',
+    'High Amount',
+    'Pending',
+    'Completed'
+  ]);
 
   // Load journal entries
   const loadJournalEntries = useCallback(async () => {
@@ -124,6 +125,46 @@ export default function JournalEntriesPage() {
     setPage(1); // Reset to first page when filtering
   };
 
+  const updateSearchHistory = (searchTerm: string) => {
+    if (searchTerm.trim()) {
+      setSearchHistory(prev => {
+        const filtered = prev.filter(term => term !== searchTerm);
+        return [searchTerm, ...filtered].slice(0, 10);
+      });
+    }
+  };
+
+  const handleQuickFilter = (filter: string) => {
+    const today = new Date();
+    const thisWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+    switch (filter) {
+      case 'Today':
+        setFilters(prev => ({ ...prev, dateFrom: today, dateTo: today }));
+        break;
+      case 'This Week':
+        setFilters(prev => ({ ...prev, dateFrom: thisWeek, dateTo: today }));
+        break;
+      case 'This Month':
+        setFilters(prev => ({ ...prev, dateFrom: thisMonth, dateTo: today }));
+        break;
+      case 'High Amount':
+        setFilters(prev => ({ ...prev, amountMin: 10000 }));
+        break;
+      case 'Low Amount':
+        setFilters(prev => ({ ...prev, amountMax: 1000 }));
+        break;
+      case 'Pending':
+        setFilters(prev => ({ ...prev, status: 'Pending' }));
+        break;
+      case 'Completed':
+        setFilters(prev => ({ ...prev, status: 'Completed' }));
+        break;
+    }
+    setPage(1);
+  };
+
   const clearFilters = () => {
     setFilters({
       transactionType: 'All',
@@ -136,15 +177,7 @@ export default function JournalEntriesPage() {
     setPage(1);
   };
 
-  const formatCurrency = (amount: number) => `৳${amount.toFixed(2)}`;
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
 
   const handleExport = async (selectedColumns: string[]) => {
     try {
@@ -188,7 +221,7 @@ export default function JournalEntriesPage() {
   };
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns}>
+    <>
       <ServiceStatusBanner
         showWhenHealthy={false}
         dismissible={true}
@@ -259,12 +292,31 @@ export default function JournalEntriesPage() {
           </Stack>
         </Box>
 
+        {/* Search Section */}
+        <Card sx={{ mb: 3 }}>
+          <CardContent>
+            <Typography variant="h6" gutterBottom>
+              🔍 Search Journal Entries
+            </Typography>
+            <SearchSection
+              value={filters.description || ''}
+              onChange={(value) => {
+                handleFilterChange('description', value);
+                updateSearchHistory(value);
+              }}
+              onQuickFilter={handleQuickFilter}
+              searchHistory={searchHistory}
+              popularSearches={popularSearches}
+            />
+          </CardContent>
+        </Card>
+
         {/* Filters */}
         <Card sx={{ mb: 3 }}>
           <CardContent>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography variant="h6">
-                🔍 Filters & Search
+                🔍 Advanced Filters
               </Typography>
               <Stack direction="row" spacing={1}>
                 <Button
@@ -288,97 +340,55 @@ export default function JournalEntriesPage() {
             {showFilters && (
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(4, 1fr)' }, gap: 2 }}>
                 {/* Date Range */}
-                <DatePicker
-                  label="Date From"
-                  value={filters.dateFrom || null}
-                  onChange={(date) => handleFilterChange('dateFrom', date)}
-                  slotProps={{ textField: { fullWidth: true, size: 'small' } }}
-                />
-                <DatePicker
-                  label="Date To"
-                  value={filters.dateTo || null}
-                  onChange={(date) => handleFilterChange('dateTo', date)}
-                  slotProps={{ textField: { fullWidth: true, size: 'small' } }}
-                />
+                <Box sx={{ gridColumn: { xs: '1', md: '1 / -1' } }}>
+                  <DateRangeFilter
+                    dateFrom={filters.dateFrom}
+                    dateTo={filters.dateTo}
+                    onDateFromChange={(date) => handleFilterChange('dateFrom', date)}
+                    onDateToChange={(date) => handleFilterChange('dateTo', date)}
+                  />
+                </Box>
 
                 {/* Transaction Type */}
-                <FormControl fullWidth size="small">
-                  <InputLabel>Transaction Type</InputLabel>
-                  <Select
-                    value={filters.transactionType}
-                    label="Transaction Type"
-                    onChange={(e) => handleFilterChange('transactionType', e.target.value)}
-                  >
-                    <MenuItem value="All">All Types</MenuItem>
-                    <MenuItem value="Credit">Credit (Money In)</MenuItem>
-                    <MenuItem value="Debit">Debit (Money Out)</MenuItem>
-                  </Select>
-                </FormControl>
+                <TransactionTypeFilter
+                  value={filters.transactionType}
+                  onChange={(value) => handleFilterChange('transactionType', value)}
+                />
 
                 {/* Category */}
-                <FormControl fullWidth size="small">
-                  <InputLabel>Category</InputLabel>
-                  <Select
-                    value={filters.category}
-                    label="Category"
-                    onChange={(e) => handleFilterChange('category', e.target.value)}
-                  >
-                    <MenuItem value="">All Categories</MenuItem>
-                    {categories.map((category) => (
-                      <MenuItem key={category} value={category}>
-                        {category}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+                <CategoryFilter
+                  value={filters.category}
+                  categories={categories}
+                  onChange={(value) => handleFilterChange('category', value)}
+                />
 
                 {/* Amount Range */}
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Min Amount"
-                  type="number"
-                  value={filters.amountMin || ''}
-                  onChange={(e) => handleFilterChange('amountMin', e.target.value ? parseFloat(e.target.value) : undefined)}
-                />
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Max Amount"
-                  type="number"
-                  value={filters.amountMax || ''}
-                  onChange={(e) => handleFilterChange('amountMax', e.target.value ? parseFloat(e.target.value) : undefined)}
-                />
+                <Box sx={{ gridColumn: { xs: '1', md: '1 / -1' } }}>
+                  <AmountRangeFilter
+                    amountMin={filters.amountMin}
+                    amountMax={filters.amountMax}
+                    onAmountMinChange={(value) => handleFilterChange('amountMin', value)}
+                    onAmountMaxChange={(value) => handleFilterChange('amountMax', value)}
+                  />
+                </Box>
 
                 {/* Reference Number */}
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Reference Number"
+                <ReferenceFilter
                   value={filters.referenceNumber}
-                  onChange={(e) => handleFilterChange('referenceNumber', e.target.value)}
+                  onChange={(value) => handleFilterChange('referenceNumber', value)}
                 />
 
                 {/* Contact Name */}
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Contact/Supplier"
+                <ContactFilter
                   value={filters.contactName}
-                  onChange={(e) => handleFilterChange('contactName', e.target.value)}
+                  onChange={(value) => handleFilterChange('contactName', value)}
                 />
 
                 {/* Description - Full Width */}
                 <Box sx={{ gridColumn: { xs: '1', md: '1 / -1' } }}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    label="Search in Description/Particulars"
+                  <DescriptionFilter
                     value={filters.description}
-                    onChange={(e) => handleFilterChange('description', e.target.value)}
-                    InputProps={{
-                      startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />
-                    }}
+                    onChange={(value) => handleFilterChange('description', value)}
                   />
                 </Box>
 
@@ -436,110 +446,13 @@ export default function JournalEntriesPage() {
         )}
 
         {/* Journal Entries Table */}
-        <Card>
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Journal #</TableCell>
-                  <TableCell>Date</TableCell>
-                  <TableCell>Type</TableCell>
-                  <TableCell>Category</TableCell>
-                  <TableCell>Particulars</TableCell>
-                  <TableCell align="right">Amount</TableCell>
-                  <TableCell>Reference</TableCell>
-                  <TableCell>Contact</TableCell>
-                  <TableCell>Account</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
-                      <CircularProgress />
-                    </TableCell>
-                  </TableRow>
-                ) : entries.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        No journal entries found. Try adjusting your filters or add some transactions.
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  entries.map((entry) => (
-                    <TableRow key={entry.id} hover>
-                      <TableCell>
-                        <Typography variant="body2" fontWeight="medium">
-                          {entry.journalNumber}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2">
-                          {formatDate(entry.transactionDate)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={entry.type}
-                          color={entry.type === 'Credit' ? 'success' : 'error'}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2">
-                          {entry.categoryName}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" sx={{ maxWidth: 200 }}>
-                          {entry.particulars}
-                        </Typography>
-                      </TableCell>
-                      <TableCell align="right">
-                        <Typography
-                          variant="body2"
-                          fontWeight="medium"
-                          color={entry.type === 'Credit' ? 'success.main' : 'error.main'}
-                        >
-                          {formatCurrency(entry.amount)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2">
-                          {entry.referenceNumber}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2">
-                          {entry.contactName || '-'}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2">
-                          {entry.accountName}
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-              <Pagination
-                count={totalPages}
-                page={page}
-                onChange={(_, newPage) => setPage(newPage)}
-                color="primary"
-              />
-            </Box>
-          )}
-        </Card>
+        <JournalEntriesTable
+          entries={entries}
+          loading={loading}
+          page={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+        />
 
         {/* Export Modal */}
         <ExportModal
@@ -560,6 +473,6 @@ export default function JournalEntriesPage() {
           totalEntries={totalEntries}
         />
       </Box>
-    </LocalizationProvider>
+    </>
   );
 }
