@@ -97,7 +97,7 @@ export interface ExportJournalEntriesResponse {
  * Service for managing journal entries
  */
 class JournalEntryService {
-  private readonly baseUrl = '/api/cashbookentry';
+  private readonly baseUrl = '/api/journalentry';
 
   /**
    * Get journal entries with filtering and pagination

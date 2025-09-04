@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import {
   Box,
   Typography,
@@ -28,10 +28,11 @@ import {
 
 import { useRouter } from 'next/navigation';
 import ServiceStatusBanner from '@/components/ui/ServiceStatusBanner';
-import { ExportModal } from '@/components/accounting/ExportModal';
+import OfflineIndicator from '@/components/ui/OfflineIndicator';
+import { LazyExportModal } from '@/components/accounting/LazyExportModal';
 import { SummarySection } from '@/components/accounting/SummarySection';
 import { StatusFilter } from '@/components/accounting/StatusFilter';
-import { PrintModal } from '@/components/accounting/PrintModal';
+import { LazyPrintModal } from '@/components/accounting/LazyPrintModal';
 import { DateRangeFilter } from '@/components/accounting/DateRangeFilter';
 import { TransactionTypeFilter } from '@/components/accounting/TransactionTypeFilter';
 import { AmountRangeFilter } from '@/components/accounting/AmountRangeFilter';
@@ -40,7 +41,7 @@ import { ReferenceFilter } from '@/components/accounting/ReferenceFilter';
 import { ContactFilter } from '@/components/accounting/ContactFilter';
 import { DescriptionFilter } from '@/components/accounting/DescriptionFilter';
 import { SearchSection } from '@/components/accounting/SearchSection';
-import { JournalEntriesTable } from '@/components/accounting/JournalEntriesTable';
+import { LazyJournalEntriesTable } from '@/components/accounting/LazyJournalEntriesTable';
 import { journalEntryService, type JournalEntry, type JournalEntryFilters, type SummaryInfo } from '@/services/journalEntryService';
 
 // Using types from the service
@@ -101,7 +102,7 @@ export default function JournalEntriesPage() {
   // Load categories for filter dropdown
   const loadCategories = async () => {
     try {
-      const response = await fetch('/api/cashbookentry/categories');
+      const response = await fetch('/api/journalentry/categories');
       if (response.ok) {
         const data = await response.json();
         const categoryNames = data.map((cat: { name: string }) => cat.name);
@@ -227,6 +228,12 @@ export default function JournalEntriesPage() {
         dismissible={true}
         showDetails={true}
         position="top"
+      />
+      
+      <OfflineIndicator
+        position="top"
+        dismissible={true}
+        showDetails={true}
       />
 
       <Box sx={{ p: 3, mt: 6 }}>
@@ -446,7 +453,7 @@ export default function JournalEntriesPage() {
         )}
 
         {/* Journal Entries Table */}
-        <JournalEntriesTable
+        <LazyJournalEntriesTable
           entries={entries}
           loading={loading}
           page={page}
@@ -455,7 +462,7 @@ export default function JournalEntriesPage() {
         />
 
         {/* Export Modal */}
-        <ExportModal
+        <LazyExportModal
           isOpen={showExportModal}
           onClose={() => setShowExportModal(false)}
           onExport={handleExport}
@@ -465,7 +472,7 @@ export default function JournalEntriesPage() {
         />
 
         {/* Print Modal */}
-        <PrintModal
+        <LazyPrintModal
           isOpen={showPrintModal}
           onClose={() => setShowPrintModal(false)}
           entries={entries}
