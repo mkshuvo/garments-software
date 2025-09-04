@@ -106,7 +106,7 @@ builder.Services.AddScoped<IRoleManagementService, RoleManagementService>();
 // builder.Services.AddScoped<ITrialBalanceService, TrialBalanceService>();
 // builder.Services.AddScoped<IBalanceService, BalanceService>();
 // builder.Services.AddScoped<IEnhancedCashBookService, EnhancedCashBookService>();
-// builder.Services.AddScoped<IJournalEntryService, JournalEntryService>();
+builder.Services.AddScoped<IJournalEntryService, JournalEntryService>();
 // builder.Services.AddScoped<IDatabasePerformanceService, DatabasePerformanceService>();
 
 // Redis Configuration
