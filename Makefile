@@ -1,7 +1,7 @@
 # GarmentsERP Makefile
 # Professional admin creation and development utilities
 
-.PHONY: help superuser build run clean test migrate restore docker-build docker-up docker-down docker-dev docker-dev-hot docker-dev-rebuild
+.PHONY: help superuser build run clean test migrate restore docker-build docker-up docker-down docker-dev docker-dev-detached docker-dev-hot docker-dev-rebuild backend-build-dev backend-validate dev-status dev-logs dev-clean dev-reset podman-build podman-up podman-down podman-dev podman-dev-verbose podman-dev-hot podman-dev-rebuild podman-dev-status podman-dev-logs podman-dev-clean podman-dev-reset superuser-help
 
 # Default target
 help:
@@ -48,45 +48,45 @@ help:
 
 # Cross-platform detection and configuration
 ifeq ($(OS),Windows_NT)
-	DETECTED_OS := Windows
-	DOTNET := dotnet
-	RM := del /Q /F
-	RMDIR := rmdir /S /Q
-	MKDIR := mkdir
-	NULL := NUL
-	PATH_SEP := \\
-	SHELL_CMD := cmd /c
-	# Windows command validation
-	CHECK_VARS = @if "$(USERNAME)" == "" (echo Error: USERNAME is required && exit 1) else if "$(PASSWORD)" == "" (echo Error: PASSWORD is required && exit 1)
-	# Docker compose command for Windows
-	DOCKER_COMPOSE := docker compose
-	PODMAN_COMPOSE := podman-compose
-	# Process management
-	KILL_PROC := taskkill /F /IM
-	BACKGROUND := start /B
+DETECTED_OS := Windows
+DOTNET := dotnet
+RM := del /Q /F
+RMDIR := rmdir /S /Q
+MKDIR := if not exist
+NULL := NUL
+PATH_SEP := \\
+SHELL_CMD := cmd /c
+# Windows command validation
+CHECK_VARS = @if "$(USERNAME)" == "" (echo Error: USERNAME is required && exit /b 1) else if "$(PASSWORD)" == "" (echo Error: PASSWORD is required && exit /b 1)
+# Docker compose command for Windows
+DOCKER_COMPOSE := docker compose
+PODMAN_COMPOSE := podman-compose
+# Process management
+KILL_PROC := taskkill /F /IM
+BACKGROUND := start /B
 else
-	UNAME_S := $(shell uname -s)
-	ifeq ($(UNAME_S),Linux)
-		DETECTED_OS := Linux
-	endif
-	ifeq ($(UNAME_S),Darwin)
-		DETECTED_OS := macOS
-	endif
-	DOTNET := dotnet
-	RM := rm -f
-	RMDIR := rm -rf
-	MKDIR := mkdir -p
-	NULL := /dev/null
-	PATH_SEP := /
-	SHELL_CMD := sh -c
-	# Unix command validation
-	CHECK_VARS = @if [ -z "$(USERNAME)" ] || [ -z "$(PASSWORD)" ]; then echo "Error: USERNAME and PASSWORD are required"; exit 1; fi
-	# Docker compose command for Unix systems
-	DOCKER_COMPOSE := docker compose
-	PODMAN_COMPOSE := podman-compose
-	# Process management
-	KILL_PROC := pkill -f
-	BACKGROUND := &
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Linux)
+DETECTED_OS := Linux
+endif
+ifeq ($(UNAME_S),Darwin)
+DETECTED_OS := macOS
+endif
+DOTNET := dotnet
+RM := rm -f
+RMDIR := rm -rf
+MKDIR := mkdir -p
+NULL := /dev/null
+PATH_SEP := /
+SHELL_CMD := sh -c
+# Unix command validation
+CHECK_VARS = @if [ -z "$(USERNAME)" ] || [ -z "$(PASSWORD)" ]; then echo "Error: USERNAME and PASSWORD are required"; exit 1; fi
+# Docker compose command for Unix systems
+DOCKER_COMPOSE := docker compose
+PODMAN_COMPOSE := podman-compose
+# Process management
+KILL_PROC := pkill -f
+BACKGROUND := &
 endif
 
 # Project paths
@@ -96,7 +96,11 @@ SCRIPTS_DIR := scripts
 
 # Ensure scripts directory exists
 $(SCRIPTS_DIR):
-	$(MKDIR) $(SCRIPTS_DIR)
+ifeq ($(OS),Windows_NT)
+	@if not exist $(SCRIPTS_DIR) mkdir $(SCRIPTS_DIR)
+else
+	@$(MKDIR) $(SCRIPTS_DIR)
+endif
 
 # Create super admin user via API endpoint
 superuser: $(SCRIPTS_DIR)
@@ -117,15 +121,17 @@ endif
 build:
 	@echo "Building GarmentsERP..."
 	@echo "Building backend..."
-	@cd $(BACKEND_DIR) && $(DOTNET) build
+	@cd $(BACKEND_DIR) && $(DOTNET) build || (echo "❌ Backend build failed" && exit 1)
 	@echo "Building frontend..."
-	@cd $(FRONTEND_DIR) && npm run build
+	@cd $(FRONTEND_DIR) && npm run build || (echo "❌ Frontend build failed" && exit 1)
+	@echo "✅ Build completed successfully"
 
 # Restore NuGet packages
 restore:
 	@echo "Restoring packages..."
-	@cd $(BACKEND_DIR) && $(DOTNET) restore
-	@cd $(FRONTEND_DIR) && npm install
+	@cd $(BACKEND_DIR) && $(DOTNET) restore || (echo "❌ Backend restore failed" && exit 1)
+	@cd $(FRONTEND_DIR) && npm install || (echo "❌ Frontend restore failed" && exit 1)
+	@echo "✅ Package restore completed successfully"
 
 # Run the application
 run:
@@ -143,18 +149,24 @@ endif
 # Apply database migrations
 migrate:
 	@echo "Applying database migrations..."
-	@cd $(BACKEND_DIR) && $(DOTNET) ef database update
+	@cd $(BACKEND_DIR) && $(DOTNET) ef database update || (echo "❌ Migration failed" && exit 1)
+	@echo "✅ Database migrations completed successfully"
 
 # Run tests
 test:
 	@echo "Running tests..."
-	@cd $(BACKEND_DIR) && $(DOTNET) test
+	@cd $(BACKEND_DIR) && $(DOTNET) test || (echo "❌ Tests failed" && exit 1)
+	@echo "✅ All tests passed successfully"
 
 # Clean build artifacts
 clean:
 	@echo "Cleaning build artifacts..."
 	@cd $(BACKEND_DIR) && $(DOTNET) clean
-	@cd $(FRONTEND_DIR) && $(RM) -rf .next node_modules
+ifeq ($(OS),Windows_NT)
+	@cd $(FRONTEND_DIR) && if exist .next rmdir /S /Q .next && if exist node_modules rmdir /S /Q node_modules
+else
+	@cd $(FRONTEND_DIR) && $(RMDIR) .next node_modules
+endif
 
 # Docker commands
 docker-build:
@@ -172,19 +184,21 @@ docker-down:
 docker-dev:
 	@echo "Building and starting development environment on $(DETECTED_OS)..."
 	@echo "📦 Building images and starting services (you'll see full progress)..."
+	@echo "Disabling buildkit to avoid Podman conflicts..."
 ifeq ($(OS),Windows_NT)
-	@docker compose -f docker-compose.dev.yml up --build
+	@set DOCKER_BUILDKIT=0 && docker compose -f docker-compose.dev.yml up --build
 else
-	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml up --build
+	@DOCKER_BUILDKIT=0 $(DOCKER_COMPOSE) -f docker-compose.dev.yml up --build
 endif
 
 # Quick background startup (detached mode)
 docker-dev-detached:
 	@echo "Building and starting development environment in background on $(DETECTED_OS)..."
+	@echo "Disabling buildkit to avoid Podman conflicts..."
 ifeq ($(OS),Windows_NT)
-	@docker compose -f docker-compose.dev.yml up --build -d
+	@set DOCKER_BUILDKIT=0 && docker compose -f docker-compose.dev.yml up --build -d
 else
-	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml up --build -d
+	@DOCKER_BUILDKIT=0 $(DOCKER_COMPOSE) -f docker-compose.dev.yml up --build -d
 endif
 
 # Hot reload development (no rebuild)
@@ -199,12 +213,13 @@ endif
 # Rebuild development environment
 docker-dev-rebuild:
 	@echo "Rebuilding development environment on $(DETECTED_OS)..."
+	@echo "Disabling buildkit to avoid Podman conflicts..."
 ifeq ($(OS),Windows_NT)
 	@docker compose -f docker-compose.dev.yml down
-	@docker compose -f docker-compose.dev.yml up --build -d
+	@set DOCKER_BUILDKIT=0 && docker compose -f docker-compose.dev.yml up --build -d
 else
 	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml down
-	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml up --build -d
+	@DOCKER_BUILDKIT=0 $(DOCKER_COMPOSE) -f docker-compose.dev.yml up --build -d
 endif
 
 # Backend build optimization commands
@@ -248,6 +263,9 @@ dev-clean:
 	@echo "Cleaning development environment on $(DETECTED_OS)..."
 	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml down -v
 	@docker system prune -f
+	@echo "Cleaning up buildkit containers..."
+	@docker container prune -f
+	@docker builder prune -f
 ifeq ($(OS),Windows_NT)
 	@powershell -Command "docker images | Select-String 'garments' | ForEach-Object { $$_.ToString().Split()[0] + ':' + $$_.ToString().Split()[1] } | ForEach-Object { docker rmi $$_ -f }"
 else
