@@ -328,7 +328,7 @@ namespace GarmentsERP.API.Services
 
                 // Log audit trail
                 await _auditLogService.LogJournalEntryOperationAsync(
-                    "Create", journalEntry.Id, GetCurrentUserId(), "Journal entry created");
+                    "Create", journalEntry.Id, GetCurrentUserId().ToString(), "Journal entry created");
 
                 // Return detailed DTO
                 return await GetJournalEntryByIdAsync(journalEntry.Id) ?? 
@@ -407,7 +407,7 @@ namespace GarmentsERP.API.Services
 
                 // Log audit trail
                 await _auditLogService.LogJournalEntryOperationAsync(
-                    "Update", journalEntry.Id, GetCurrentUserId(), "Journal entry updated");
+                    "Update", journalEntry.Id, GetCurrentUserId().ToString(), "Journal entry updated");
 
                 return await GetJournalEntryByIdAsync(journalEntry.Id) ?? 
                     throw new InvalidOperationException("Failed to retrieve updated journal entry");
@@ -438,7 +438,7 @@ namespace GarmentsERP.API.Services
 
                 // Log audit trail
                 await _auditLogService.LogJournalEntryOperationAsync(
-                    "Delete", journalEntry.Id, GetCurrentUserId(), "Journal entry deleted");
+                    "Delete", journalEntry.Id, GetCurrentUserId().ToString(), "Journal entry deleted");
 
                 return true;
             }
@@ -469,7 +469,7 @@ namespace GarmentsERP.API.Services
 
                 // Log audit trail
                 await _auditLogService.LogJournalEntryOperationAsync(
-                    "Approve", journalEntry.Id, userId, $"Journal entry approved. Notes: {notes}");
+                    "Approve", journalEntry.Id, userId.ToString(), $"Journal entry approved. Notes: {notes}");
 
                 return true;
             }
@@ -498,7 +498,7 @@ namespace GarmentsERP.API.Services
 
                 // Log audit trail
                 await _auditLogService.LogJournalEntryOperationAsync(
-                    "Reverse", journalEntry.Id, userId, $"Journal entry reversed. Reason: {reason}");
+                    "Reverse", journalEntry.Id, userId.ToString(), $"Journal entry reversed. Reason: {reason}");
 
                 return true;
             }
