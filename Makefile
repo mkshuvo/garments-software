@@ -186,7 +186,7 @@ docker-dev:
 	@echo "📦 Building images and starting services (you'll see full progress)..."
 	@echo "Disabling buildkit to avoid Podman conflicts..."
 ifeq ($(OS),Windows_NT)
-	@set DOCKER_BUILDKIT=0 && docker compose -f docker-compose.dev.yml up --build
+	@set "DOCKER_BUILDKIT=0" && docker compose -f docker-compose.dev.yml up --build
 else
 	@DOCKER_BUILDKIT=0 $(DOCKER_COMPOSE) -f docker-compose.dev.yml up --build
 endif
@@ -196,7 +196,7 @@ docker-dev-detached:
 	@echo "Building and starting development environment in background on $(DETECTED_OS)..."
 	@echo "Disabling buildkit to avoid Podman conflicts..."
 ifeq ($(OS),Windows_NT)
-	@set DOCKER_BUILDKIT=0 && docker compose -f docker-compose.dev.yml up --build -d
+	@set "DOCKER_BUILDKIT=0" && docker compose -f docker-compose.dev.yml up --build -d
 else
 	@DOCKER_BUILDKIT=0 $(DOCKER_COMPOSE) -f docker-compose.dev.yml up --build -d
 endif
@@ -216,7 +216,7 @@ docker-dev-rebuild:
 	@echo "Disabling buildkit to avoid Podman conflicts..."
 ifeq ($(OS),Windows_NT)
 	@docker compose -f docker-compose.dev.yml down
-	@set DOCKER_BUILDKIT=0 && docker compose -f docker-compose.dev.yml up --build -d
+	@set "DOCKER_BUILDKIT=0" && docker compose -f docker-compose.dev.yml up --build -d
 else
 	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml down
 	@DOCKER_BUILDKIT=0 $(DOCKER_COMPOSE) -f docker-compose.dev.yml up --build -d
