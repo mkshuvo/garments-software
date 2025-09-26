@@ -105,8 +105,10 @@ builder.Services.AddScoped<IRoleManagementService, RoleManagementService>();
 // builder.Services.AddScoped<ITrialBalanceCacheService, TrialBalanceCacheService>();
 // builder.Services.AddScoped<ITrialBalanceService, TrialBalanceService>();
 // builder.Services.AddScoped<IBalanceService, BalanceService>();
+// Temporarily commented out to resolve compilation errors
 // builder.Services.AddScoped<IEnhancedCashBookService, EnhancedCashBookService>();
-builder.Services.AddScoped<IJournalEntryService, JournalEntryService>();
+// builder.Services.AddScoped<IJournalEntryService, JournalEntryService>();
+// builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 // builder.Services.AddScoped<IDatabasePerformanceService, DatabasePerformanceService>();
 
 // Redis Configuration
@@ -122,6 +124,9 @@ builder.Services.AddStackExchangeRedisCache(options =>
 {
     options.Configuration = builder.Configuration.GetConnectionString("Redis") ?? "redis:6379";
 });
+
+// Add in-memory cache
+builder.Services.AddMemoryCache();
 
 // CORS Configuration
 builder.Services.AddCors(options =>

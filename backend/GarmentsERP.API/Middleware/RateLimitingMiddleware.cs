@@ -53,7 +53,7 @@ namespace GarmentsERP.API.Middleware
             }
 
             // Increment request counters
-            await IncrementRequestCounters(clientIP, endpoint);
+            IncrementRequestCounters(clientIP, endpoint);
 
             await _next(context);
         }
@@ -104,7 +104,7 @@ namespace GarmentsERP.API.Middleware
             return dayCount < _maxRequestsPerDay;
         }
 
-        private async Task IncrementRequestCounters(string clientIP, string endpoint)
+        private void IncrementRequestCounters(string clientIP, string endpoint)
         {
             var now = DateTime.UtcNow;
             var minuteKey = $"rate_limit_minute_{clientIP}_{endpoint}_{now:yyyyMMddHHmm}";
@@ -154,7 +154,7 @@ namespace GarmentsERP.API.Middleware
         {
             context.Response.StatusCode = 429; // Too Many Requests
             context.Response.ContentType = "application/json";
-            context.Response.Headers.Add("Retry-After", "60"); // Retry after 1 minute
+            context.Response.Headers["Retry-After"] = "60"; // Retry after 1 minute
 
             var response = new
             {

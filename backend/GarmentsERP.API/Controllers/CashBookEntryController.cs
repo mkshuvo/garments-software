@@ -1,4 +1,4 @@
-// TEMPORARILY COMMENTED OUT ENTIRE FILE TO RESOLVE COMPILATION ERRORS
+// TEMPORARILY COMMENTED OUT TO RESOLVE COMPILATION ERRORS
 /*
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -14,12 +14,11 @@ using System.ComponentModel.DataAnnotations;
 
 namespace GarmentsERP.API.Controllers
 {
-    // Temporarily commented out to resolve compilation errors
-// [ApiController]
-// [Route("api/[controller]")]
-// public class CashBookEntryController : ControllerBase
-// {
-//         private readonly ApplicationDbContext _context;
+    [ApiController]
+    [Route("api/[controller]")]
+    public class CashBookEntryController : ControllerBase
+    {
+        private readonly ApplicationDbContext _context;
         private readonly IEnhancedCashBookService _enhancedCashBookService;
         private readonly IJournalEntryService _journalEntryService;
         private readonly IDatabasePerformanceService _databasePerformanceService;
@@ -1269,21 +1268,10 @@ namespace GarmentsERP.API.Controllers
     }
 
     // Additional DTOs for lifecycle management
-    public class ApprovalRequest
-    {
-        public string? Notes { get; set; }
-    }
-
     public class RejectionRequest
     {
         [Required]
         public string Reason { get; set; } = string.Empty;
     }
-
-    public class ReversalRequest
-    {
-        [Required]
-        public string Reason { get; set; } = string.Empty;
-    }
-// }
+}
 */

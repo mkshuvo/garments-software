@@ -364,7 +364,7 @@ export default function JournalEntriesPage() {
 
                 {/* Category */}
                 <CategoryFilter
-                  value={filters.category}
+                  value={filters.category || ''}
                   categories={categories}
                   onChange={(value) => handleFilterChange('category', value)}
                 />

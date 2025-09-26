@@ -54,12 +54,7 @@ namespace GarmentsERP.API.Tests
                         TransactionStatus = "Posted",
                         CreatedAt = DateTime.Now,
                         CreatedBy = "System",
-                        JournalType = "General",
-                        FormattedAmount = "$1,000.00",
-                        FormattedDate = "Jan 01, 2024",
-                        FormattedCreatedDate = "Jan 01, 2024 00:00",
-                        TypeColor = "success",
-                        StatusColor = "info"
+                        JournalType = "General"
                     }
                 },
                 Pagination = new PaginationInfo
@@ -153,6 +148,7 @@ namespace GarmentsERP.API.Tests
             var okResult = Assert.IsType<OkObjectResult>(result);
             var response = okResult.Value as dynamic;
             Assert.True(response.Success);
+            Assert.NotNull(response.Data);
             Assert.Equal(id.ToString(), response.Data.Id);
         }
 
@@ -172,6 +168,7 @@ namespace GarmentsERP.API.Tests
             // Assert
             var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
             var response = notFoundResult.Value as dynamic;
+            Assert.NotNull(response);
             Assert.False(response.Success);
             Assert.Equal("Journal entry not found", response.Message);
         }
@@ -369,7 +366,9 @@ namespace GarmentsERP.API.Tests
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
             var response = okResult.Value as dynamic;
+            Assert.NotNull(response);
             Assert.True(response.Success);
+            Assert.NotNull(response.Data);
             Assert.Equal("Updated description", response.Data.Description);
         }
 
@@ -389,6 +388,7 @@ namespace GarmentsERP.API.Tests
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
             var response = okResult.Value as dynamic;
+            Assert.NotNull(response);
             Assert.True(response.Success);
             Assert.Equal("Journal entry deleted successfully", response.Message);
         }
@@ -409,6 +409,7 @@ namespace GarmentsERP.API.Tests
             // Assert
             var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
             var response = notFoundResult.Value as dynamic;
+            Assert.NotNull(response);
             Assert.False(response.Success);
             Assert.Equal("Journal entry not found", response.Message);
         }
@@ -433,6 +434,7 @@ namespace GarmentsERP.API.Tests
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
             var response = okResult.Value as dynamic;
+            Assert.NotNull(response);
             Assert.True(response.Success);
             Assert.Equal("Journal entry approved successfully", response.Message);
         }
@@ -457,6 +459,7 @@ namespace GarmentsERP.API.Tests
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
             var response = okResult.Value as dynamic;
+            Assert.NotNull(response);
             Assert.True(response.Success);
             Assert.Equal("Journal entry reversed successfully", response.Message);
         }
@@ -477,6 +480,7 @@ namespace GarmentsERP.API.Tests
             // Assert
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
             var response = badRequestResult.Value as dynamic;
+            Assert.NotNull(response);
             Assert.False(response.Success);
             Assert.Equal("Reversal reason is required", response.Message);
         }
@@ -497,7 +501,9 @@ namespace GarmentsERP.API.Tests
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
             var response = okResult.Value as dynamic;
+            Assert.NotNull(response);
             Assert.True(response.Success);
+            Assert.NotNull(response.Data);
             Assert.Equal(3, response.Data.Count);
         }
 
@@ -517,7 +523,9 @@ namespace GarmentsERP.API.Tests
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
             var response = okResult.Value as dynamic;
+            Assert.NotNull(response);
             Assert.True(response.Success);
+            Assert.NotNull(response.Data);
             Assert.Equal(4, response.Data.Count);
         }
 
@@ -537,7 +545,9 @@ namespace GarmentsERP.API.Tests
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
             var response = okResult.Value as dynamic;
+            Assert.NotNull(response);
             Assert.True(response.Success);
+            Assert.NotNull(response.Data);
             Assert.Equal(4, response.Data.Count);
         }
     }
