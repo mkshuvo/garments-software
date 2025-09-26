@@ -272,6 +272,9 @@ namespace GarmentsERP.API.Services
         {
             try
             {
+                if (request == null)
+                    throw new ArgumentNullException(nameof(request));
+
                 // Validate request
                 var validation = ValidateJournalEntryRequest(request);
                 if (!validation.IsValid)
@@ -512,18 +515,18 @@ namespace GarmentsERP.API.Services
         /// <summary>
         /// Get journal entry audit trail
         /// </summary>
-        public async Task<List<AuditTrailEntryDto>> GetAuditTrailAsync(Guid id)
+        public Task<List<AuditTrailEntryDto>> GetAuditTrailAsync(Guid id)
         {
             try
             {
                 // This would typically come from an audit log table
                 // For now, return empty list
-                return new List<AuditTrailEntryDto>();
+                return Task.FromResult(new List<AuditTrailEntryDto>());
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting audit trail for journal entry: {Id}", id);
-                return new List<AuditTrailEntryDto>();
+                return Task.FromResult(new List<AuditTrailEntryDto>());
             }
         }
 
@@ -613,17 +616,17 @@ namespace GarmentsERP.API.Services
         /// <summary>
         /// Get journal entry statuses for filtering
         /// </summary>
-        public async Task<List<string>> GetStatusesAsync()
+        public Task<List<string>> GetStatusesAsync()
         {
-            return Enum.GetNames<JournalStatus>().ToList();
+            return Task.FromResult(Enum.GetNames<JournalStatus>().ToList());
         }
 
         /// <summary>
         /// Get journal entry types for filtering
         /// </summary>
-        public async Task<List<string>> GetTypesAsync()
+        public Task<List<string>> GetTypesAsync()
         {
-            return Enum.GetNames<JournalType>().ToList();
+            return Task.FromResult(Enum.GetNames<JournalType>().ToList());
         }
 
         #region Private Helper Methods
@@ -841,25 +844,25 @@ namespace GarmentsERP.API.Services
             return $"JE-{year}-{month:D2}-{count:D4}";
         }
 
-        private async Task<string> GenerateCsvExportAsync(List<JournalEntryDisplayDto> entries, string fileName)
+        private Task<string> GenerateCsvExportAsync(List<JournalEntryDisplayDto> entries, string fileName)
         {
             // This would generate CSV content and return a download URL
             // For now, return a placeholder
-            return $"/api/exports/{fileName}";
+            return Task.FromResult($"/api/exports/{fileName}");
         }
 
-        private async Task<string> GenerateExcelExportAsync(List<JournalEntryDisplayDto> entries, string fileName)
+        private Task<string> GenerateExcelExportAsync(List<JournalEntryDisplayDto> entries, string fileName)
         {
             // This would generate Excel content and return a download URL
             // For now, return a placeholder
-            return $"/api/exports/{fileName}";
+            return Task.FromResult($"/api/exports/{fileName}");
         }
 
-        private async Task<string> GeneratePdfExportAsync(List<JournalEntryDisplayDto> entries, string fileName)
+        private Task<string> GeneratePdfExportAsync(List<JournalEntryDisplayDto> entries, string fileName)
         {
             // This would generate PDF content and return a download URL
             // For now, return a placeholder
-            return $"/api/exports/{fileName}";
+            return Task.FromResult($"/api/exports/{fileName}");
         }
 
         private Guid GetCurrentUserId()

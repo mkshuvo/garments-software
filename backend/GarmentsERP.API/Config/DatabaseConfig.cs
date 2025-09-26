@@ -17,8 +17,8 @@ namespace GarmentsERP.API.Config
             this IServiceCollection services, 
             IConfiguration configuration)
         {
-            // Add DbContext with optimized settings
-            services.AddDbContext<ApplicationDbContext>(options =>
+            // Configure connection pooling (removed duplicate AddDbContext)
+            services.AddDbContextPool<ApplicationDbContext>(options =>
             {
                 options.UseNpgsql(
                     configuration.GetConnectionString("DefaultConnection"),
@@ -50,24 +50,6 @@ namespace GarmentsERP.API.Config
                 
                 // Enable lazy loading (if needed)
                 // options.UseLazyLoadingProxies();
-            });
-
-            // Configure connection pooling
-            services.AddDbContextPool<ApplicationDbContext>(options =>
-            {
-                options.UseNpgsql(
-                    configuration.GetConnectionString("DefaultConnection"),
-                    npgsqlOptions =>
-                    {
-                        npgsqlOptions.EnableRetryOnFailure(
-                            maxRetryCount: 3,
-                            maxRetryDelay: TimeSpan.FromSeconds(30),
-                            errorCodesToAdd: null);
-                        
-                        npgsqlOptions.CommandTimeout(30);
-                        npgsqlOptions.MaxBatchSize(100);
-                        npgsqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
-                    });
             }, poolSize: 128);
 
             return services;
