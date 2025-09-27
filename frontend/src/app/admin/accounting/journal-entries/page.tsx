@@ -110,6 +110,18 @@ export default function JournalEntriesPage() {
       }
     } catch (err) {
       console.error('Failed to load categories:', err);
+      // Set mock categories when API is unavailable
+      console.warn('API unavailable, using mock categories');
+      setCategories([
+        'Sales Revenue',
+        'Office Supplies',
+        'Travel Expenses',
+        'Marketing',
+        'Utilities',
+        'Rent',
+        'Insurance',
+        'Professional Services'
+      ]);
     }
   };
 
