@@ -1,10 +1,8 @@
 'use client'
 
-import React, { lazy, Suspense } from 'react';
+import React from 'react';
 import { Box, CircularProgress, Typography } from '@mui/material';
-
-// Lazy load the export modal component
-const ExportModal = lazy(() => import('./ExportModal'));
+import { ExportModal } from './ExportModal';
 
 interface LazyExportModalProps {
   isOpen: boolean;
@@ -49,10 +47,11 @@ export function LazyExportModal(props: LazyExportModalProps) {
     return null;
   }
 
-  return (
-    <Suspense fallback={<ModalLoadingFallback />}>
-      <ExportModal {...props} />
-    </Suspense>
-  );
+  // Show loading state if export is in progress
+  if (props.loading) {
+    return <ModalLoadingFallback />;
+  }
+
+  return <ExportModal {...props} />;
 }
 

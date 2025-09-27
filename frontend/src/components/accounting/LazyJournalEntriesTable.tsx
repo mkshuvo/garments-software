@@ -1,11 +1,9 @@
 'use client'
 
-import React, { lazy, Suspense } from 'react';
+import React from 'react';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { type JournalEntry } from '@/services/journalEntryService';
-
-// Lazy load the heavy table component
-const JournalEntriesTable = lazy(() => import('./JournalEntriesTable'));
+import { JournalEntriesTable } from './JournalEntriesTable';
 
 interface LazyJournalEntriesTableProps {
   entries: JournalEntry[];
@@ -35,10 +33,11 @@ const TableLoadingFallback = () => (
 );
 
 export function LazyJournalEntriesTable(props: LazyJournalEntriesTableProps) {
-  return (
-    <Suspense fallback={<TableLoadingFallback />}>
-      <JournalEntriesTable {...props} />
-    </Suspense>
-  );
+  // Show loading state if entries are being fetched
+  if (props.loading) {
+    return <TableLoadingFallback />;
+  }
+
+  return <JournalEntriesTable {...props} />;
 }
 
