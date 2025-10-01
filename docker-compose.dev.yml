@@ -88,7 +88,7 @@ services:
     image: redis:8.0.3-alpine3.21
     container_name: garments-redis-dev
     ports:
-      - "6380:6379"
+      - "16379:6379"
     volumes:
       - redis_dev_data:/data
     networks:

@@ -172,63 +172,28 @@ class JournalEntryService {
       return response;
     } catch (error) {
       console.error('Error fetching journal entries:', error);
-      console.error('Error details:', {
-        message: error?.message,
-        status: error?.response?.status,
-        statusText: error?.response?.statusText,
-        data: error?.response?.data,
-        url: error?.config?.url,
-        method: error?.config?.method
-      });
-      
-      // Return mock data when API is unavailable
-      console.warn('API unavailable, returning mock data');
-      const mockResponse: GetJournalEntriesResponse = {
-        success: true,
-        message: 'Mock data - Backend API is currently unavailable',
-        entries: [
-          {
-            id: '1',
-            journalNumber: 'JE-001',
-            transactionDate: new Date().toISOString(),
-            type: 'Credit',
-            categoryName: 'Sales Revenue',
-            particulars: 'Sample journal entry',
-            amount: 1000.00,
-            referenceNumber: 'REF-001',
-            contactName: 'Sample Customer',
-            accountName: 'Cash Account',
-            createdAt: new Date().toISOString(),
-            status: 'Approved'
-          },
-          {
-            id: '2',
-            journalNumber: 'JE-002',
-            transactionDate: new Date().toISOString(),
-            type: 'Debit',
-            categoryName: 'Office Supplies',
-            particulars: 'Purchase of office supplies',
-            amount: 250.00,
-            referenceNumber: 'REF-002',
-            contactName: 'Office Depot',
-            accountName: 'Expense Account',
-            createdAt: new Date().toISOString(),
-            status: 'Pending'
-          }
-        ],
-        pagination: {
-          currentPage: page,
-          totalPages: 1,
-          totalCount: 2
-        },
-        summary: {
-          totalDebits: 250.00,
-          totalCredits: 1000.00,
-          balance: 750.00
+
+      // Provide more detailed error information
+      let errorMessage = 'Failed to fetch journal entries. Please try again.';
+
+      if (error instanceof Error) {
+        // Check for common error types
+        if (error.message.includes('Network Error') || error.message.includes('fetch')) {
+          errorMessage = 'Network error - please check your connection and ensure the backend API is running.';
+        } else if (error.message.includes('timeout')) {
+          errorMessage = 'Request timeout - the backend API may be overloaded or unavailable.';
+        } else if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+          errorMessage = 'Authentication failed - please check your credentials.';
+        } else if (error.message.includes('403') || error.message.includes('Forbidden')) {
+          errorMessage = 'Access denied - you do not have permission to view journal entries.';
+        } else if (error.message.includes('404') || error.message.includes('Not Found')) {
+          errorMessage = 'Journal entries endpoint not found - please check the API configuration.';
+        } else if (error.message.includes('500')) {
+          errorMessage = 'Server error - the backend API encountered an internal error.';
         }
-      };
-      
-      return mockResponse;
+      }
+
+      throw new Error(errorMessage);
     }
   }
 

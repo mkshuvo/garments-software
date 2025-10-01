@@ -1,18 +1,32 @@
 'use client'
 
-import React, { useState, useEffect, useCallback, Suspense } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
-  Typography,
   Card,
   CardContent,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Chip,
+  CircularProgress,
+  Alert,
+  AlertTitle,
   Button,
   Stack,
   Breadcrumbs,
   Link,
-  Alert,
   IconButton,
-  Tooltip
+  Tooltip,
+  TextField,
+  InputAdornment,
+  Pagination,
+  Snackbar
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -23,475 +37,470 @@ import {
   ArrowBack as ArrowBackIcon,
   Home as HomeIcon,
   AccountBalance as AccountBalanceIcon,
-  Receipt as ReceiptIcon
+  Receipt as ReceiptIcon,
+  Error as ErrorIcon
 } from '@mui/icons-material';
-
 import { useRouter } from 'next/navigation';
-import ServiceStatusBanner from '@/components/ui/ServiceStatusBanner';
-import OfflineIndicator from '@/components/ui/OfflineIndicator';
-import { LazyExportModal } from '@/components/accounting/LazyExportModal';
-import { SummarySection } from '@/components/accounting/SummarySection';
-import { StatusFilter } from '@/components/accounting/StatusFilter';
-import { LazyPrintModal } from '@/components/accounting/LazyPrintModal';
-import { DateRangeFilter } from '@/components/accounting/DateRangeFilter';
-import { TransactionTypeFilter } from '@/components/accounting/TransactionTypeFilter';
-import { AmountRangeFilter } from '@/components/accounting/AmountRangeFilter';
-import { CategoryFilter } from '@/components/accounting/CategoryFilter';
-import { ReferenceFilter } from '@/components/accounting/ReferenceFilter';
-import { ContactFilter } from '@/components/accounting/ContactFilter';
-import { DescriptionFilter } from '@/components/accounting/DescriptionFilter';
-import { SearchSection } from '@/components/accounting/SearchSection';
-import { LazyJournalEntriesTable } from '@/components/accounting/LazyJournalEntriesTable';
-import { journalEntryService, type JournalEntry, type JournalEntryFilters, type SummaryInfo } from '@/services/journalEntryService';
-
-// Using types from the service
+import { journalEntryService, type JournalEntry, type JournalEntryFilters } from '@/services/journalEntryService';
 
 export default function JournalEntriesPage() {
   const router = useRouter();
-  const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string>('');
-  const [page, setPage] = useState(1);
+  const [entries, setEntries] = useState<JournalEntry[]>([]);
+  const [filteredEntries, setFilteredEntries] = useState<JournalEntry[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState('');
+  const [selectedType, setSelectedType] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [totalEntries, setTotalEntries] = useState(0);
-  const [summary, setSummary] = useState<SummaryInfo | null>(null);
-
-  const [filters, setFilters] = useState<JournalEntryFilters>({
-    transactionType: 'All',
-    category: '',
-    referenceNumber: '',
-    contactName: '',
-    description: '',
-    status: 'All'
+  const [entriesPerPage] = useState(20);
+  const [error, setError] = useState<string | null>(null);
+  const [apiAvailable, setApiAvailable] = useState(true);
+  const [summary, setSummary] = useState({
+    totalCredits: 0,
+    totalDebits: 0,
+    balance: 0
   });
 
-  const [categories, setCategories] = useState<string[]>([]);
-  const [showFilters, setShowFilters] = useState(false);
-  const [showExportModal, setShowExportModal] = useState(false);
-  const [showPrintModal, setShowPrintModal] = useState(false);
-  const [exportLoading, setExportLoading] = useState(false);
-  const [searchHistory, setSearchHistory] = useState<string[]>([]);
-  const [popularSearches] = useState<string[]>([
-    'Today',
-    'This Week',
-    'High Amount',
-    'Pending',
-    'Completed'
-  ]);
-
-  // Load journal entries
+  // Load journal entries from real API
   const loadJournalEntries = useCallback(async () => {
     try {
       setLoading(true);
-      setError('');
+      setError(null);
 
-      const response = await journalEntryService.getJournalEntries(filters, page, 20);
+      const filters: JournalEntryFilters = {
+        dateFrom: undefined,
+        dateTo: undefined,
+        transactionType: (selectedType as 'Credit' | 'Debit' | 'All') || 'All',
+        amountMin: undefined,
+        amountMax: undefined,
+        category: selectedCategory || undefined,
+        referenceNumber: searchTerm || undefined,
+        contactName: undefined,
+        description: undefined,
+        status: (selectedStatus as 'Approved' | 'Pending' | 'Rejected' | 'All') || 'All',
+        sortBy: 'TransactionDate',
+        sortOrder: 'desc'
+      };
+
+      const response = await journalEntryService.getJournalEntries(filters, currentPage, entriesPerPage);
       
       setEntries(response.entries);
+      setFilteredEntries(response.entries);
       setTotalPages(response.pagination.totalPages);
-      setTotalEntries(response.pagination.totalEntries);
-      setSummary(response.summary);
+      setSummary({
+        totalCredits: response.summary.totalCredits,
+        totalDebits: response.summary.totalDebits,
+        balance: response.summary.balance
+      });
+      setApiAvailable(true);
 
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load journal entries');
+      console.error('Error loading journal entries:', err);
+      setError('Failed to load journal entries. The backend API may not be available.');
+      setApiAvailable(false);
+      
+      // Set empty state
+      setEntries([]);
+      setFilteredEntries([]);
+      setTotalPages(1);
+      setSummary({ totalCredits: 0, totalDebits: 0, balance: 0 });
     } finally {
       setLoading(false);
     }
-  }, [page, filters]);
+  }, [currentPage, entriesPerPage, selectedCategory, selectedStatus, selectedType, searchTerm]);
 
-  // Load categories for filter dropdown
-  const loadCategories = async () => {
-    try {
-      const response = await fetch('/api/journalentry/categories');
-      if (response.ok) {
-        const data = await response.json();
-        const categoryNames = data.map((cat: { name: string }) => cat.name);
-        setCategories(categoryNames);
-      }
-    } catch (err) {
-      console.error('Failed to load categories:', err);
-      // Set mock categories when API is unavailable
-      console.warn('API unavailable, using mock categories');
-      setCategories([
-        'Sales Revenue',
-        'Office Supplies',
-        'Travel Expenses',
-        'Marketing',
-        'Utilities',
-        'Rent',
-        'Insurance',
-        'Professional Services'
-      ]);
-    }
-  };
-
+  // Load data on component mount and when filters change
   useEffect(() => {
     loadJournalEntries();
   }, [loadJournalEntries]);
 
+  // Handle search and filtering
   useEffect(() => {
-    loadCategories();
-  }, []);
+    if (!apiAvailable) {
+      // Client-side filtering when API is not available
+      let filtered = entries;
 
-  const handleFilterChange = (field: keyof JournalEntryFilters, value: string | number | Date | undefined | null) => {
-    setFilters(prev => ({ ...prev, [field]: value }));
-    setPage(1); // Reset to first page when filtering
-  };
-
-  const updateSearchHistory = (searchTerm: string) => {
-    if (searchTerm.trim()) {
-      setSearchHistory(prev => {
-        const filtered = prev.filter(term => term !== searchTerm);
-        return [searchTerm, ...filtered].slice(0, 10);
-      });
-    }
-  };
-
-  const handleQuickFilter = (filter: string) => {
-    const today = new Date();
-    const thisWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-
-    switch (filter) {
-      case 'Today':
-        setFilters(prev => ({ ...prev, dateFrom: today, dateTo: today }));
-        break;
-      case 'This Week':
-        setFilters(prev => ({ ...prev, dateFrom: thisWeek, dateTo: today }));
-        break;
-      case 'This Month':
-        setFilters(prev => ({ ...prev, dateFrom: thisMonth, dateTo: today }));
-        break;
-      case 'High Amount':
-        setFilters(prev => ({ ...prev, amountMin: 10000 }));
-        break;
-      case 'Low Amount':
-        setFilters(prev => ({ ...prev, amountMax: 1000 }));
-        break;
-      case 'Pending':
-        setFilters(prev => ({ ...prev, status: 'Pending' }));
-        break;
-      case 'Completed':
-        setFilters(prev => ({ ...prev, status: 'Completed' }));
-        break;
-    }
-    setPage(1);
-  };
-
-  const clearFilters = () => {
-    setFilters({
-      transactionType: 'All',
-      category: '',
-      referenceNumber: '',
-      contactName: '',
-      description: '',
-      status: 'All'
-    });
-    setPage(1);
-  };
-
-
-
-  const handleExport = async (selectedColumns: string[]) => {
-    try {
-      setExportLoading(true);
-
-      const exportRequest = {
-        format: 'csv' as const,
-        columns: selectedColumns,
-        dateFrom: filters.dateFrom?.toISOString(),
-        dateTo: filters.dateTo?.toISOString(),
-        type: filters.transactionType !== 'All' ? filters.transactionType : undefined,
-        amountMin: filters.amountMin,
-        amountMax: filters.amountMax,
-        category: filters.category || undefined,
-        referenceNumber: filters.referenceNumber || undefined,
-        contactName: filters.contactName || undefined,
-        description: filters.description || undefined,
-        status: filters.status !== 'All' ? filters.status : undefined
-      };
-
-      const response = await journalEntryService.exportJournalEntries(exportRequest);
-      
-      if (response.success && response.downloadUrl) {
-        // Create a temporary link and trigger download
-        const link = document.createElement('a');
-        link.href = response.downloadUrl;
-        link.download = response.fileName || `journal-entries-${new Date().toISOString().split('T')[0]}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      } else {
-        throw new Error(response.message || 'Export failed');
+      if (searchTerm) {
+        filtered = filtered.filter(entry =>
+          entry.journalNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          entry.particulars.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          entry.referenceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          entry.contactName?.toLowerCase().includes(searchTerm.toLowerCase())
+        );
       }
 
-      setShowExportModal(false);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to export data. Please try again.');
-    } finally {
-      setExportLoading(false);
+      if (selectedCategory) {
+        filtered = filtered.filter(entry => entry.categoryName === selectedCategory);
+      }
+
+      if (selectedStatus) {
+        filtered = filtered.filter(entry => entry.status === selectedStatus);
+      }
+
+      if (selectedType) {
+        filtered = filtered.filter(entry => entry.type === selectedType);
+      }
+
+      setFilteredEntries(filtered);
+    }
+  }, [entries, searchTerm, selectedCategory, selectedStatus, selectedType, apiAvailable]);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Approved':
+        return 'success';
+      case 'Pending':
+        return 'warning';
+      case 'Rejected':
+        return 'error';
+      default:
+        return 'default';
     }
   };
 
-  return (
-    <>
-      <ServiceStatusBanner
-        showWhenHealthy={false}
-        dismissible={true}
-        showDetails={true}
-        position="top"
-      />
-      
-      <OfflineIndicator
-        position="top"
-        dismissible={true}
-        showDetails={true}
-      />
+  const getTypeColor = (type: string) => {
+    return type === 'Credit' ? 'success' : 'error';
+  };
 
-      <Box sx={{ p: 3, mt: 6 }}>
-        {/* Navigation Breadcrumbs */}
-        <Breadcrumbs sx={{ mb: 3 }}>
-          <Link
-            color="inherit"
-            href="/"
-            sx={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}
-          >
-            <HomeIcon sx={{ mr: 0.5 }} fontSize="inherit" />
-            Home
-          </Link>
-          <Link
-            color="inherit"
-            href="/admin/accounting"
-            sx={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}
-          >
-            <AccountBalanceIcon sx={{ mr: 0.5 }} fontSize="inherit" />
-            Accounting
-          </Link>
-          <Typography color="text.primary" sx={{ display: 'flex', alignItems: 'center' }}>
-            <ReceiptIcon sx={{ mr: 0.5 }} fontSize="inherit" />
-            Journal Entries
-          </Typography>
-        </Breadcrumbs>
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
+  };
 
-        {/* Header */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Box>
-            <Typography variant="h4" fontWeight="bold" gutterBottom>
-              📋 Journal Entries
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              View and manage all your credit and debit transactions with advanced filtering
-            </Typography>
-          </Box>
-          <Stack direction="row" spacing={2}>
-            <Button
-              variant="contained"
-              startIcon={<DownloadIcon />}
-              onClick={() => setShowExportModal(true)}
-              disabled={loading || entries.length === 0}
-              color="success"
-            >
-              Export CSV
-            </Button>
-            <Button
-              variant="outlined"
-              startIcon={<RefreshIcon />}
-              onClick={() => loadJournalEntries()}
-              disabled={loading}
-            >
-              Refresh
-            </Button>
-            <Button
-              variant="outlined"
-              startIcon={<ArrowBackIcon />}
-              onClick={() => router.push('/admin/accounting')}
-            >
-              Back to Accounting
-            </Button>
-          </Stack>
-        </Box>
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount);
+  };
 
-        {/* Search Section */}
-        <Card sx={{ mb: 3 }}>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              🔍 Search Journal Entries
-            </Typography>
-            <SearchSection
-              value={filters.description || ''}
-              onChange={(value) => {
-                handleFilterChange('description', value);
-                updateSearchHistory(value);
-              }}
-              onQuickFilter={handleQuickFilter}
-              searchHistory={searchHistory}
-              popularSearches={popularSearches}
-            />
-          </CardContent>
-        </Card>
+  const handleRefresh = () => {
+    loadJournalEntries();
+  };
 
-        {/* Filters */}
-        <Card sx={{ mb: 3 }}>
-          <CardContent>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant="h6">
-                🔍 Advanced Filters
-              </Typography>
-              <Stack direction="row" spacing={1}>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  startIcon={<FilterIcon />}
-                  onClick={() => setShowFilters(!showFilters)}
-                >
-                  {showFilters ? 'Hide Filters' : 'Show Filters'}
-                </Button>
-                <Button
-                  variant="text"
-                  size="small"
-                  onClick={clearFilters}
-                >
-                  Clear All
-                </Button>
-              </Stack>
-            </Box>
+  const handleExport = () => {
+    if (!apiAvailable) {
+      setError('Export functionality requires the backend API to be available.');
+      return;
+    }
+    // TODO: Implement export functionality
+    console.log('Export functionality to be implemented');
+  };
 
-            {showFilters && (
-              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(4, 1fr)' }, gap: 2 }}>
-                {/* Date Range */}
-                <Box sx={{ gridColumn: { xs: '1', md: '1 / -1' } }}>
-                  <DateRangeFilter
-                    dateFrom={filters.dateFrom}
-                    dateTo={filters.dateTo}
-                    onDateFromChange={(date) => handleFilterChange('dateFrom', date)}
-                    onDateToChange={(date) => handleFilterChange('dateTo', date)}
-                  />
-                </Box>
+  const handlePrint = () => {
+    window.print();
+  };
 
-                {/* Transaction Type */}
-                <TransactionTypeFilter
-                  value={filters.transactionType}
-                  onChange={(value) => handleFilterChange('transactionType', value)}
-                />
+  const handlePageChange = (event: React.ChangeEvent<unknown>, page: number) => {
+    setCurrentPage(page);
+  };
 
-                {/* Category */}
-                <CategoryFilter
-                  value={filters.category || ''}
-                  categories={categories}
-                  onChange={(value) => handleFilterChange('category', value)}
-                />
-
-                {/* Amount Range */}
-                <Box sx={{ gridColumn: { xs: '1', md: '1 / -1' } }}>
-                  <AmountRangeFilter
-                    amountMin={filters.amountMin}
-                    amountMax={filters.amountMax}
-                    onAmountMinChange={(value) => handleFilterChange('amountMin', value)}
-                    onAmountMaxChange={(value) => handleFilterChange('amountMax', value)}
-                  />
-                </Box>
-
-                {/* Reference Number */}
-                <ReferenceFilter
-                  value={filters.referenceNumber}
-                  onChange={(value) => handleFilterChange('referenceNumber', value)}
-                />
-
-                {/* Contact Name */}
-                <ContactFilter
-                  value={filters.contactName}
-                  onChange={(value) => handleFilterChange('contactName', value)}
-                />
-
-                {/* Description - Full Width */}
-                <Box sx={{ gridColumn: { xs: '1', md: '1 / -1' } }}>
-                  <DescriptionFilter
-                    value={filters.description}
-                    onChange={(value) => handleFilterChange('description', value)}
-                  />
-                </Box>
-
-                {/* Status Filter */}
-                <Box sx={{ gridColumn: { xs: '1', md: '1 / -1' } }}>
-                  <StatusFilter
-                    value={filters.status || 'All'}
-                    onChange={(status) => handleFilterChange('status', status)}
-                  />
-                </Box>
-              </Box>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Summary Section */}
-        <SummarySection
-          summary={summary}
-          loading={loading}
-          error={error}
-        />
-
-        {/* Results Summary */}
-        <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="body2" color="text.secondary">
-            {loading ? 'Loading...' : `Showing ${entries.length} of ${totalEntries} entries`}
-          </Typography>
-          <Stack direction="row" spacing={1}>
-            <Tooltip title="Export to CSV">
-              <IconButton
-                size="small"
-                onClick={() => setShowExportModal(true)}
-                disabled={loading || entries.length === 0}
-              >
-                <DownloadIcon />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Print">
-              <IconButton 
-                size="small"
-                onClick={() => setShowPrintModal(true)}
-                disabled={loading || entries.length === 0}
-              >
-                <PrintIcon />
-              </IconButton>
-            </Tooltip>
-          </Stack>
-        </Box>
-
-        {/* Error Display */}
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {error}
-          </Alert>
-        )}
-
-        {/* Journal Entries Table */}
-        <LazyJournalEntriesTable
-          entries={entries}
-          loading={loading}
-          page={page}
-          totalPages={totalPages}
-          onPageChange={setPage}
-        />
-
-        {/* Export Modal */}
-        <LazyExportModal
-          isOpen={showExportModal}
-          onClose={() => setShowExportModal(false)}
-          onExport={handleExport}
-          loading={exportLoading}
-          activeFilters={filters}
-          totalEntries={totalEntries}
-        />
-
-        {/* Print Modal */}
-        <LazyPrintModal
-          isOpen={showPrintModal}
-          onClose={() => setShowPrintModal(false)}
-          entries={entries}
-          filters={filters}
-          totalEntries={totalEntries}
-        />
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
+        <Typography variant="h6" sx={{ ml: 2 }}>
+          Loading journal entries...
+        </Typography>
       </Box>
-    </>
+    );
+  }
+
+  return (
+    <Box sx={{ p: 3 }}>
+      {/* Breadcrumbs */}
+      <Breadcrumbs sx={{ mb: 3 }}>
+        <Link
+          color="inherit"
+          href="/admin"
+          onClick={(e) => {
+            e.preventDefault();
+            router.push('/admin');
+          }}
+          sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+        >
+          <HomeIcon fontSize="small" />
+          Admin
+        </Link>
+        <Link
+          color="inherit"
+          href="/admin/accounting"
+          onClick={(e) => {
+            e.preventDefault();
+            router.push('/admin/accounting');
+          }}
+          sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+        >
+          <AccountBalanceIcon fontSize="small" />
+          Accounting
+        </Link>
+        <Typography color="text.primary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <ReceiptIcon fontSize="small" />
+          Journal Entries
+        </Typography>
+      </Breadcrumbs>
+
+      {/* Header */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h4" component="h1">
+          Journal Entries
+        </Typography>
+        <Stack direction="row" spacing={1}>
+          <Tooltip title="Refresh">
+            <IconButton onClick={handleRefresh}>
+              <RefreshIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Export">
+            <IconButton onClick={handleExport} disabled={!apiAvailable}>
+              <DownloadIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Print">
+            <IconButton onClick={handlePrint}>
+              <PrintIcon />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+      </Box>
+
+      {/* API Status Alert */}
+      {!apiAvailable && (
+        <Alert 
+          severity="warning" 
+          sx={{ mb: 3 }}
+          action={
+            <Button color="inherit" size="small" onClick={handleRefresh}>
+              Retry
+            </Button>
+          }
+        >
+          <AlertTitle>Backend API Unavailable</AlertTitle>
+          The backend API is not responding. Some features may be limited. Click "Retry" to attempt reconnection.
+        </Alert>
+      )}
+
+      {/* Summary Cards */}
+      <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
+        <Card sx={{ flex: 1 }}>
+          <CardContent>
+            <Typography color="text.secondary" gutterBottom>
+              Total Credits
+            </Typography>
+            <Typography variant="h5" color="success.main">
+              {formatCurrency(summary.totalCredits)}
+            </Typography>
+          </CardContent>
+        </Card>
+        <Card sx={{ flex: 1 }}>
+          <CardContent>
+            <Typography color="text.secondary" gutterBottom>
+              Total Debits
+            </Typography>
+            <Typography variant="h5" color="error.main">
+              {formatCurrency(summary.totalDebits)}
+            </Typography>
+          </CardContent>
+        </Card>
+        <Card sx={{ flex: 1 }}>
+          <CardContent>
+            <Typography color="text.secondary" gutterBottom>
+              Balance
+            </Typography>
+            <Typography variant="h5" color={summary.balance >= 0 ? 'success.main' : 'error.main'}>
+              {formatCurrency(summary.balance)}
+            </Typography>
+          </CardContent>
+        </Card>
+      </Stack>
+
+      {/* Filters */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            Filters
+          </Typography>
+          <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+            <TextField
+              placeholder="Search entries..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ minWidth: 200 }}
+            />
+            <TextField
+              select
+              label="Category"
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              SelectProps={{ native: true }}
+              sx={{ minWidth: 150 }}
+            >
+              <option value="">All Categories</option>
+              <option value="Sales Revenue">Sales Revenue</option>
+              <option value="Service Revenue">Service Revenue</option>
+              <option value="Office Supplies">Office Supplies</option>
+              <option value="Travel Expenses">Travel Expenses</option>
+              <option value="Utilities">Utilities</option>
+              <option value="Marketing">Marketing</option>
+              <option value="Rent">Rent</option>
+              <option value="Insurance">Insurance</option>
+              <option value="Professional Services">Professional Services</option>
+            </TextField>
+            <TextField
+              select
+              label="Status"
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              SelectProps={{ native: true }}
+              sx={{ minWidth: 120 }}
+            >
+              <option value="">All Status</option>
+              <option value="Approved">Approved</option>
+              <option value="Pending">Pending</option>
+              <option value="Rejected">Rejected</option>
+            </TextField>
+            <TextField
+              select
+              label="Type"
+              value={selectedType}
+              onChange={(e) => setSelectedType(e.target.value)}
+              SelectProps={{ native: true }}
+              sx={{ minWidth: 120 }}
+            >
+              <option value="">All Types</option>
+              <option value="Credit">Credit</option>
+              <option value="Debit">Debit</option>
+            </TextField>
+          </Stack>
+          <Typography variant="body2" color="text.secondary">
+            Showing {filteredEntries.length} entries
+            {apiAvailable ? ' (from API)' : ' (cached)'}
+          </Typography>
+        </CardContent>
+      </Card>
+
+      {/* Journal Entries Table */}
+      <Card>
+        <CardContent>
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Journal #</TableCell>
+                  <TableCell>Date</TableCell>
+                  <TableCell>Type</TableCell>
+                  <TableCell>Category</TableCell>
+                  <TableCell>Particulars</TableCell>
+                  <TableCell align="right">Amount</TableCell>
+                  <TableCell>Reference</TableCell>
+                  <TableCell>Contact</TableCell>
+                  <TableCell>Status</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filteredEntries.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        {apiAvailable 
+                          ? 'No journal entries found. Try adjusting your filters or add some transactions.'
+                          : 'No data available. Backend API is not responding.'
+                        }
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredEntries.map((entry) => (
+                    <TableRow key={entry.id} hover>
+                      <TableCell>
+                        <Typography variant="body2" fontWeight="medium">
+                          {entry.journalNumber}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">
+                          {formatDate(entry.transactionDate)}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={entry.type}
+                          color={getTypeColor(entry.type) as any}
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">
+                          {entry.categoryName}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" sx={{ maxWidth: 200 }}>
+                          {entry.particulars}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Typography
+                          variant="body2"
+                          color={entry.type === 'Credit' ? 'success.main' : 'error.main'}
+                          fontWeight="bold"
+                        >
+                          {formatCurrency(entry.amount)}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">
+                          {entry.referenceNumber}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">
+                          {entry.contactName || '-'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={entry.status}
+                          color={getStatusColor(entry.status) as any}
+                          size="small"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+              <Pagination
+                count={totalPages}
+                page={currentPage}
+                onChange={handlePageChange}
+                color="primary"
+              />
+            </Box>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Error Snackbar */}
+      <Snackbar
+        open={!!error}
+        autoHideDuration={6000}
+        onClose={() => setError(null)}
+        message={error}
+      />
+    </Box>
   );
 }
