@@ -38,13 +38,14 @@ import {
   Home as HomeIcon,
   AccountBalance as AccountBalanceIcon,
   Receipt as ReceiptIcon,
-  Error as ErrorIcon
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import { journalEntryService, type JournalEntry, type JournalEntryFilters } from '@/services/journalEntryService';
+import { useAuthStore } from '@/stores/authStore';
 
 export default function JournalEntriesPage() {
   const router = useRouter();
+  const { isAuthenticated, isInitialized } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [filteredEntries, setFilteredEntries] = useState<JournalEntry[]>([]);
@@ -113,8 +114,10 @@ export default function JournalEntriesPage() {
 
   // Load data on component mount and when filters change
   useEffect(() => {
-    loadJournalEntries();
-  }, [loadJournalEntries]);
+    if (isInitialized) {
+      loadJournalEntries();
+    }
+  }, [loadJournalEntries, isInitialized]);
 
   // Handle search and filtering
   useEffect(() => {
@@ -147,7 +150,8 @@ export default function JournalEntriesPage() {
     }
   }, [entries, searchTerm, selectedCategory, selectedStatus, selectedType, apiAvailable]);
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string | undefined) => {
+    if (!status) return 'default';
     switch (status) {
       case 'Approved':
         return 'success';
@@ -196,12 +200,12 @@ export default function JournalEntriesPage() {
     setCurrentPage(page);
   };
 
-  if (loading) {
+  if (loading || !isInitialized) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
         <CircularProgress />
         <Typography variant="h6" sx={{ ml: 2 }}>
-          Loading journal entries...
+          {!isInitialized ? 'Initializing authentication...' : 'Loading journal entries...'}
         </Typography>
       </Box>
     );
@@ -469,7 +473,7 @@ export default function JournalEntriesPage() {
                       <TableCell>
                         <Chip
                           label={entry.status}
-                          color={getStatusColor(entry.status) as any}
+                          color={getStatusColor(entry.status)}
                           size="small"
                         />
                       </TableCell>
