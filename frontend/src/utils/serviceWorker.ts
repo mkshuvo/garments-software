@@ -174,13 +174,18 @@ class ServiceWorkerManager {
    * Request background sync for journal entries
    */
   async requestBackgroundSync(): Promise<void> {
-    if (!this.registration || !('sync' in window.ServiceWorkerRegistration.prototype)) {
+    if (!this.registration) {
       console.warn('Background sync not supported');
       return;
     }
 
     try {
-      await this.registration.sync.register('journal-entry-sync');
+      const sync = (this.registration as any).sync;
+      if (sync && typeof sync.register === 'function') {
+        await sync.register('journal-entry-sync');
+      } else {
+        console.warn('Background sync manager unavailable');
+      }
       console.log('Background sync registered for journal entries');
     } catch (error) {
       console.error('Failed to register background sync:', error);
@@ -197,6 +202,5 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 // Export types and utilities
-export type { ServiceWorkerMessage };
 export default serviceWorkerManager;
 

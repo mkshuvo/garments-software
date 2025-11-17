@@ -340,7 +340,12 @@ namespace GarmentsERP.API.Services
 
         public async Task<DTOs.SingleTransactionResult> SaveCreditTransactionAsync(DTOs.CreditTransactionDto request)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction? transaction = null;
+            var useTransaction = !_context.Database.IsInMemory();
+            if (useTransaction)
+            {
+                transaction = await _context.Database.BeginTransactionAsync();
+            }
             try
             {
                 // Get or create category and corresponding account
@@ -396,7 +401,10 @@ namespace GarmentsERP.API.Services
                 _context.JournalEntryLines.Add(journalLine);
 
                 await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
+                if (useTransaction && transaction != null)
+                {
+                    await transaction.CommitAsync();
+                }
 
                 return DTOs.SingleTransactionResult.SuccessResult(
                     journalEntry.Id,
@@ -406,7 +414,10 @@ namespace GarmentsERP.API.Services
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
+                if (useTransaction && transaction != null)
+                {
+                    await transaction.RollbackAsync();
+                }
                 _logger.LogError(ex, "Error saving credit transaction");
                 return DTOs.SingleTransactionResult.FailedResult("Failed to save credit transaction", new List<string> { ex.Message });
             }
@@ -414,7 +425,12 @@ namespace GarmentsERP.API.Services
 
         public async Task<DTOs.SingleTransactionResult> SaveDebitTransactionAsync(DTOs.DebitTransactionDto request)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction? transaction = null;
+            var useTransaction = !_context.Database.IsInMemory();
+            if (useTransaction)
+            {
+                transaction = await _context.Database.BeginTransactionAsync();
+            }
             try
             {
                 // Get or create category and corresponding account
@@ -475,7 +491,10 @@ namespace GarmentsERP.API.Services
                 _context.JournalEntryLines.Add(journalLine);
 
                 await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
+                if (useTransaction && transaction != null)
+                {
+                    await transaction.CommitAsync();
+                }
 
                 return DTOs.SingleTransactionResult.SuccessResult(
                     journalEntry.Id,
@@ -485,7 +504,10 @@ namespace GarmentsERP.API.Services
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
+                if (useTransaction && transaction != null)
+                {
+                    await transaction.RollbackAsync();
+                }
                 _logger.LogError(ex, "Error saving debit transaction");
                 return DTOs.SingleTransactionResult.FailedResult("Failed to save debit transaction", new List<string> { ex.Message });
             }

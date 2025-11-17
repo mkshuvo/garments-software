@@ -1,5 +1,5 @@
 # Use the official .NET 8 SDK image for building the app
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 
 WORKDIR /src
 
@@ -17,7 +17,7 @@ RUN dotnet build "GarmentsERP.API.csproj" -c Release -o /app/build
 RUN dotnet publish "GarmentsERP.API.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 # Use the official ASP.NET Core runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 
 # Create a non-root user for security
 RUN addgroup --system --gid 1001 dotnetgroup && \

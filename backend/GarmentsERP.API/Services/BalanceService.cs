@@ -103,7 +103,7 @@ namespace GarmentsERP.API.Services
                 var cachedSummary = await _database.StringGetAsync(BALANCE_SUMMARY_KEY);
                 if (cachedSummary.HasValue)
                 {
-                    var summary = JsonSerializer.Deserialize<BalanceSummaryDto>(cachedSummary!);
+                    var summary = JsonSerializer.Deserialize<BalanceSummaryDto>(cachedSummary.ToString());
                     if (summary != null)
                     {
                         summary.IsFromCache = true;
