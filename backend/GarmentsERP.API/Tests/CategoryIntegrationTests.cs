@@ -52,6 +52,7 @@ namespace GarmentsERP.API.Tests
             _factory = factory;
             _factory = _factory.WithWebHostBuilder(builder =>
             {
+                builder.UseSolutionRelativeContentRoot("backend/GarmentsERP.API");
                 builder.ConfigureServices(services =>
                 {
                     // Remove the existing DbContext registration

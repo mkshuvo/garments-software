@@ -19,6 +19,7 @@ namespace GarmentsERP.API.Tests
         {
             var options = new DbContextOptionsBuilder<ApplicationDbContext>()
                 .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+                .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning))
                 .Options;
 
             _context = new ApplicationDbContext(options);
@@ -128,7 +129,7 @@ namespace GarmentsERP.API.Tests
 
             Assert.NotNull(journalEntry);
             Assert.Equal(JournalType.CashReceipt, journalEntry.JournalType);
-            Assert.Equal(request.Date.Date, journalEntry.TransactionDate.Date);
+            Assert.Equal(request.Date.Date, journalEntry.TransactionDate.ToLocalTime().Date);
             Assert.Equal(request.Particulars, journalEntry.Description);
 
             // Verify single journal entry line was created
@@ -166,7 +167,7 @@ namespace GarmentsERP.API.Tests
 
             Assert.NotNull(journalEntry);
             Assert.Equal(JournalType.CashPayment, journalEntry.JournalType);
-            Assert.Equal(request.Date.Date, journalEntry.TransactionDate.Date);
+            Assert.Equal(request.Date.Date, journalEntry.TransactionDate.ToLocalTime().Date);
             Assert.Equal(request.Particulars, journalEntry.Description);
 
             // Verify single journal entry line was created

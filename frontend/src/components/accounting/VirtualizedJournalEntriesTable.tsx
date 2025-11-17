@@ -74,7 +74,7 @@ const JournalEntryRow: React.FC<RowProps> = ({ index, style, data }) => {
         </TableCell>
         <TableCell>
           <Typography variant="body2">
-            {entry.formattedDate}
+            {new Date(entry.transactionDate).toLocaleDateString()}
           </Typography>
         </TableCell>
         <TableCell>
@@ -97,7 +97,7 @@ const JournalEntryRow: React.FC<RowProps> = ({ index, style, data }) => {
         </TableCell>
         <TableCell align="right">
           <Typography variant="body2" fontWeight="medium">
-            {entry.formattedAmount}
+            {Number(entry.amount).toLocaleString()}
           </Typography>
         </TableCell>
         <TableCell>
@@ -113,7 +113,13 @@ const JournalEntryRow: React.FC<RowProps> = ({ index, style, data }) => {
         <TableCell>
           <Chip
             label={entry.status}
-            color={entry.statusColor as any}
+            color={
+              (entry.status === 'Posted' && 'success') ||
+              (entry.status === 'Draft' && 'warning') ||
+              (entry.status === 'Approved' && 'info') ||
+              (entry.status === 'Reversed' && 'error') ||
+              'default'
+            }
             size="small"
             variant="outlined"
           />
@@ -250,6 +256,7 @@ export function VirtualizedJournalEntriesTable({
         <Box sx={{ height: Math.min(entries.length * itemHeight, maxHeight) }}>
           <List
             height={Math.min(entries.length * itemHeight, maxHeight)}
+            width={1200}
             itemCount={entries.length}
             itemSize={itemHeight}
             itemData={itemData}
@@ -271,7 +278,7 @@ export function VirtualizedJournalEntriesTable({
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2">
-                      {entry.formattedDate}
+                      {new Date(entry.transactionDate).toLocaleDateString()}
                     </Typography>
                   </TableCell>
                   <TableCell>
@@ -294,7 +301,7 @@ export function VirtualizedJournalEntriesTable({
                   </TableCell>
                   <TableCell align="right">
                     <Typography variant="body2" fontWeight="medium">
-                      {entry.formattedAmount}
+                      {Number(entry.amount).toLocaleString()}
                     </Typography>
                   </TableCell>
                   <TableCell>
@@ -310,7 +317,13 @@ export function VirtualizedJournalEntriesTable({
                   <TableCell>
                     <Chip
                       label={entry.status}
-                      color={entry.statusColor as any}
+                      color={
+                        (entry.status === 'Posted' && 'success') ||
+                        (entry.status === 'Draft' && 'warning') ||
+                        (entry.status === 'Approved' && 'info') ||
+                        (entry.status === 'Reversed' && 'error') ||
+                        'default'
+                      }
                       size="small"
                       variant="outlined"
                     />
