@@ -43,13 +43,13 @@ class ApiService {
       (response: AxiosResponse) => response,
       async (error) => {
         const status = error.response?.status
-        
+
         if (status === 401) {
           return this.handle401Error(error)
         } else if (status === 403) {
           return this.handle403Error(error)
         }
-        
+
         return Promise.reject(this.formatError(error))
       }
     )
@@ -63,10 +63,10 @@ class ApiService {
 
     // Check if we're in development mode with fallback authentication
     const isDevelopment = process.env.NODE_ENV === 'development'
-    const isFallbackMode = typeof window !== 'undefined' && 
-                          localStorage.getItem('auth_fallback_mode') === 'true'
+    const isFallbackMode = typeof window !== 'undefined' &&
+      localStorage.getItem('auth_fallback_mode') === 'true'
     const shouldBypassAuth = process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true'
-    
+
     if (isDevelopment && (isFallbackMode || shouldBypassAuth)) {
       console.warn('🔄 API call failed but in fallback mode - not redirecting to login')
       // In fallback mode, don't redirect but still reject the request
@@ -75,15 +75,15 @@ class ApiService {
     }
 
     this.isRedirecting = true
-    
+
     try {
       // Clear token and auth state
       await this.clearAuthState()
-      
+
       if (typeof window !== 'undefined') {
         const currentPath = window.location.pathname
         const isAuthPage = this.isAuthRelatedPage(currentPath)
-        
+
         if (!isAuthPage) {
           console.warn('Authentication failed - redirecting to login')
           // Use setTimeout to avoid redirect in interceptor context
@@ -101,7 +101,7 @@ class ApiService {
       console.error('Error clearing auth state:', clearError)
       this.isRedirecting = false
     }
-    
+
     return Promise.reject(this.formatError(error, 'Your session has expired. Please log in again.'))
   }
 
@@ -135,7 +135,7 @@ class ApiService {
       // Decode JWT payload to check expiration
       const payload = JSON.parse(atob(token.split('.')[1]))
       const currentTime = Math.floor(Date.now() / 1000)
-      
+
       // Check if token is expired (with 30 second buffer)
       if (payload.exp && payload.exp < currentTime + 30) {
         return false
@@ -152,7 +152,7 @@ class ApiService {
     try {
       // Clear token from localStorage
       this.clearToken()
-      
+
       // Clear auth store state
       const { useAuthStore } = await import('../stores/authStore')
       const authStore = useAuthStore.getState()
@@ -271,7 +271,12 @@ class ApiService {
   // Method to refresh token if supported by backend
   async refreshToken(): Promise<boolean> {
     try {
-      const response = await this.post<{ token: string }>('/api/auth/refresh')
+      const currentToken = this.getToken()
+      if (!currentToken) {
+        console.warn('No token available for refresh')
+        return false
+      }
+      const response = await this.post<{ token: string }>('/api/auth/refresh', { token: currentToken })
       if (response.token) {
         this.setToken(response.token)
         return true

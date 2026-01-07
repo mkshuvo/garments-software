@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Box,
@@ -25,47 +25,79 @@ import { authService } from '@/services/authService'
 
 export default function LoginPage() {
   const router = useRouter()
-  const { isAuthenticated, login } = useAuthStore()
-  
+  const { isAuthenticated, isInitialized, user } = useAuthStore()
+  const login = useAuthStore((state) => state.login)
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
+  const hasRedirected = useRef(false)
 
-  // Redirect if authenticated
-  useEffect(() => {
-    if (isAuthenticated) {
-      router.push('/')
+  // Synchronous check for auth state before first paint
+  useLayoutEffect(() => {
+    // Check localStorage directly for instant check (zustand persist stores here)
+    if (typeof window !== 'undefined') {
+      try {
+        const storedAuth = localStorage.getItem('auth-storage')
+        if (storedAuth) {
+          const parsed = JSON.parse(storedAuth)
+          if (parsed?.state?.isAuthenticated && parsed?.state?.token && parsed?.state?.user) {
+            // User is logged in, redirect immediately without rendering login form
+            if (!hasRedirected.current) {
+              hasRedirected.current = true
+              const userRole = parsed.state.user.role || parsed.state.user.roles?.[0]
+              const redirectPath = userRole === 'Admin' ? '/admin' : '/'
+              router.replace(redirectPath)
+              return
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('Error checking stored auth:', e)
+      }
     }
-  }, [isAuthenticated, router])
+    setIsCheckingAuth(false)
+  }, [router])
+
+  // Secondary check using zustand state (for state changes after mount)
+  useEffect(() => {
+    if (isInitialized && isAuthenticated && user && !hasRedirected.current) {
+      hasRedirected.current = true
+      const userRole = user.role || user.roles?.[0]
+      const redirectPath = userRole === 'Admin' ? '/admin' : '/'
+      router.replace(redirectPath)
+    }
+  }, [isAuthenticated, isInitialized, user, router])
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     // Clear previous error
     setError('')
-    
+
     // Basic validation
     if (!email.trim()) {
       setError('Email or username is required')
       return
     }
-    
+
     if (!password) {
       setError('Password is required')
       return
     }
-    
+
     setIsLoading(true)
-    
+
     try {
       const response = await authService.login({
         email: email.trim(),
         password: password
       })
-      
+
       // Use the async login method
       await login(response.user, response.token)
       // Success - redirect handled by useEffect
@@ -75,9 +107,24 @@ export default function LoginPage() {
       } else {
         setError('Login failed. Please try again.')
       }
-    } finally {
-      setIsLoading(false)
     }
+  }
+
+  // Show minimal loading while checking auth to prevent flash
+  if (isCheckingAuth) {
+    return (
+      <Box
+        sx={{
+          minHeight: '100vh',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <CircularProgress sx={{ color: 'white' }} />
+      </Box>
+    )
   }
 
   return (
@@ -114,7 +161,7 @@ export default function LoginPage() {
             >
               <ArrowBack />
             </IconButton>
-            
+
             <Typography
               variant="h3"
               fontWeight="bold"
@@ -161,7 +208,7 @@ export default function LoginPage() {
                 },
               }}
             />
-            
+
             <TextField
               fullWidth
               label="Password"

@@ -1,12 +1,16 @@
-services:  
+# GarmentsERP Docker Compose
+# Single unified configuration for development and production
+
+services:
   # Backend API
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile
-    container_name: garments-backend-prod
+      dockerfile: Dockerfile.dev
+    image: garments-backend:latest
+    container_name: garments-backend
     environment:
-      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=GarmentsERP;Username=postgres;Password=postgres123
       - ConnectionStrings__Redis=redis:6379
       - JwtSettings__Secret=YourSuperSecretKeyThatIsAtLeast32CharactersLong!@#$$%
@@ -15,6 +19,10 @@ services:
       - JwtSettings__ExpireHours=24
     ports:
       - "8080:8080"
+    volumes:
+      - ./backend:/app
+      - /app/obj
+      - /app/bin
     depends_on:
       postgres:
         condition: service_healthy
@@ -28,22 +36,26 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 40s
+      start_period: 60s
 
   # Frontend
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
-    container_name: garments-frontend-prod
+      dockerfile: Dockerfile.dev
+    container_name: garments-frontend
     environment:
-      - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=http://nginx:80/api
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:8080
     ports:
-      - "3000:3000"
+      - "4000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - frontend_next_cache:/app/.next
+    user: "1001:1001"
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
     networks:
       - garments-network
     restart: unless-stopped
@@ -53,35 +65,37 @@ services:
       timeout: 10s
       retries: 5
       start_period: 40s
+
   # PostgreSQL Database
   postgres:
     image: postgres:17.5-alpine3.21
-    container_name: garments-postgres-prod
+    container_name: garments-postgres
     environment:
       POSTGRES_DB: GarmentsERP
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres123
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
-      - "15432:5432"
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-scripts:/docker-entrypoint-initdb.d
     networks:
       - garments-network
-    restart: unless-stopped    
+    restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d GarmentsERP"]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 30s
-  # Redis Cache - Latest stable 8.x (widely used in production)
+
+  # Redis Cache
   redis:
     image: redis:8.0.3-alpine3.21
-    container_name: garments-redis-prod
+    container_name: garments-redis
     ports:
-      - "16379:6379"
+      - "6379:6379"
     volumes:
       - redis_data:/data
     networks:
@@ -92,58 +106,83 @@ services:
       test: ["CMD", "redis-cli", "ping"]
       interval: 30s
       timeout: 10s
-      retries: 5  
-  # pgAdmin for database management - Production with security
+      retries: 5
+
+  # pgAdmin for database management
   pgadmin:
-    image: dpage/pgadmin4:9.4.0
-    container_name: garments-pgadmin-prod
+    image: dpage/pgadmin4:9.5.0
+    container_name: garments-pgadmin
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@garmentserp.com
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-SecureAdminPassword123!}
-      PGADMIN_CONFIG_SERVER_MODE: 'True'
-      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'True'
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
     ports:
       - "5050:80"
     volumes:
       - pgadmin_data:/var/lib/pgadmin
+      - ./pgadmin/servers.json:/tmp/servers.json:ro
+      - ./pgadmin/pgpass:/tmp/pgpass:ro
     depends_on:
       postgres:
         condition: service_healthy
     networks:
       - garments-network
     restart: unless-stopped
+    entrypoint: >
+      /bin/sh -c "
+      cp /tmp/pgpass /var/lib/pgadmin/pgpass;
+      chmod 600 /var/lib/pgadmin/pgpass;
+      if [ ! -f /var/lib/pgadmin/.servers_loaded ]; then
+        /entrypoint.sh &
+        sleep 10;
+        /venv/bin/python3 /pgadmin4/setup.py load-servers /tmp/servers.json --user pgadmin4@pgadmin.org;
+        touch /var/lib/pgadmin/.servers_loaded;
+        wait;
+      else
+        /entrypoint.sh;
+      fi
+      "
 
-  # Redis Commander for Redis management - Production with security
+  # Redis Commander for Redis management
   redis-commander:
     image: rediscommander/redis-commander:latest
-    container_name: garments-redis-commander-prod
+    container_name: garments-redis-commander
     environment:
-      - REDIS_HOSTS=production:redis:6379
-      - HTTP_USER=${REDIS_COMMANDER_USER:-admin}
-      - HTTP_PASSWORD=${REDIS_COMMANDER_PASSWORD:-SecureRedisPassword123!}
-      - URL_PREFIX=/redis-admin
+      - REDIS_HOSTS=local:redis:6379
+      - HTTP_USER=admin
+      - HTTP_PASSWORD=admin123
     ports:
-      - "8081:8081"
+      - "8082:8081"
     depends_on:
       redis:
         condition: service_healthy
     networks:
       - garments-network
     restart: unless-stopped
-  # Nginx Reverse Proxy - Latest stable
-  nginx:
-    image: nginx:1.29.0-alpine3.22
-    container_name: garments-nginx-prod
+
+  # Mailhog for email testing
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: garments-mailhog
     ports:
-      - "8088:80"
-      - "8443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - "1025:1025"  # SMTP server
+      - "8125:8025"  # Web UI
+    networks:
+      - garments-network
+    restart: unless-stopped
+
+  # Nginx Reverse Proxy
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: garments-nginx
+    ports:
+      - "80:80"
     depends_on:
-      frontend:
-        condition: service_healthy
-      backend:
-        condition: service_healthy
+      - backend
+      - frontend
     networks:
       - garments-network
     restart: unless-stopped
@@ -159,6 +198,8 @@ volumes:
   redis_data:
     driver: local
   pgadmin_data:
+    driver: local
+  frontend_next_cache:
     driver: local
 
 networks:

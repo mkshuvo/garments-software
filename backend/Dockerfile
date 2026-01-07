@@ -1,4 +1,4 @@
-# Use the official .NET 8 SDK image for building
+# Use the official .NET 10 SDK image for building
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
@@ -15,7 +15,7 @@ RUN dotnet build "GarmentsERP.API.csproj" -c Release -o /app/build
 FROM build AS publish
 RUN dotnet publish "GarmentsERP.API.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
-# Use the official .NET 8 runtime image
+# Use the official .NET 10 runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 

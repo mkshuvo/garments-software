@@ -1,5 +1,5 @@
-# Development Dockerfile for .NET 8.0
-FROM mcr.microsoft.com/dotnet/sdk:8.0
+# Development Dockerfile for .NET 10.0
+FROM mcr.microsoft.com/dotnet/sdk:10.0
 
 # Install essential tools for development and health checks
 RUN apt-get update && \
