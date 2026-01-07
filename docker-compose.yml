@@ -11,9 +11,9 @@ services:
     container_name: garments-backend
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=GarmentsERP;Username=postgres;Password=postgres123
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
       - ConnectionStrings__Redis=redis:6379
-      - JwtSettings__Secret=YourSuperSecretKeyThatIsAtLeast32CharactersLong!@#$$%
+      - JwtSettings__Secret=${JWT_SECRET}
       - JwtSettings__Issuer=GarmentsERP.API
       - JwtSettings__Audience=GarmentsERP.Client
       - JwtSettings__ExpireHours=24
@@ -71,9 +71,9 @@ services:
     image: postgres:17.5-alpine3.21
     container_name: garments-postgres
     environment:
-      POSTGRES_DB: GarmentsERP
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres123
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
       - "5432:5432"
@@ -113,10 +113,10 @@ services:
     image: dpage/pgadmin4:9.5.0
     container_name: garments-pgadmin
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@garmentserp.com
-      PGADMIN_DEFAULT_PASSWORD: admin123
-      PGADMIN_CONFIG_SERVER_MODE: 'False'
-      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+      PGADMIN_CONFIG_SERVER_MODE: 'True'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'True'
     ports:
       - "5050:80"
     volumes:
@@ -136,7 +136,7 @@ services:
       if [ ! -f /var/lib/pgadmin/.servers_loaded ]; then
         /entrypoint.sh &
         sleep 10;
-        /venv/bin/python3 /pgadmin4/setup.py load-servers /tmp/servers.json --user pgadmin4@pgadmin.org;
+        /venv/bin/python3 /pgadmin4/setup.py load-servers /tmp/servers.json --user admin@garmentserp.com;
         touch /var/lib/pgadmin/.servers_loaded;
         wait;
       else
@@ -150,8 +150,8 @@ services:
     container_name: garments-redis-commander
     environment:
       - REDIS_HOSTS=local:redis:6379
-      - HTTP_USER=admin
-      - HTTP_PASSWORD=admin123
+      - HTTP_USER=${REDIS_COMMANDER_USER}
+      - HTTP_PASSWORD=${REDIS_COMMANDER_PASSWORD}
     ports:
       - "8082:8081"
     depends_on:

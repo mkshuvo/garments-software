@@ -160,14 +160,56 @@ docker-down:
 	@echo "Stopping Docker services on $(DETECTED_OS)..."
 	@$(DOCKER_COMPOSE) down
 
-docker-dev:
-	@echo "Building and starting development environment on $(DETECTED_OS)..."
-	@echo "📦 Building images and starting services..."
+# Decrypt secrets from encrypted file
+decrypt-secrets:
+	@echo "🔐 Decrypting secrets..."
 ifeq ($(OS),Windows_NT)
-	@set "DOCKER_BUILDKIT=0" && docker compose up --build
+	@powershell -ExecutionPolicy Bypass -File scripts/decrypt-secrets.ps1
 else
-	@DOCKER_BUILDKIT=0 $(DOCKER_COMPOSE) up --build
+	@bash scripts/decrypt-secrets.sh
 endif
+
+# Encrypt secrets (after manual editing of secrets.yaml)
+encrypt-secrets:
+	@echo "🔒 Encrypting secrets..."
+ifeq ($(OS),Windows_NT)
+	@sops -e secrets.yaml | Out-File -FilePath secrets.enc.yaml -Encoding utf8
+	@del secrets.yaml
+else
+	@sops -e secrets.yaml > secrets.enc.yaml
+	@rm secrets.yaml
+endif
+	@echo "✅ Secrets encrypted to secrets.enc.yaml"
+
+# Initialize super admin user
+init-superadmin:
+	@echo "👤 Initializing super admin..."
+ifeq ($(OS),Windows_NT)
+	@powershell -ExecutionPolicy Bypass -File scripts/init-superadmin.ps1
+else
+	@bash scripts/init-superadmin.sh
+endif
+
+docker-dev:
+	@echo "🔐 Step 1: Decrypting secrets..."
+ifeq ($(OS),Windows_NT)
+	@powershell -ExecutionPolicy Bypass -File scripts/decrypt-secrets.ps1
+else
+	@bash scripts/decrypt-secrets.sh
+endif
+	@echo "🚀 Step 2: Building and starting containers..."
+ifeq ($(OS),Windows_NT)
+	@set "DOCKER_BUILDKIT=0" && docker compose up --build -d
+else
+	@DOCKER_BUILDKIT=0 $(DOCKER_COMPOSE) up --build -d
+endif
+	@echo "👤 Step 3: Initializing super admin..."
+ifeq ($(OS),Windows_NT)
+	@powershell -ExecutionPolicy Bypass -File scripts/init-superadmin.ps1
+else
+	@bash scripts/init-superadmin.sh
+endif
+	@echo "✅ Development environment ready!"
 
 # Hot reload development (no rebuild)
 docker-hot:
