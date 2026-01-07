@@ -443,6 +443,10 @@ appsettings.Staging.json
 # JWT Keys
 jwt-*.key
 
+# SOPS Secrets (plaintext - NEVER commit)
+secrets.yaml
+pgadmin/pgpass
+
 # =========================
 # Tools and Utilities
 # =========================
