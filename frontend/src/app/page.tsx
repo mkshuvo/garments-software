@@ -1,476 +1,253 @@
 'use client'
 
 import React from 'react'
-import {
-  Box,
-  Container,
-  Typography,
-  Button,
-  Card,
-  CardContent,
-  Stack,
-  Avatar,
-  Chip,
-} from '@mui/material'
-import Link from 'next/link'
-import { useAuthStore } from '@/stores/authStore'
-// import { authService } from '@/services/authService' // Unused import
+import { Box, Typography, Paper } from '@mui/material'
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet'
+import TrendingUpIcon from '@mui/icons-material/TrendingUp'
+import ReceiptIcon from '@mui/icons-material/Receipt'
+import PaymentsIcon from '@mui/icons-material/Payments'
+import { StatCard, RecentTransactions, UpgradeBanner } from '@/components/dashboard'
+import LayoutShell from '@/components/layout/LayoutShell'
 
-import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
-import BusinessIcon from '@mui/icons-material/Business';
-import CurrencyExchangeIcon from '@mui/icons-material/CurrencyExchange';
-import CategoryIcon from '@mui/icons-material/Category';
-import PercentIcon from '@mui/icons-material/Percent';
-import WarehouseIcon from '@mui/icons-material/Warehouse';
-import DescriptionIcon from '@mui/icons-material/Description';
-import SettingsIcon from '@mui/icons-material/Settings';
-import LoginIcon from '@mui/icons-material/Login';
-import PersonAddIcon from '@mui/icons-material/PersonAdd';
-import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
-import ReceiptIcon from '@mui/icons-material/Receipt';
+// Sample data for the dashboard
+const statsData = [
+  {
+    title: 'Profit & Loss',
+    value: 100000,
+    change: 30.02,
+    subtitle: 'from this month',
+    icon: <TrendingUpIcon />,
+    iconBg: 'linear-gradient(135deg, #4318FF 0%, #7551FF 100%)',
+  },
+  {
+    title: 'Cash Flow',
+    value: 502000,
+    change: -1.25,
+    subtitle: 'Decreases this month',
+    icon: <AccountBalanceWalletIcon />,
+    iconBg: 'linear-gradient(135deg, #05CD99 0%, #38D9AA 100%)',
+  },
+  {
+    title: 'Sales',
+    value: 220000,
+    change: 1.53,
+    subtitle: 'Increases this month',
+    icon: <ReceiptIcon />,
+    iconBg: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+  },
+  {
+    title: 'Payment',
+    value: 15320,
+    change: -0.11,
+    subtitle: 'Decreases this month',
+    icon: <PaymentsIcon />,
+    iconBg: 'linear-gradient(135deg, #EE5D50 0%, #FF7B73 100%)',
+  },
+]
 
-const menuItems = [
-  // Admin & User Management
-  {
-    title: 'Permissions',
-    description: 'Manage user and role permissions',
-    icon: <AdminPanelSettingsIcon sx={{ fontSize: 40 }} color="primary" />,
-    href: '/admin/permissions',
-    category: 'Administration'
-  },
+// Revenue chart data
+const revenueData = [
+  { month: 'JAN', revenue: 250, margin: 150 },
+  { month: 'FEB', revenue: 180, margin: 100 },
+  { month: 'MAR', revenue: 350, margin: 200 },
+  { month: 'APR', revenue: 280, margin: 170 },
+  { month: 'MAY', revenue: 420, margin: 350 },
+  { month: 'JUN', revenue: 380, margin: 180 },
+  { month: 'JUL', revenue: 180, margin: 150 },
+  { month: 'AUG', revenue: 320, margin: 200 },
+  { month: 'SEP', revenue: 280, margin: 380 },
+  { month: 'OCT', revenue: 400, margin: 280 },
+  { month: 'NOV', revenue: 350, margin: 220 },
+  { month: 'DEC', revenue: 150, margin: 90 },
+]
 
-  // Company & Business Settings
-  {
-    title: 'Companies',
-    description: 'Manage company information',
-    icon: <BusinessIcon sx={{ fontSize: 40 }} color="primary" />,
-    href: '/admin/companies',
-    category: 'Business'
-  },
-  {
-    title: 'Business Settings',
-    description: 'Configure business settings',
-    icon: <SettingsIcon sx={{ fontSize: 40 }} color="primary" />,
-    href: '/admin/business-settings',
-    category: 'Business'
-  },
+const maxRevenue = Math.max(...revenueData.map(d => Math.max(d.revenue, d.margin)))
 
-  // Financial Configuration
-  {
-    title: 'Accounting & Cash Book',
-    description: 'Manage cash book entries, journal entries, and financial reports',
-    icon: <AccountBalanceIcon sx={{ fontSize: 40 }} color="primary" />,
-    href: '/admin/accounting',
-    category: 'Financial'
-  },
-  {
-    title: 'Cash Book Entry',
-    description: 'Manual cash book entry in MM Fashion format',
-    icon: <ReceiptIcon sx={{ fontSize: 40 }} color="primary" />,
-    href: '/admin/accounting/cash-book-entry',
-    category: 'Financial'
-  },
-  {
-    title: 'Transaction Categories',
-    description: 'Manage credit and debit categories for cash book entries',
-    icon: <CategoryIcon sx={{ fontSize: 40 }} color="primary" />,
-    href: '/admin/accounting/categories',
-    category: 'Financial'
-  },
-  {
-    title: 'Currencies',
-    description: 'Manage currencies and exchange rates',
-    icon: <CurrencyExchangeIcon sx={{ fontSize: 40 }} color="primary" />,
-    href: '/admin/currencies',
-    category: 'Financial'
-  },
-  {
-    title: 'Tax Rates',
-    description: 'Configure tax rates and types',
-    icon: <PercentIcon sx={{ fontSize: 40 }} color="primary" />,
-    href: '/admin/tax-rates',
-    category: 'Financial'
-  },
-
-  // Inventory & Products
-  {
-    title: 'Product Categories',
-    description: 'Organize products into categories',
-    icon: <CategoryIcon sx={{ fontSize: 40 }} color="primary" />,
-    href: '/admin/product-categories',
-    category: 'Inventory'
-  },
-  {
-    title: 'Warehouses',
-    description: 'Manage warehouse locations',
-    icon: <WarehouseIcon sx={{ fontSize: 40 }} color="primary" />,
-    href: '/admin/warehouses',
-    category: 'Inventory'
-  },
-
-  // Reports
-  {
-    title: 'Report Templates',
-    description: 'Configure and manage report templates',
-    icon: <DescriptionIcon sx={{ fontSize: 40 }} color="primary" />,
-    href: '/admin/report-templates',
-    category: 'Reports'
-  },
-];
+// Expense breakdown
+const expenseCategories = [
+  { name: 'Email Marketing', value: 2.2, color: '#4318FF' },
+  { name: 'Influencer', value: 4.6, color: '#7551FF' },
+  { name: 'Google Ads', value: 116.0, color: '#05CD99' },
+  { name: 'Social Media', value: 644.0, color: '#EE5D50' },
+  { name: 'Back Links', value: 12.0, color: '#FFCE20' },
+  { name: 'Ad Campaign', value: 85.2, color: '#2196f3' },
+]
 
 export default function HomePage() {
-  const { isAuthenticated, user, logout } = useAuthStore()
-  
-
-
   return (
-      <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default' }}>
-        {/* Header */}
+    <LayoutShell>
+      <Box>
+        {/* Stats Row - CSS Grid */}
         <Box
           sx={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            color: 'white',
-            py: 2,
+            display: 'grid',
+            gridTemplateColumns: {
+              xs: '1fr',
+              sm: 'repeat(2, 1fr)',
+              lg: 'repeat(4, 1fr)',
+            },
+            gap: 3,
+            mb: 3,
           }}
         >
-          <Container>
-            <Stack
-              direction="row"
-              justifyContent="space-between"
-              alignItems="center"
-            >
-              <Typography variant="h4" fontWeight="bold">
-                GarmentsERP
-              </Typography>
-
-              {isAuthenticated ? (
-                <Stack direction="row" spacing={3} alignItems="center">
-                  <Stack direction="row" spacing={2} alignItems="center">
-                    <Avatar sx={{ bgcolor: 'white', color: 'primary.main' }}>
-                      {user?.name?.charAt(0) || 'U'}
-                    </Avatar>
-                    <Box>
-                      <Typography variant="body1" fontWeight="medium">
-                        {user?.name}
-                      </Typography>
-                      <Chip
-                        label={user?.roles?.[0] || 'User'}
-                        size="small"
-                        sx={{
-                          backgroundColor: 'rgba(255,255,255,0.2)',
-                          color: 'white',
-                          fontSize: '0.75rem'
-                        }}
-                      />
-                    </Box>
-                  </Stack>
-                  <Button
-                    variant="outlined"
-                    color="inherit"
-                    onClick={logout}
-                    sx={{
-                      borderColor: 'white',
-                      color: 'white',
-                      '&:hover': {
-                        borderColor: 'white',
-                        backgroundColor: 'rgba(255,255,255,0.1)',
-                      },
-                    }}
-                  >
-                    Logout
-                  </Button>
-                </Stack>
-              ) : (
-                <Stack direction="row" spacing={2}>
-                  <Link href="/login" passHref>
-                    <Button
-                      variant="outlined"
-                      color="inherit"
-                      startIcon={<LoginIcon />}
-                      sx={{
-                        borderColor: 'white',
-                        color: 'white',
-                        '&:hover': {
-                          borderColor: 'white',
-                          backgroundColor: 'rgba(255,255,255,0.1)',
-                        },
-                      }}
-                    >
-                      Login
-                    </Button>
-                  </Link>
-                  <Link href="/register" passHref>
-                    <Button
-                      variant="contained"
-                      startIcon={<PersonAddIcon />}
-                      sx={{
-                        backgroundColor: 'white',
-                        color: 'primary.main',
-                        '&:hover': {
-                          backgroundColor: 'grey.100',
-                        },
-                      }}
-                    >
-                      Register
-                    </Button>
-                  </Link>
-                </Stack>
-              )}
-            </Stack>
-          </Container>
+          {statsData.map((stat, index) => (
+            <StatCard key={index} {...stat} />
+          ))}
         </Box>
 
-        {/* Hero Section */}
+        {/* Charts Row */}
         <Box
           sx={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            color: 'white',
-            py: 12,
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', lg: '2fr 1fr' },
+            gap: 3,
+            mb: 3,
           }}
         >
-          <Container>
-            <Stack spacing={4} alignItems="center" textAlign="center">
-              <Typography
-                variant="h1"
-                sx={{
-                  fontSize: { xs: '2.5rem', md: '4rem' },
-                  fontWeight: 800,
-                  maxWidth: '800px',
-                  lineHeight: 1.1,
-                }}
-              >
-                Complete ERP Solution for Garment Industry
+          {/* Revenue vs Operating Margin Chart */}
+          <Paper
+            sx={{
+              p: 3,
+              borderRadius: '20px',
+              boxShadow: '0px 18px 40px rgba(112, 144, 176, 0.12)',
+              height: '100%',
+            }}
+          >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, color: '#2B3674' }}>
+                Revenue Vs Operating Margin
               </Typography>
-              <Typography
-                variant="h5"
-                sx={{
-                  maxWidth: '600px',
-                  opacity: 0.9,
-                  fontWeight: 400,
-                  fontSize: { xs: '1.2rem', md: '1.5rem' },
-                }}
-              >
-                Streamline your garment manufacturing, inventory, sales, and financial operations with our comprehensive ERP system.
-              </Typography>
-
-              {!isAuthenticated && (
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3} sx={{ mt: 4 }}>
-                  <Link href="/register" passHref>
-                    <Button
-                      variant="contained"
-                      size="large"
-                      sx={{
-                        backgroundColor: 'white',
-                        color: 'primary.main',
-                        px: 4,
-                        py: 2,
-                        fontSize: '1.1rem',
-                        '&:hover': {
-                          backgroundColor: 'grey.100',
-                        },
-                      }}
-                    >
-                      Get Started Free
-                    </Button>
-                  </Link>
-                  <Link href="/login" passHref>
-                    <Button
-                      variant="outlined"
-                      size="large"
-                      sx={{
-                        borderColor: 'white',
-                        color: 'white',
-                        px: 4,
-                        py: 2,
-                        fontSize: '1.1rem',
-                        '&:hover': {
-                          borderColor: 'white',
-                          backgroundColor: 'rgba(255,255,255,0.1)',
-                        },
-                      }}
-                    >
-                      Sign In
-                    </Button>
-                  </Link>
-                </Stack>
-              )}
-            </Stack>
-          </Container>
-        </Box>
-
-        {/* Quick Access Section for Authenticated Users */}
-        {isAuthenticated && (
-          <Container sx={{ py: 6 }}>
-            <Card sx={{ mb: 6, background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: 'white' }}>
-              <CardContent sx={{ p: 4 }}>
-                <Typography variant="h5" fontWeight="bold" gutterBottom>
-                  🚀 Quick Access
-                </Typography>
-                <Typography variant="body1" sx={{ mb: 3, opacity: 0.9 }}>
-                  Jump directly to commonly used features
-                </Typography>
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                  <Button
-                    variant="contained"
-                    startIcon={<AccountBalanceIcon />}
-                    component={Link}
-                    href="/admin/accounting"
-                    sx={{
-                      backgroundColor: 'rgba(255,255,255,0.2)',
-                      color: 'white',
-                      '&:hover': {
-                        backgroundColor: 'rgba(255,255,255,0.3)',
-                      },
-                    }}
-                  >
-                    Accounting Dashboard
-                  </Button>
-                  <Button
-                    variant="contained"
-                    startIcon={<ReceiptIcon />}
-                    component={Link}
-                    href="/admin/accounting/cash-book-entry"
-                    sx={{
-                      backgroundColor: 'rgba(255,255,255,0.2)',
-                      color: 'white',
-                      '&:hover': {
-                        backgroundColor: 'rgba(255,255,255,0.3)',
-                      },
-                    }}
-                  >
-                    New Cash Book Entry
-                  </Button>
-                  <Button
-                    variant="contained"
-                    startIcon={<CategoryIcon />}
-                    component={Link}
-                    href="/admin/accounting/categories"
-                    sx={{
-                      backgroundColor: 'rgba(255,255,255,0.2)',
-                      color: 'white',
-                      '&:hover': {
-                        backgroundColor: 'rgba(255,255,255,0.3)',
-                      },
-                    }}
-                  >
-                    Manage Categories
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    startIcon={<DescriptionIcon />}
-                    component={Link}
-                    href="/admin/accounting/balance"
-                    sx={{
-                      borderColor: 'white',
-                      color: 'white',
-                      '&:hover': {
-                        borderColor: 'white',
-                        backgroundColor: 'rgba(255,255,255,0.1)',
-                      },
-                    }}
-                  >
-                    View Balance
-                  </Button>
-                </Stack>
-              </CardContent>
-            </Card>
-          </Container>
-        )}
-
-        {/* Menu Section */}
-        <Container sx={{ py: 12 }}>
-          <Stack spacing={8}>
-            <Box textAlign="center">
-              <Typography variant="h2" gutterBottom color="text.primary">
-                Welcome to GarmentsERP
-              </Typography>
-              <Typography variant="h6" color="text.secondary" sx={{ maxWidth: '600px', mx: 'auto' }}>
-                Select a module to get started with your ERP configuration
+              <Typography variant="body2" sx={{ color: '#4318FF', fontWeight: 500, cursor: 'pointer' }}>
+                This Year →
               </Typography>
             </Box>
 
-            {/* Group menu items by category */}
-            {['Administration', 'Business', 'Financial', 'Inventory', 'Reports'].map((category) => {
-              const categoryItems = menuItems.filter(item => item.category === category);
-              if (categoryItems.length === 0) return null;
-
-              return (
-                <Box key={category}>
-                  <Typography variant="h4" gutterBottom color="text.primary" sx={{ mb: 4 }}>
-                    {category}
-                  </Typography>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: 4,
-                      justifyContent: { xs: 'center', md: 'flex-start' },
-                    }}
-                  >
-                    {categoryItems.map((item) => (
-                      <Box
-                        key={item.title}
-                        sx={{
-                          flex: { xs: '1 1 100%', sm: '1 1 45%', md: '1 1 30%', lg: '1 1 22%' },
-                          minWidth: 260,
-                          maxWidth: 350,
-                          mb: 4,
-                          display: 'flex',
-                        }}
-                      >
-                        <Card
-                          sx={{
-                            width: '100%',
-                            height: '100%',
-                            transition: 'all 0.3s',
-                            '&:hover': {
-                              boxShadow: 8,
-                              transform: 'translateY(-6px) scale(1.03)',
-                            },
-                            cursor: 'pointer',
-                          }}
-                          component={Link}
-                          href={item.href}
-                        >
-                          <CardContent sx={{ p: 4, textAlign: 'center' }}>
-                            <Box mb={2}>{item.icon}</Box>
-                            <Typography variant="h6" fontWeight="bold" gutterBottom>
-                              {item.title}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              {item.description}
-                            </Typography>
-                          </CardContent>
-                        </Card>
-                      </Box>
-                    ))}
+            {/* Bar Chart */}
+            <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1.5, height: 200, mt: 4 }}>
+              {revenueData.map((data, index) => (
+                <Box key={index} sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+                  <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'flex-end', height: 160 }}>
+                    <Box
+                      sx={{
+                        width: 16,
+                        height: `${(data.revenue / maxRevenue) * 150}px`,
+                        background: 'linear-gradient(180deg, #4318FF 0%, #7551FF 100%)',
+                        borderRadius: '4px 4px 0 0',
+                        transition: 'height 0.3s ease',
+                      }}
+                    />
+                    <Box
+                      sx={{
+                        width: 4,
+                        height: `${(data.margin / maxRevenue) * 150}px`,
+                        backgroundColor: '#05CD99',
+                        borderRadius: '2px',
+                      }}
+                    />
                   </Box>
+                  <Typography variant="caption" sx={{ color: '#A3AED0', fontSize: '0.625rem' }}>
+                    {data.month}
+                  </Typography>
                 </Box>
-              );
-            })}
-          </Stack>
-        </Container>
+              ))}
+            </Box>
 
-        {/* Footer */}
+            {/* Legend */}
+            <Box sx={{ display: 'flex', gap: 3, mt: 2, justifyContent: 'center' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box sx={{ width: 12, height: 12, backgroundColor: '#4318FF', borderRadius: 1 }} />
+                <Typography variant="caption" sx={{ color: '#A3AED0' }}>Revenue</Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box sx={{ width: 12, height: 12, backgroundColor: '#05CD99', borderRadius: 1 }} />
+                <Typography variant="caption" sx={{ color: '#A3AED0' }}>Operating Margin</Typography>
+              </Box>
+            </Box>
+          </Paper>
+
+          {/* Marketing Expenses Donut */}
+          <Paper
+            sx={{
+              p: 3,
+              borderRadius: '20px',
+              boxShadow: '0px 18px 40px rgba(112, 144, 176, 0.12)',
+              height: '100%',
+            }}
+          >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, color: '#2B3674' }}>
+                Marketing Expenses
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#4318FF', fontWeight: 500, cursor: 'pointer' }}>
+                Last Year →
+              </Typography>
+            </Box>
+
+            {/* Donut */}
+            <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}>
+              <Box
+                sx={{
+                  width: 160,
+                  height: 160,
+                  borderRadius: '50%',
+                  background: `conic-gradient(
+                    #4318FF 0deg 60deg,
+                    #7551FF 60deg 120deg,
+                    #05CD99 120deg 180deg,
+                    #EE5D50 180deg 270deg,
+                    #FFCE20 270deg 300deg,
+                    #2196f3 300deg 360deg
+                  )`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 100,
+                    height: 100,
+                    borderRadius: '50%',
+                    backgroundColor: 'white',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Typography variant="h5" sx={{ fontWeight: 700, color: '#2B3674' }}>
+                    13.2 M
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
+
+            {/* Legend */}
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
+              {expenseCategories.map((cat, idx) => (
+                <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: cat.color }} />
+                  <Typography variant="caption" sx={{ color: '#A3AED0' }}>
+                    {cat.name}
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
+          </Paper>
+        </Box>
+
+        {/* Bottom Row */}
         <Box
           sx={{
-            backgroundColor: 'grey.900',
-            color: 'white',
-            py: 6,
-            mt: 8,
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', lg: '2fr 1fr' },
+            gap: 3,
           }}
         >
-          <Container>
-            <Stack spacing={4} textAlign="center">
-              <Typography variant="h4" fontWeight="bold">
-                GarmentsERP
-              </Typography>
-              <Typography variant="body1" color="grey.400">
-                © 2025 GarmentsERP. All rights reserved.
-              </Typography>
-            </Stack>
-          </Container>
+          <RecentTransactions />
+          <UpgradeBanner />
         </Box>
       </Box>
+    </LayoutShell>
   )
 }

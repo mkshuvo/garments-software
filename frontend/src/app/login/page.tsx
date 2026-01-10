@@ -4,7 +4,6 @@ import React, { useState, useEffect, useLayoutEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Box,
-  Container,
   Paper,
   TextField,
   Button,
@@ -13,13 +12,19 @@ import {
   CircularProgress,
   IconButton,
   InputAdornment,
+  Checkbox,
+  FormControlLabel,
+  Divider,
+  Link as MuiLink,
 } from '@mui/material'
 import {
   Visibility,
   VisibilityOff,
-  Login as LoginIcon,
-  ArrowBack,
 } from '@mui/icons-material'
+import FacebookIcon from '@mui/icons-material/Facebook'
+import GoogleIcon from '@mui/icons-material/Google'
+import LinkedInIcon from '@mui/icons-material/LinkedIn'
+import XIcon from '@mui/icons-material/X'
 import { useAuthStore } from '@/stores/authStore'
 import { authService } from '@/services/authService'
 
@@ -31,6 +36,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
@@ -38,19 +44,15 @@ export default function LoginPage() {
 
   // Synchronous check for auth state before first paint
   useLayoutEffect(() => {
-    // Check localStorage directly for instant check (zustand persist stores here)
     if (typeof window !== 'undefined') {
       try {
         const storedAuth = localStorage.getItem('auth-storage')
         if (storedAuth) {
           const parsed = JSON.parse(storedAuth)
           if (parsed?.state?.isAuthenticated && parsed?.state?.token && parsed?.state?.user) {
-            // User is logged in, redirect immediately without rendering login form
             if (!hasRedirected.current) {
               hasRedirected.current = true
-              const userRole = parsed.state.user.role || parsed.state.user.roles?.[0]
-              const redirectPath = userRole === 'Admin' ? '/admin' : '/'
-              router.replace(redirectPath)
+              router.replace('/')
               return
             }
           }
@@ -62,24 +64,19 @@ export default function LoginPage() {
     setIsCheckingAuth(false)
   }, [router])
 
-  // Secondary check using zustand state (for state changes after mount)
+  // Secondary check using zustand state
   useEffect(() => {
     if (isInitialized && isAuthenticated && user && !hasRedirected.current) {
       hasRedirected.current = true
-      const userRole = user.role || user.roles?.[0]
-      const redirectPath = userRole === 'Admin' ? '/admin' : '/'
-      router.replace(redirectPath)
+      router.replace('/')
     }
   }, [isAuthenticated, isInitialized, user, router])
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    // Clear previous error
     setError('')
 
-    // Basic validation
     if (!email.trim()) {
       setError('Email or username is required')
       return
@@ -98,31 +95,31 @@ export default function LoginPage() {
         password: password
       })
 
-      // Use the async login method
       await login(response.user, response.token)
-      // Success - redirect handled by useEffect
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message)
       } else {
         setError('Login failed. Please try again.')
       }
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  // Show minimal loading while checking auth to prevent flash
+  // Show loading while checking auth
   if (isCheckingAuth) {
     return (
       <Box
         sx={{
           minHeight: '100vh',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          backgroundColor: '#F4F7FE',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
-        <CircularProgress sx={{ color: 'white' }} />
+        <CircularProgress sx={{ color: '#4318FF' }} />
       </Box>
     )
   }
@@ -131,93 +128,126 @@ export default function LoginPage() {
     <Box
       sx={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        backgroundColor: '#F4F7FE',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        p: 2,
+        p: 3,
       }}
     >
-      <Container maxWidth="sm">
-        <Paper
-          elevation={24}
-          sx={{
-            p: 4,
-            borderRadius: 3,
-            background: 'rgba(255, 255, 255, 0.95)',
-            backdropFilter: 'blur(10px)',
-          }}
-        >
-          {/* Header */}
-          <Box sx={{ textAlign: 'center', mb: 4 }}>
-            <IconButton
-              onClick={() => router.push('/')}
+      <Paper
+        sx={{
+          width: '100%',
+          maxWidth: 480,
+          p: { xs: 4, sm: 6 },
+          borderRadius: '24px',
+          boxShadow: '0px 18px 40px rgba(112, 144, 176, 0.12)',
+          backgroundColor: '#ffffff',
+        }}
+      >
+        {/* Header */}
+        <Box sx={{ textAlign: 'center', mb: 4 }}>
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 700,
+              color: '#2B3674',
+              mb: 1,
+            }}
+          >
+            Sign In
+          </Typography>
+          <Typography variant="body2" sx={{ color: '#A3AED0' }}>
+            Don't have an account yet?{' '}
+            <MuiLink
+              href="#"
               sx={{
-                position: 'absolute',
-                top: 16,
-                left: 16,
-                color: 'text.secondary',
+                color: '#4318FF',
+                fontWeight: 600,
+                textDecoration: 'none',
+                '&:hover': { textDecoration: 'underline' },
               }}
             >
-              <ArrowBack />
-            </IconButton>
+              Sign Up
+            </MuiLink>
+          </Typography>
+        </Box>
 
+        {/* Error Alert */}
+        {error && (
+          <Alert
+            severity="error"
+            onClose={() => setError('')}
+            sx={{ mb: 3, borderRadius: '12px' }}
+          >
+            {error}
+          </Alert>
+        )}
+
+        {/* Login Form */}
+        <Box component="form" onSubmit={handleSubmit} noValidate>
+          {/* Email Field */}
+          <Box sx={{ mb: 3 }}>
             <Typography
-              variant="h3"
-              fontWeight="bold"
-              color="primary.main"
-              gutterBottom
+              variant="body2"
+              sx={{
+                color: '#2B3674',
+                fontWeight: 500,
+                mb: 1,
+              }}
             >
-              GarmentsERP
+              Email Address
             </Typography>
-            <Typography variant="h5" fontWeight="600" gutterBottom>
-              Welcome Back
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              Sign in to your account
-            </Typography>
-          </Box>
-
-          {/* Error Alert */}
-          {error && (
-            <Alert
-              severity="error"
-              onClose={() => setError('')}
-              sx={{ mb: 3, borderRadius: 2 }}
-            >
-              {error}
-            </Alert>
-          )}
-
-          {/* Login Form */}
-          <Box component="form" onSubmit={handleSubmit} noValidate>
             <TextField
               fullWidth
-              label="Email or Username"
+              placeholder="Enter email address *"
               type="text"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={isLoading}
-              margin="normal"
-              required
               autoComplete="username"
               autoFocus
               sx={{
                 '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
+                  borderRadius: '16px',
+                  backgroundColor: '#ffffff',
+                  '& fieldset': {
+                    borderColor: '#E2E8F0',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: '#A3AED0',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#4318FF',
+                    borderWidth: '2px',
+                  },
+                },
+                '& .MuiOutlinedInput-input': {
+                  padding: '14px 16px',
                 },
               }}
             />
+          </Box>
 
+          {/* Password Field */}
+          <Box sx={{ mb: 2 }}>
+            <Typography
+              variant="body2"
+              sx={{
+                color: '#2B3674',
+                fontWeight: 500,
+                mb: 1,
+              }}
+            >
+              Your Password
+            </Typography>
             <TextField
               fullWidth
-              label="Password"
+              placeholder="Enter password *"
               type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={isLoading}
-              margin="normal"
-              required
               autoComplete="current-password"
               InputProps={{
                 endAdornment: (
@@ -226,6 +256,7 @@ export default function LoginPage() {
                       onClick={() => setShowPassword(!showPassword)}
                       edge="end"
                       disabled={isLoading}
+                      sx={{ color: '#A3AED0' }}
                     >
                       {showPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
@@ -234,39 +265,154 @@ export default function LoginPage() {
               }}
               sx={{
                 '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
+                  borderRadius: '16px',
+                  backgroundColor: '#ffffff',
+                  '& fieldset': {
+                    borderColor: '#E2E8F0',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: '#A3AED0',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#4318FF',
+                    borderWidth: '2px',
+                  },
+                },
+                '& .MuiOutlinedInput-input': {
+                  padding: '14px 16px',
                 },
               }}
             />
+          </Box>
 
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              disabled={isLoading}
+          {/* Remember Me & Forgot Password */}
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mb: 3,
+            }}
+          >
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  sx={{
+                    color: '#E2E8F0',
+                    '&.Mui-checked': { color: '#4318FF' },
+                  }}
+                />
+              }
+              label={
+                <Typography variant="body2" sx={{ color: '#2B3674' }}>
+                  Remember me
+                </Typography>
+              }
+            />
+            <MuiLink
+              href="#"
               sx={{
-                mt: 3,
-                mb: 2,
-                py: 1.5,
-                borderRadius: 2,
-                fontSize: '1.1rem',
-                fontWeight: 600,
-                textTransform: 'none',
+                color: '#4318FF',
+                fontWeight: 500,
+                fontSize: '0.875rem',
+                textDecoration: 'none',
+                '&:hover': { textDecoration: 'underline' },
               }}
-              startIcon={isLoading ? <CircularProgress size={20} /> : <LoginIcon />}
             >
-              {isLoading ? 'Signing In...' : 'Sign In'}
-            </Button>
+              Forgot Password?
+            </MuiLink>
           </Box>
 
-          {/* Footer */}
-          <Box sx={{ mt: 4, textAlign: 'center' }}>
-            <Typography variant="body2" color="text.secondary">
-              Need help? Contact your administrator
+          {/* Sign In Button */}
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            disabled={isLoading}
+            sx={{
+              py: 1.75,
+              borderRadius: '16px',
+              fontSize: '1rem',
+              fontWeight: 600,
+              textTransform: 'none',
+              background: 'linear-gradient(135deg, #4318FF 0%, #7551FF 100%)',
+              boxShadow: '0px 4px 12px rgba(67, 24, 255, 0.25)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #3610E8 0%, #6644EE 100%)',
+                boxShadow: '0px 8px 20px rgba(67, 24, 255, 0.35)',
+              },
+              '&:disabled': {
+                background: '#E2E8F0',
+              },
+            }}
+          >
+            {isLoading ? (
+              <CircularProgress size={24} sx={{ color: 'white' }} />
+            ) : (
+              'Sign In'
+            )}
+          </Button>
+        </Box>
+
+        {/* Divider */}
+        <Box sx={{ my: 4 }}>
+          <Divider>
+            <Typography variant="caption" sx={{ color: '#A3AED0', px: 2 }}>
+              or sign in with
             </Typography>
-          </Box>
-        </Paper>
-      </Container>
+          </Divider>
+        </Box>
+
+        {/* Social Login Buttons */}
+        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
+          <IconButton
+            sx={{
+              width: 44,
+              height: 44,
+              backgroundColor: '#1877F2',
+              color: 'white',
+              '&:hover': { backgroundColor: '#1565C0' },
+            }}
+          >
+            <FacebookIcon sx={{ fontSize: 20 }} />
+          </IconButton>
+          <IconButton
+            sx={{
+              width: 44,
+              height: 44,
+              backgroundColor: '#000000',
+              color: 'white',
+              '&:hover': { backgroundColor: '#333333' },
+            }}
+          >
+            <XIcon sx={{ fontSize: 20 }} />
+          </IconButton>
+          <IconButton
+            sx={{
+              width: 44,
+              height: 44,
+              backgroundColor: '#EA4335',
+              color: 'white',
+              '&:hover': { backgroundColor: '#D32F2F' },
+            }}
+          >
+            <GoogleIcon sx={{ fontSize: 20 }} />
+          </IconButton>
+          <IconButton
+            sx={{
+              width: 44,
+              height: 44,
+              backgroundColor: '#0A66C2',
+              color: 'white',
+              '&:hover': { backgroundColor: '#0D47A1' },
+            }}
+          >
+            <LinkedInIcon sx={{ fontSize: 20 }} />
+          </IconButton>
+        </Box>
+      </Paper>
     </Box>
   )
 }
