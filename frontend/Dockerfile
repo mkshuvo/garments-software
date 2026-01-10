@@ -1,5 +1,5 @@
-# Use Alpine Linux with Node.js 22 (Current LTS)
-FROM node:22.17.1-alpine3.22 AS base
+# Use Alpine Linux with Node.js 24 (Current LTS)
+FROM node:24-alpine3.22 AS base
 
 # Install dependencies only when needed
 FROM base AS deps
@@ -8,7 +8,7 @@ WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
-RUN npm ci && npm cache clean --force
+RUN npm install -g npm@latest && npm ci && npm cache clean --force
 
 # Rebuild the source code only when needed
 FROM base AS builder
