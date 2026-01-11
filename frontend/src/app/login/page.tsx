@@ -17,16 +17,16 @@ import {
   Divider,
   Link as MuiLink,
 } from '@mui/material'
-import {
-  Visibility,
-  VisibilityOff,
-} from '@mui/icons-material'
-import FacebookIcon from '@mui/icons-material/Facebook'
-import GoogleIcon from '@mui/icons-material/Google'
-import LinkedInIcon from '@mui/icons-material/LinkedIn'
-import XIcon from '@mui/icons-material/X'
 import { useAuthStore } from '@/stores/authStore'
 import { authService } from '@/services/authService'
+import {
+  FacebookIcon,
+  XIcon,
+  GoogleIcon,
+  LinkedInIcon,
+  VisibilityIcon,
+  VisibilityOffIcon,
+} from '@/components/icons/SocialIcons'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -158,7 +158,7 @@ export default function LoginPage() {
             Sign In
           </Typography>
           <Typography variant="body2" sx={{ color: '#A3AED0' }}>
-            Don't have an account yet?{' '}
+            Don&apos;t have an account yet?{' '}
             <MuiLink
               href="#"
               sx={{
@@ -258,7 +258,7 @@ export default function LoginPage() {
                       disabled={isLoading}
                       sx={{ color: '#A3AED0' }}
                     >
-                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                      {showPassword ? <VisibilityOffIcon size={20} /> : <VisibilityIcon size={20} />}
                     </IconButton>
                   </InputAdornment>
                 ),
@@ -376,7 +376,7 @@ export default function LoginPage() {
               '&:hover': { backgroundColor: '#1565C0' },
             }}
           >
-            <FacebookIcon sx={{ fontSize: 20 }} />
+            <FacebookIcon size={20} />
           </IconButton>
           <IconButton
             sx={{
@@ -387,7 +387,7 @@ export default function LoginPage() {
               '&:hover': { backgroundColor: '#333333' },
             }}
           >
-            <XIcon sx={{ fontSize: 20 }} />
+            <XIcon size={20} />
           </IconButton>
           <IconButton
             sx={{
@@ -398,7 +398,7 @@ export default function LoginPage() {
               '&:hover': { backgroundColor: '#D32F2F' },
             }}
           >
-            <GoogleIcon sx={{ fontSize: 20 }} />
+            <GoogleIcon size={20} />
           </IconButton>
           <IconButton
             sx={{
@@ -409,7 +409,7 @@ export default function LoginPage() {
               '&:hover': { backgroundColor: '#0D47A1' },
             }}
           >
-            <LinkedInIcon sx={{ fontSize: 20 }} />
+            <LinkedInIcon size={20} />
           </IconButton>
         </Box>
       </Paper>
