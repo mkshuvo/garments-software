@@ -31,13 +31,13 @@ const KPICard: React.FC<KPICardProps> = ({ title, value, type, loading, trend, i
     const getIcon = () => {
         switch (type) {
             case 'asset':
-                return <AccountBalanceWalletIcon sx={{ color: '#fff' }} />
+                return <AccountBalanceWalletIcon sx={{ color: '#fff', fontSize: 24 }} />
             case 'liability':
-                return <PaidIcon sx={{ color: '#fff' }} />
+                return <PaidIcon sx={{ color: '#fff', fontSize: 24 }} />
             case 'equity':
-                return <TrendingUpIcon sx={{ color: '#fff' }} />
+                return <TrendingUpIcon sx={{ color: '#fff', fontSize: 24 }} />
             case 'status':
-                return isBalanced ? <CheckCircleIcon sx={{ color: '#fff' }} /> : <WarningIcon sx={{ color: '#fff' }} />
+                return isBalanced ? <CheckCircleIcon sx={{ color: '#fff', fontSize: 24 }} /> : <WarningIcon sx={{ color: '#fff', fontSize: 24 }} />
         }
     }
 
@@ -46,9 +46,9 @@ const KPICard: React.FC<KPICardProps> = ({ title, value, type, loading, trend, i
             case 'asset':
                 return 'linear-gradient(135deg, #4318FF 0%, #7551FF 100%)'
             case 'liability':
-                return 'linear-gradient(135deg, #EE5D50 0%, #FF7B73 100%)' // Reddish for liabilities
+                return 'linear-gradient(135deg, #EE5D50 0%, #FF7B73 100%)'
             case 'equity':
-                return 'linear-gradient(135deg, #05CD99 0%, #38D9AA 100%)' // Greenish for equity/net
+                return 'linear-gradient(135deg, #05CD99 0%, #38D9AA 100%)'
             case 'status':
                 return isBalanced
                     ? 'linear-gradient(135deg, #05CD99 0%, #38D9AA 100%)'
@@ -66,14 +66,17 @@ const KPICard: React.FC<KPICardProps> = ({ title, value, type, loading, trend, i
     return (
         <Paper
             sx={{
-                p: 2,
+                p: 3,
                 borderRadius: '20px',
-                boxShadow: '0px 18px 40px rgba(112, 144, 176, 0.12)',
+                boxShadow: '0px 18px 40px rgba(0, 0, 0, 0.2)',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 2,
+                gap: 2.5,
                 height: '100%',
-                backgroundColor: '#ffffff'
+                backgroundColor: '#111C44',
+                border: '1px solid rgba(255, 255, 255, 0.05)',
+                transition: 'transform 0.2s',
+                '&:hover': { transform: 'translateY(-4px)' }
             }}
         >
             <Box
@@ -85,27 +88,27 @@ const KPICard: React.FC<KPICardProps> = ({ title, value, type, loading, trend, i
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.1)'
+                    flexShrink: 0
                 }}
             >
                 {getIcon()}
             </Box>
 
             <Box sx={{ flex: 1 }}>
-                <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
+                <Typography variant="body2" sx={{ color: '#A3AED0', fontSize: '0.875rem', fontWeight: 500 }}>
                     {title}
                 </Typography>
 
                 {loading ? (
-                    <Skeleton variant="text" width="60%" height={32} />
+                    <Skeleton variant="text" width="60%" height={32} sx={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }} />
                 ) : (
                     <Typography
-                        variant="h6"
+                        variant="h4"
                         sx={{
-                            color: '#2B3674',
+                            color: '#FFFFFF',
                             fontWeight: 700,
                             lineHeight: 1.2,
-                            fontSize: '1.25rem'
+                            mt: 0.5
                         }}
                     >
                         {getFormattedValue()}
@@ -113,23 +116,19 @@ const KPICard: React.FC<KPICardProps> = ({ title, value, type, loading, trend, i
                 )}
 
                 {trend !== undefined && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-                        {trend >= 0 ? (
-                            <TrendingUpIcon sx={{ fontSize: 16, color: '#05CD99' }} />
-                        ) : (
-                            <TrendingDownIcon sx={{ fontSize: 16, color: '#EE5D50' }} />
-                        )}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1 }}>
                         <Typography
                             variant="caption"
                             sx={{
                                 color: trend >= 0 ? '#05CD99' : '#EE5D50',
-                                fontWeight: 700
+                                fontWeight: 700,
+                                fontSize: '0.85rem'
                             }}
                         >
-                            {Math.abs(trend)}%
+                            {trend >= 0 ? '+' : ''}{trend}%
                         </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                            vs last month
+                        <Typography variant="caption" sx={{ color: '#A3AED0', fontSize: '0.75rem' }}>
+                            since last month
                         </Typography>
                     </Box>
                 )}

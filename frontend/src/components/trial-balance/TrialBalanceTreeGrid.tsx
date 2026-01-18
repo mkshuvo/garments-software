@@ -54,17 +54,16 @@ const AccountRow = ({
         <Box
             sx={{
                 display: 'grid',
-                gridTemplateColumns: 'minmax(300px, 2fr) 100px 1fr 1fr 1fr 100px',
+                gridTemplateColumns: 'minmax(250px, 2.5fr) 140px 1.2fr 1.2fr 1.2fr 100px',
                 gap: 2,
-                py: 2,
+                py: 2.25,
                 px: 3,
-                borderBottom: '1px solid #F4F7FE',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
                 alignItems: 'center',
                 transition: 'background-color 0.2s',
                 cursor: onClick ? 'pointer' : 'default',
                 '&:hover': {
-                    backgroundColor: '#FAFCFF',
-                    '& .account-name': { color: '#4318FF' }
+                    backgroundColor: 'rgba(255, 255, 255, 0.02)',
                 }
             }}
             onClick={() => onClick && onClick(account.accountId, account.accountName)}
@@ -73,25 +72,24 @@ const AccountRow = ({
             <Box sx={{ pl: 4 }}>
                 <Typography
                     variant="body2"
-                    className="account-name"
-                    sx={{ color: '#2B3674', fontWeight: 600, transition: 'color 0.2s' }}
+                    sx={{ color: '#FFFFFF', fontWeight: 600 }}
                 >
                     {account.accountName}
                 </Typography>
             </Box>
 
             {/* Code */}
-            <Typography variant="caption" sx={{ color: '#A3AED0', fontFamily: 'monospace' }}>
-                {account.accountId.substring(0, 4)}...
+            <Typography variant="body2" sx={{ color: '#A3AED0', fontFamily: 'monospace' }}>
+                {account.accountId.substring(0, 10)}
             </Typography>
 
             {/* Debit */}
-            <Typography variant="body2" sx={{ color: '#2B3674', textAlign: 'right' }}>
+            <Typography variant="body2" sx={{ color: '#FFFFFF', textAlign: 'right', fontWeight: 500 }}>
                 {account.debitAmount !== 0 ? formatCurrency(account.debitAmount) : '-'}
             </Typography>
 
             {/* Credit */}
-            <Typography variant="body2" sx={{ color: '#2B3674', textAlign: 'right' }}>
+            <Typography variant="body2" sx={{ color: '#FFFFFF', textAlign: 'right', fontWeight: 500 }}>
                 {account.creditAmount !== 0 ? formatCurrency(account.creditAmount) : '-'}
             </Typography>
 
@@ -99,7 +97,7 @@ const AccountRow = ({
             <Typography
                 variant="body2"
                 sx={{
-                    color: isPositive ? '#05CD99' : '#EE5D50',
+                    color: '#FFFFFF',
                     fontWeight: 700,
                     textAlign: 'right'
                 }}
@@ -125,33 +123,33 @@ const CategorySection = ({
     const [expanded, setExpanded] = useState(true)
 
     return (
-        <Box sx={{ mb: 1 }}>
+        <Box sx={{ mb: 0.5 }}>
             {/* Category Header */}
             <Box
                 sx={{
                     display: 'grid',
-                    gridTemplateColumns: 'minmax(300px, 2fr) 100px 1fr 1fr 1fr 100px',
+                    gridTemplateColumns: 'minmax(250px, 2.5fr) 140px 1.2fr 1.2fr 1.2fr 100px',
                     gap: 2,
                     py: 2,
                     px: 3,
-                    backgroundColor: '#F7F9FB', // Light gray background for category headers
-                    // borderBottom: expanded ? '1px solid #E0E5F2' : 'none',
+                    backgroundColor: 'rgba(255, 255, 255, 0.02)',
                     cursor: 'pointer',
-                    alignItems: 'center'
+                    alignItems: 'center',
+                    borderRadius: '8px',
+                    mx: 1
                 }}
                 onClick={() => setExpanded(!expanded)}
             >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <IconButton size="small" sx={{ p: 0.5 }}>
+                    <IconButton size="small" sx={{ p: 0.5, color: '#FFFFFF' }}>
                         {expanded ? <KeyboardArrowDownIcon /> : <KeyboardArrowRightIcon />}
                     </IconButton>
-                    <Typography variant="subtitle1" sx={{ color: '#2B3674', fontWeight: 700 }}>
+                    <Typography variant="subtitle1" sx={{ color: '#FFFFFF', fontWeight: 700 }}>
                         {category.name}
                     </Typography>
                 </Box>
 
                 <Box /> {/* Spacer for Code */}
-
                 <Box /> {/* Spacer for Debit */}
                 <Box /> {/* Spacer for Credit */}
 
@@ -159,7 +157,7 @@ const CategorySection = ({
                 <Typography
                     variant="subtitle2"
                     sx={{
-                        color: '#2B3674',
+                        color: '#FFFFFF',
                         fontWeight: 700,
                         textAlign: 'right'
                     }}
@@ -199,46 +197,46 @@ export const TrialBalanceTreeGrid: React.FC<TrialBalanceTreeGridProps> = ({ data
         <Paper
             sx={{
                 width: '100%',
-                borderRadius: '20px',
-                boxShadow: '0px 18px 40px rgba(112, 144, 176, 0.12)',
-                backgroundColor: '#ffffff',
-                overflow: 'hidden'
+                borderRadius: '24px',
+                boxShadow: '0px 18px 40px rgba(0, 0, 0, 0.3)',
+                backgroundColor: '#111C44',
+                overflow: 'hidden',
+                border: '1px solid rgba(255, 255, 255, 0.05)'
             }}
         >
             {/* Grid Header */}
             <Box
                 sx={{
                     display: 'grid',
-                    gridTemplateColumns: 'minmax(300px, 2fr) 100px 1fr 1fr 1fr 100px',
+                    gridTemplateColumns: 'minmax(250px, 2.5fr) 140px 1.2fr 1.2fr 1.2fr 100px',
                     gap: 2,
-                    py: 2.5,
+                    py: 3,
                     px: 3,
-                    borderBottom: '1px solid #E0E5F2',
-                    backgroundColor: '#FAFCFF'
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
                 }}
             >
-                <Typography variant="caption" sx={{ color: '#A3AED0', fontWeight: 700, letterSpacing: '0.5px' }}>
+                <Typography variant="caption" sx={{ color: '#A3AED0', fontWeight: 700, letterSpacing: '1px' }}>
                     ACCOUNT NAME
                 </Typography>
-                <Typography variant="caption" sx={{ color: '#A3AED0', fontWeight: 700, letterSpacing: '0.5px' }}>
+                <Typography variant="caption" sx={{ color: '#A3AED0', fontWeight: 700, letterSpacing: '1px' }}>
                     CODE
                 </Typography>
-                <Typography variant="caption" sx={{ color: '#A3AED0', fontWeight: 700, letterSpacing: '0.5px', textAlign: 'right' }}>
+                <Typography variant="caption" sx={{ color: '#A3AED0', fontWeight: 700, letterSpacing: '1px', textAlign: 'right' }}>
                     DEBIT
                 </Typography>
-                <Typography variant="caption" sx={{ color: '#A3AED0', fontWeight: 700, letterSpacing: '0.5px', textAlign: 'right' }}>
+                <Typography variant="caption" sx={{ color: '#A3AED0', fontWeight: 700, letterSpacing: '1px', textAlign: 'right' }}>
                     CREDIT
                 </Typography>
-                <Typography variant="caption" sx={{ color: '#A3AED0', fontWeight: 700, letterSpacing: '0.5px', textAlign: 'right' }}>
+                <Typography variant="caption" sx={{ color: '#A3AED0', fontWeight: 700, letterSpacing: '1px', textAlign: 'right' }}>
                     NET BALANCE
                 </Typography>
-                <Typography variant="caption" sx={{ color: '#A3AED0', fontWeight: 700, letterSpacing: '0.5px', textAlign: 'center' }}>
+                <Typography variant="caption" sx={{ color: '#A3AED0', fontWeight: 700, letterSpacing: '1px', textAlign: 'center' }}>
                     TREND
                 </Typography>
             </Box>
 
             {/* Content */}
-            <Box>
+            <Box sx={{ py: 1 }}>
                 {data.categories.map((category) => (
                     <CategorySection
                         key={category.name}
@@ -252,29 +250,29 @@ export const TrialBalanceTreeGrid: React.FC<TrialBalanceTreeGridProps> = ({ data
             <Box
                 sx={{
                     display: 'grid',
-                    gridTemplateColumns: 'minmax(300px, 2fr) 100px 1fr 1fr 1fr 100px',
+                    gridTemplateColumns: 'minmax(250px, 2.5fr) 140px 1.2fr 1.2fr 1.2fr 100px',
                     gap: 2,
-                    py: 3,
+                    py: 4,
                     px: 3,
-                    borderTop: '2px solid #E0E5F2',
-                    backgroundColor: '#FAFCFF'
+                    borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                    backgroundColor: 'rgba(255, 255, 255, 0.03)'
                 }}
             >
-                <Typography variant="h6" sx={{ color: '#2B3674', fontWeight: 700 }}>
+                <Typography variant="h5" sx={{ color: '#FFFFFF', fontWeight: 700 }}>
                     Grand Total
                 </Typography>
                 <Box />
 
-                <Typography variant="subtitle1" sx={{ color: '#2B3674', fontWeight: 700, textAlign: 'right' }}>
+                <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 700, textAlign: 'right' }}>
                     {formatCurrency(data.totalDebits)}
                 </Typography>
 
-                <Typography variant="subtitle1" sx={{ color: '#2B3674', fontWeight: 700, textAlign: 'right' }}>
+                <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 700, textAlign: 'right' }}>
                     {formatCurrency(data.totalCredits)}
                 </Typography>
 
                 <Typography
-                    variant="subtitle1"
+                    variant="h6"
                     sx={{
                         color: data.finalBalance === 0 ? '#05CD99' : '#EE5D50',
                         fontWeight: 700,

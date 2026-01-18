@@ -5,7 +5,7 @@ import TrialBalanceDashboard from '@/components/trial-balance/TrialBalanceDashbo
 
 export default function TrialBalancePage() {
     return (
-        <main className="min-h-screen bg-[#F4F7FE] dark:bg-navy-900">
+        <main className="min-h-screen bg-[#0B1437]">
             <TrialBalanceDashboard />
         </main>
     )
