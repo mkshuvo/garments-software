@@ -14,6 +14,7 @@ import { startOfMonth, endOfMonth } from 'date-fns'
 import { DateRangeSelector } from './DateRangeSelector'
 
 export default function TrialBalanceDashboard() {
+    const [mounted, setMounted] = useState(false)
     const [dateRange, setDateRange] = useState<DateRange>({
         startDate: startOfMonth(new Date()),
         endDate: new Date() // Current date
@@ -21,7 +22,11 @@ export default function TrialBalanceDashboard() {
 
     const [data, setData] = useState<TrialBalanceData | null>(null)
     const [loading, setLoading] = useState(true)
-    const [showZeroBalances, setShowZeroBalances] = useState(false) // Toggle state
+    const [showZeroBalances, setShowZeroBalances] = useState(false)
+
+    useEffect(() => {
+        setMounted(true)
+    }, [])
 
     const fetchData = useCallback(async () => {
         setLoading(true)
@@ -33,7 +38,6 @@ export default function TrialBalanceDashboard() {
             setData(result)
         } catch (error) {
             console.error("Failed to fetch trial balance:", error)
-            // Handle error state suitable for dashboard
         } finally {
             setLoading(false)
         }
@@ -52,35 +56,37 @@ export default function TrialBalanceDashboard() {
             isBalanced: false
         }
 
-        // We assume categories are named consistently from backend/enum
-        // If not, we might need to sum by AccountType from data
         const assets = data.categories.find(c => c.name === 'Assets')?.subtotal || 0
         const liabilities = data.categories.find(c => c.name === 'Liabilities')?.subtotal || 0
-        const equity = data.categories.find(c => c.name === 'Equity')?.subtotal || 0
-        const income = data.categories.find(c => c.name === 'Income')?.subtotal || 0
-        const expenses = data.categories.find(c => c.name === 'Expenses')?.subtotal || 0
-
-        // Net Position roughly Equity + (Income - Expenses) or just Assets - Liabilities
-        // Let's use Assets - Liabilities for a quick "Net Assets" view, or strictly Equity
-        // The dashboard screenshot showed "Net Position" which usually implies Equity or Net Assets.
 
         return {
-            totalAssets: assets,
-            totalLiabilities: liabilities,
-            totalEquity: (assets - liabilities), // Simple Net Assets
-            isBalanced: data.finalBalance === 0
+            totalAssets: Math.abs(assets),
+            totalLiabilities: Math.abs(liabilities),
+            totalEquity: Math.abs(assets + liabilities),
+            isBalanced: Math.abs(data.finalBalance) < 0.01
         }
     }
 
+    // Prevent hydration mismatch
+    const formattedDates = mounted
+        ? `${dateRange.startDate.toLocaleDateString()} - ${dateRange.endDate.toLocaleDateString()}`
+        : ""
+
     return (
-        <Box sx={{ p: 3, maxWidth: '1600px', mx: 'auto' }}>
+        <Box sx={{
+            p: { xs: 2, md: 4 },
+            maxWidth: '1600px',
+            mx: 'auto',
+            minHeight: '100vh',
+            backgroundColor: '#0B1437'
+        }}>
             {/* Top Toolbar */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
                 <Box>
                     <Typography
                         variant="h4"
                         sx={{
-                            color: '#2B3674',
+                            color: '#FFFFFF',
                             fontWeight: 700,
                             mb: 0.5
                         }}
@@ -88,7 +94,7 @@ export default function TrialBalanceDashboard() {
                         Trial Balance
                     </Typography>
                     <Typography variant="body2" sx={{ color: '#A3AED0' }}>
-                        Financial Overview & Analysis • {dateRange.startDate.toLocaleDateString()} - {dateRange.endDate.toLocaleDateString()}
+                        Financial Overview & Analysis • {formattedDates}
                     </Typography>
                 </Box>
 
@@ -97,11 +103,17 @@ export default function TrialBalanceDashboard() {
                         startIcon={<FileDownloadIcon />}
                         variant="outlined"
                         sx={{
-                            borderRadius: '10px',
-                            color: '#2B3674',
-                            borderColor: '#E0E5F2',
+                            borderRadius: '12px',
+                            color: '#FFFFFF',
+                            borderColor: 'rgba(255, 255, 255, 0.1)',
+                            backgroundColor: 'rgba(255, 255, 255, 0.05)',
                             textTransform: 'none',
-                            fontWeight: 600
+                            fontWeight: 600,
+                            px: 3,
+                            '&:hover': {
+                                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                                borderColor: 'rgba(255, 255, 255, 0.2)'
+                            }
                         }}
                     >
                         Export
@@ -110,11 +122,15 @@ export default function TrialBalanceDashboard() {
                         startIcon={<AddIcon />}
                         variant="contained"
                         sx={{
-                            borderRadius: '10px',
-                            background: 'linear-gradient(135deg, #4318FF 0%, #7551FF 100%)',
+                            borderRadius: '12px',
+                            background: '#4318FF',
                             textTransform: 'none',
                             fontWeight: 600,
-                            boxShadow: '0 4px 10px rgba(67, 24, 255, 0.4)'
+                            px: 3,
+                            boxShadow: '0px 4px 12px rgba(67, 24, 255, 0.4)',
+                            '&:hover': {
+                                background: '#3610E8'
+                            }
                         }}
                     >
                         New Journal Entry
@@ -131,21 +147,22 @@ export default function TrialBalanceDashboard() {
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    backgroundColor: '#ffffff',
+                    backgroundColor: '#111C44',
                     p: 1.5,
-                    borderRadius: '16px',
-                    boxShadow: '0px 18px 40px rgba(112, 144, 176, 0.12)',
-                    mb: 3
+                    borderRadius: '20px',
+                    mb: 4,
+                    boxShadow: '0px 18px 40px rgba(0, 0, 0, 0.2)'
                 }}
             >
                 <Box sx={{ display: 'flex', gap: 1 }}>
                     <Button
                         variant="contained"
                         sx={{
-                            borderRadius: '10px',
+                            borderRadius: '12px',
                             textTransform: 'none',
                             backgroundColor: '#4318FF',
-                            fontWeight: 600
+                            fontWeight: 600,
+                            px: 3
                         }}
                     >
                         Standard View
@@ -153,10 +170,11 @@ export default function TrialBalanceDashboard() {
                     <Button
                         variant="text"
                         sx={{
-                            borderRadius: '10px',
+                            borderRadius: '12px',
                             textTransform: 'none',
                             color: '#A3AED0',
-                            fontWeight: 600
+                            fontWeight: 600,
+                            px: 3
                         }}
                     >
                         Comparison
@@ -165,40 +183,41 @@ export default function TrialBalanceDashboard() {
 
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Typography variant="body2" sx={{ color: '#2B3674', fontWeight: 600 }}>
+                        <Typography variant="body2" sx={{ color: '#FFFFFF', fontWeight: 600 }}>
                             Show Zero Balance
                         </Typography>
                         <IconButton
                             onClick={() => setShowZeroBalances(!showZeroBalances)}
-                            color={showZeroBalances ? "primary" : "default"}
+                            sx={{ color: showZeroBalances ? '#4318FF' : '#A3AED0' }}
                         >
-                            {/* Simple toggle visual using icons usually, or Switch. Using FilterList for now as placeholder or actual Switch */}
                             <FilterListIcon />
                         </IconButton>
                     </Box>
 
                     <Box
                         sx={{
-                            borderLeft: '1px solid #E0E5F2',
+                            borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
                             height: '24px',
-                            mx: 1
+                            mx: 2
                         }}
                     />
 
-                    {/* Date Picker Trigger - Simplified */}
                     <Button
-                        startIcon={<CalendarTodayIcon />}
+                        startIcon={<CalendarTodayIcon sx={{ fontSize: 18 }} />}
                         sx={{
-                            color: '#2B3674',
+                            color: '#FFFFFF',
                             fontWeight: 600,
                             textTransform: 'none',
-                            backgroundColor: '#F4F7FE',
-                            borderRadius: '10px',
-                            py: 1,
-                            px: 2
+                            backgroundColor: '#1B254B',
+                            borderRadius: '12px',
+                            py: 1.25,
+                            px: 2.5,
+                            '&:hover': {
+                                backgroundColor: '#222E5E'
+                            }
                         }}
                     >
-                        {dateRange.startDate.toLocaleDateString()} - {dateRange.endDate.toLocaleDateString()}
+                        {formattedDates}
                     </Button>
                 </Box>
             </Box>
