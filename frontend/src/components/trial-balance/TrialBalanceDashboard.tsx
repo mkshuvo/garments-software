@@ -15,6 +15,7 @@ import { DateRangeSelector } from './DateRangeSelector'
 
 export default function TrialBalanceDashboard() {
     const [mounted, setMounted] = useState(false)
+    const [formattedDates, setFormattedDates] = useState("")
     const [dateRange, setDateRange] = useState<DateRange>({
         startDate: startOfMonth(new Date()),
         endDate: new Date() // Current date
@@ -26,6 +27,8 @@ export default function TrialBalanceDashboard() {
 
     useEffect(() => {
         setMounted(true)
+        // Format dates only on the client
+        setFormattedDates(`${startOfMonth(new Date()).toLocaleDateString()} - ${new Date().toLocaleDateString()}`)
     }, [])
 
     const fetchData = useCallback(async () => {
@@ -36,12 +39,17 @@ export default function TrialBalanceDashboard() {
                 includeZeroBalances: showZeroBalances
             })
             setData(result)
+
+            // Update formatted dates if dateRange changes
+            if (mounted) {
+                setFormattedDates(`${dateRange.startDate.toLocaleDateString()} - ${dateRange.endDate.toLocaleDateString()}`)
+            }
         } catch (error) {
             console.error("Failed to fetch trial balance:", error)
         } finally {
             setLoading(false)
         }
-    }, [dateRange, showZeroBalances])
+    }, [dateRange, showZeroBalances, mounted])
 
     useEffect(() => {
         fetchData()
@@ -59,26 +67,25 @@ export default function TrialBalanceDashboard() {
         const assets = data.categories.find(c => c.name === 'Assets')?.subtotal || 0
         const liabilities = data.categories.find(c => c.name === 'Liabilities')?.subtotal || 0
 
+        // Final Fix for Sign Logic:
+        // We want all KPI values to be shown as POSITIVE numbers (absolute values).
+        const absAssets = Math.abs(assets)
+        const absLiabilities = Math.abs(liabilities)
+
         return {
-            totalAssets: Math.abs(assets),
-            totalLiabilities: Math.abs(liabilities),
-            totalEquity: Math.abs(assets + liabilities),
+            totalAssets: absAssets,
+            totalLiabilities: absLiabilities,
+            // Net Position = |Assets| - |Liabilities|
+            totalEquity: Math.abs(absAssets - absLiabilities),
             isBalanced: Math.abs(data.finalBalance) < 0.01
         }
     }
 
-    // Prevent hydration mismatch
-    const formattedDates = mounted
-        ? `${dateRange.startDate.toLocaleDateString()} - ${dateRange.endDate.toLocaleDateString()}`
-        : ""
-
     return (
         <Box sx={{
-            p: { xs: 2, md: 4 },
+            p: { xs: 1, md: 2 },
             maxWidth: '1600px',
-            mx: 'auto',
-            minHeight: '100vh',
-            backgroundColor: '#0B1437'
+            mx: 'auto'
         }}>
             {/* Top Toolbar */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
@@ -93,8 +100,11 @@ export default function TrialBalanceDashboard() {
                     >
                         Trial Balance
                     </Typography>
-                    <Typography variant="body2" sx={{ color: '#A3AED0' }}>
-                        Financial Overview & Analysis • {formattedDates}
+                    <Typography
+                        variant="body2"
+                        sx={{ color: '#A3AED0' }}
+                    >
+                        Financial Overview & Analysis • {formattedDates || "..."}
                     </Typography>
                 </Box>
 
@@ -217,7 +227,7 @@ export default function TrialBalanceDashboard() {
                             }
                         }}
                     >
-                        {formattedDates}
+                        {formattedDates || "..."}
                     </Button>
                 </Box>
             </Box>
