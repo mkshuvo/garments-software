@@ -7,13 +7,13 @@ import Topbar from './Topbar'
 
 const drawerWidth = 280
 
-export default function LayoutShell({ children }: { children: React.ReactNode }) {
+export default function LayoutShell({ children, bgColor = '#F4F7FE' }: { children: React.ReactNode, bgColor?: string }) {
   return (
     <Box
       sx={{
         display: 'flex',
         minHeight: '100vh',
-        backgroundColor: '#F4F7FE',
+        backgroundColor: bgColor,
       }}
     >
       <Topbar />
@@ -22,10 +22,11 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
-          ml: `${drawerWidth}px`,
-          backgroundColor: '#F4F7FE',
+          p: { xs: 2, md: 3 },
+          ml: { lg: `${drawerWidth}px` }, // Respect drawer width on desktop
+          backgroundColor: bgColor,
           minHeight: '100vh',
+          width: { lg: `calc(100% - ${drawerWidth}px)` }
         }}
       >
         <Toolbar sx={{ minHeight: '80px !important' }} />
