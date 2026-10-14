@@ -582,3 +582,8 @@ uploads/temp/
 # Cache directories
 .cache/
 .temp/
+
+# Never commit local credential files or real business data
+pgpass
+*.pgpass
+sample_csv/

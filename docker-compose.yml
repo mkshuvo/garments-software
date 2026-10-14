@@ -17,6 +17,9 @@ services:
       - JwtSettings__Issuer=GarmentsERP.API
       - JwtSettings__Audience=GarmentsERP.Client
       - JwtSettings__ExpireHours=24
+      - Encryption__Key=${ENCRYPTION_KEY}
+      - Encryption__IV=${ENCRYPTION_IV}
+      - Encryption__Salt=${ENCRYPTION_SALT}
     ports:
       - "8080:8080"
     volumes:
