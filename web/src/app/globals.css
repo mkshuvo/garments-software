@@ -1,0 +1,17 @@
+/* Design tokens, including every colour, live in src/theme/Tokens.ts and are applied through the
+   MUI theme. Colour literals are not allowed in this file — the same gate as components (L15). */
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-latin), var(--font-bengali), system-ui, sans-serif;
+}
+
+/* Ledger columns need digits that line up; proportional figures make a money column unreadable. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
