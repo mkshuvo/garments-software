@@ -255,6 +255,8 @@ Every phase ends at a **gate**: a command that prints PASS/FAIL with evidence, p
 Tag `legacy-final`; extract read-only schema + MM Fashion CSV mapping into `legacy-reference/`. New solution skeleton at §2.5 with an empty bootable app. Build CI: both builds, both lint, type-check, migrations-on-empty-DB, L1/L2/L3/L6/L14/L15 checkers, and a `verify-all.sh` that is the single gate command. Fix the frontend's two dead imports only if we keep any page; otherwise the new `web/` starts clean. Docker Desktop must be running — it currently is not.
 **Gate:** green pipeline on an app that does nothing yet, on every push. *This is the phase that could not have been skipped.*
 
+**✅ P0 CLOSED 2026-10-16 — `verify-all.sh` PASS, 11 checks.** Frontend: 105 tests, lint clean, production build succeeds, route graph closed (3 pages, 8/8 components reachable). Backend: 13 law tests (6 hold, 6 fire on planted breaches, 1 stays silent on compliant prose). Coverage line correctly reads `controllers: 0` — the harness is real, the product is not built yet. Every law was proven to fire by planting violations and then removing them.
+
 #### P0 execution record (2026-10-16)
 
 Frozen and restructured: `legacy-final` → `adbc880`. `backend/`, `frontend/`, `nginx/`, `pgadmin/`, `scripts/`, `ssl/` and the old compose/Makefile/solution moved under `legacy/` with `git mv`, so the read-only reference is the whole tree rather than a hand-picked extract; `legacy/Directory.Build.props` severs root build inheritance so the frozen code still builds as it was tagged. New tree: `GarmentsERP.slnx` with `src/{Core,Platform,Ledger,Api,Modules/{Inventory,Purchasing,Sales,Payroll,Production}}` and `tests/{Unit,Architecture,Integration}`. Docker Desktop was started and is running.
