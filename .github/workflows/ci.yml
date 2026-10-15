@@ -1,0 +1,112 @@
+name: verify
+
+# The legacy repository had no CI at all, which is how a frontend that could not build and 22
+# commented-out DI registrations survived 108 commits. Every push runs the same gate a developer
+# runs locally; the two must never diverge.
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+env:
+  DOTNET_NOLOGO: 'true'
+  DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore GarmentsERP.slnx
+
+      # TreatWarningsAsErrors is set repo-wide, so a warning fails here. No suppressions without a
+      # written reason.
+      - name: Build
+        run: dotnet build GarmentsERP.slnx --no-restore -v q --nologo
+
+      - name: Engineering laws (L1, L1b, L2, L3, L6, L8)
+        run: dotnet test tests/Garments.Tests.Architecture --no-build -v q --nologo
+
+      - name: Domain unit tests
+        run: dotnet test tests/Garments.Tests.Unit --no-build -v q --nologo
+
+      - name: Integration tests (Postgres)
+        run: dotnet test tests/Garments.Tests.Integration --no-build -v q --nologo
+
+  # L7: migrations must apply to an EMPTY Postgres. A local half-migrated volume hid the legacy
+  # tree's SQL-Server-typed migration (`type: "uniqueidentifier"`) for a year, because every
+  # developer's database was already dirty and startup swallowed the exception.
+  migrations-on-empty-database:
+    runs-on: ubuntu-latest
+    needs: backend
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: garments
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install EF tool
+        run: dotnet tool install --global dotnet-ef
+
+      - name: Apply every migration to a brand-new schema
+        run: |
+          dotnet ef database update \
+            --project src/Api --startup-project src/Api --no-build \
+            --ConnectionStrings:Default="Host=localhost;Port=5432;Database=garments;Username=postgres;Password=ci"
+
+  # L12-L15 and L17 are enforced here rather than in review.
+  frontend:
+    runs-on: ubuntu-latest
+    needs: backend
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Skip when web/ does not exist yet
+        id: guard
+        run: test -f web/package.json && echo "enabled=true" >> "$GITHUB_OUTPUT" || echo "enabled=false" >> "$GITHUB_OUTPUT"
+        working-directory: ${{ github.workspace }}
+
+      - uses: actions/setup-node@v4
+        if: steps.guard.outputs.enabled == 'true'
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - run: npm ci --no-audit --no-fund
+        if: steps.guard.outputs.enabled == 'true'
+      - run: npm run type-check
+        if: steps.guard.outputs.enabled == 'true'
+      - run: npm run lint
+        if: steps.guard.outputs.enabled == 'true'
+      - run: npm run build
+        if: steps.guard.outputs.enabled == 'true'
+      - run: node scripts/check-route-graph.mjs
+        if: steps.guard.outputs.enabled == 'true'
+      - run: npm test
+        if: steps.guard.outputs.enabled == 'true'

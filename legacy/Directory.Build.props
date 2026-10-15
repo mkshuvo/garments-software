@@ -1,0 +1,11 @@
+<Project>
+
+  <!-- Terminates inheritance from the repository root so the frozen legacy tree keeps building
+       exactly as it was tagged. Never add packages here; this tree is read-only reference. -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+    <ImportDirectoryBuildProps>false</ImportDirectoryBuildProps>
+    <ImportDirectoryBuildTargets>false</ImportDirectoryBuildTargets>
+  </PropertyGroup>
+
+</Project>

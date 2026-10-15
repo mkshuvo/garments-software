@@ -65,9 +65,40 @@ Everything in this section was executed and verified on 2026-10-15/16, not infer
 Accounting · Inventory & products · Sales, invoicing & payments · Purchasing & vendor bills · HR & payroll · Production (work orders, BOM, WIP, subcontracting, job costing) · Reporting · Tenancy/admin.
 Nothing is parked. Modules land in tranches (§3), because accounting correctness outranks breadth and every one of these modules is a *producer* into the same ledger.
 
+### 1.4 Who actually buys this (owner decision, 2026-10-16)
+
+**Target customer: the owner of a garment factory** — both small/informal and mid-size planned factories, v1. **Go-to-market: one hand-held design-partner pilot, then reference selling.** Self-serve trial and SEO landing page are explicitly **v2 motions**, not launch requirements.
+
+The five things that make a factory owner pay, in the order they feel them:
+
+1. **"Where is my order?"** — status per style, per buyer, against the ship date. The screen they open every morning.
+2. **"What did this style really cost me, am I losing money?"** — job costing. Most small factories genuinely don't know; finding out is the trust moment.
+3. **Fabric and accessories on hand vs committed**, with wastage and shrinkage.
+4. **Cash today** — the daily cash book, who owes me, what's due to suppliers.
+5. **Reports their accountant and the VAT office will accept.**
+
+The ledger core is the *foundation* of 2, 4 and 5, so P2 is unchanged — but the ledger is the reason they **stay**, not the reason they **buy**. Production and job costing must therefore not sit last in the sequence (§5 revised below).
+
+**Consequences we accept:**
+
+Module quality tiers, so "done" means something specific at each gate:
+
+| Tier | Modules | Standard |
+|---|---|---|
+| **A — world-class** | Ledger and accounting core, cash book, reporting, **order progress and job costing** | Invariants proven by tests; the buying reasons live here. |
+| **B — correct and complete for an SMB** | Inventory/stock ledger, purchasing, sales/invoicing/payments, VAT-ready reports | Right numbers, no enterprise depth. |
+| **C — thin, deferrable** | Payroll and HR | Attendance, piece/CMT rates, payslip. Not enterprise HR. |
+| **Out of v1** | APS/finite-capacity scheduling, MRP explosion, QMS, barcode WMS, self-serve billing | Excluded deliberately — see below. |
+
+- **"Both bands at once" is the acknowledged risk in this plan.** Designing for small and mid-size simultaneously is how an SMB ERP becomes too heavy for the small buyer and too shallow for the mid-size one. Two controls:
+  - **Excluded from v1:** finite-capacity scheduling / APS, MRP explosion, quality management systems, barcode WMS. A mid-size planning department needs a different product; a progress tracker plus accurate costing wins the buying decision instead.
+  - **Hedge: two pilots, one per band.** Since onboarding is hand-held anyway, the second pilot is cheap and reveals which production mode is real rather than averaging two customers into one design.
+- **Production ships in two modes over one data model:** simple stage progress (cutting → stitching → packing → dispatch) for the small factory, and BOM-driven issue/consume for the mid-size one. Same tables, same postings; the configuration differs, the costing never does.
+- **Language: Bangla is a first-class UI language, not a bolt-on.** See L17 and §4.1 — this is decided at P0, not retrofitted.
+- **The demo tenant must be a factory**, with buyers, styles, orders, fabric inventory and a live month — not a generic trading company.
+
 ---
 
-## 2. Architecture
 
 ### 2.1 The spine: every module posts, nothing reports from its own tables
 
@@ -162,8 +193,8 @@ infra/                 compose.dev.yml  compose.prod.yml  ci/  observability/
 The failure mode of the previous build was not ignorance, it was **no gate**. Each rule below has a checker; a rule with no checker is a preference.
 
 | # | Rule | Gate |
-|---|---|---|
-| L1 | **One type per file.** Every class, interface, enum, record and DTO — C#, TypeScript, everywhere. | Analyzer/script fails any file declaring >1 top-level type. |
+|---|---|---|| L1 | **One type per file.** Every class, interface, enum, record and DTO — C#, TypeScript, everywhere. Two enums sharing a file breaches it exactly as two classes do, and a public nested type is only a workaround. | Roslyn rule: >1 top-level type per file, or any nested enum/visible type, fails the build. |
+| L1b | **File name equals the type it declares.** No aggregate files — no `JournalEntryDtos.cs`, no `TrustSignals.cs` holding an enum plus a record. The plural-category filename is the tell that a drawer of types got parked in one file. | Roslyn rule: file stem must match its single top-level type; a fixed list of aggregate stems (`*Dtos`, `*Models`, `*Types`, `*Enums`, `*Common`, `*Helpers`, …) fails outright. |
 | L2 | No commented-out registrations, ever. Composition root resolves **every** controller and service. | Startup test enumerates all controllers/`I*Service` and constructs each. Missing DI = red. |
 | L3 | No fake success. Ban `Guid.NewGuid()` as a returned identifier, `NotImplementedException` behind a 200, and `TODO` in any controller path. | CI grep + "did this actually persist?" integration assertion per write endpoint. |
 | L4 | Financial invariants live in the database (I1-I8). App validation improves the error message, nothing more. | Migration diff review + constraint-existence test. |
@@ -179,6 +210,11 @@ The failure mode of the previous build was not ignorance, it was **no gate**. Ea
 | L14 | Route graph must be closed: every nav href resolves; every page has an inbound route. | Script walks `src/app` against nav config. |
 | L15 | Design tokens have one source. No inline hex/`rgba` literals in components (~40 in the old trial balance alone). | Stylelint/ESLint rule; token file is the only place colours exist. |
 | L16 | No dead code ships. Unreachable components are deleted in the phase that replaces them. | Bundle/Knit coverage + explicit "components reachable" report per gate. |
+| L17 | **Every user-facing string goes through a translation layer from P0.** The buyer is a Bangladeshi factory owner; the operating language is Bangla, with English retained for reports and account codes. Retrofitting i18n into a finished app is the expensive version of this. | ESLint rule failing any hardcoded JSX string; CI asserts no untranslated keys in the shipped bundle. Postgres collation and number/date formatting verified with Bangla data at the P4 gate, not discovered later. |
+
+**Every law must be shown to be capable of failing.** The legacy repository's checks had never been observed to reject anything — a test folder excluded from compilation, a validator never registered, a cache invalidator that logged and returned — which makes a rule that does nothing indistinguishable from a rule that is working. So each law ships with two tests: that it holds on the real tree, and that it fires on a planted known-bad sample. `LawFirepowerTests` writes deliberately non-compliant files under `src/`, re-runs every law, and asserts each one reacts, then cleans up. A law added without a firepower probe is not a law.
+
+This requirement already paid for itself. The first firepower run failed all six probes — not because the breaches were hard to spot, but because `SourceTree` cached its file list on first access, blinding every law to any file created afterwards. A check that cannot see a new file cannot see a newly introduced breach either, and it had been passing happily.
 
 ---
 
@@ -199,6 +235,16 @@ Design is not freehand. Per the owner's rule, every interface task goes through 
 
 `impeccable` runs as a **critique gate** at the end of each UI-bearing phase; its findings are fixed before the phase is called done, and the before/after is captured for the marketing assets in P9.
 
+### 4.1 Bangla typography and numeric display — decided at P0, not retrofitted
+
+The buyer is a Bangladeshi factory owner, so the operating language is Bangla while money, account codes and formal reports stay in English/Latin. Requirements:
+
+- A Latin type pairing **and** a Bengali script family with matching metrics, so mixed labels like `স্টক / Stock` don't break baseline alignment. `awesome-design-md` gives Latin tokens; the Bengali pairing is chosen and tested against real strings at the P4 gate.
+- Tabular figures for all money columns — proportional digits make a ledger column unreadable.
+- Amount formatting: BDT with thousand-grouping agreed per tenant (Western `1,234,567` vs South-Asian lakh-style), and the choice stored as tenant settings, not inferred from browser locale — the legacy screen hardcoded `en-US`/`USD`.
+- Postgres collation verified with Bangla account names and particulars for sorting and search, and search must work on both scripts (a clerk typing "Cotton" and one typing `সূতি` should reach the same row).
+- Translation layer (L17) with the string inventory extracted before P1, because retrofitting i18n after 30K lines of JSX is the expensive path.
+
 ---
 
 ## 5. Phases and gates
@@ -208,6 +254,21 @@ Every phase ends at a **gate**: a command that prints PASS/FAIL with evidence, p
 ### P0 — Freeze and the truth machine
 Tag `legacy-final`; extract read-only schema + MM Fashion CSV mapping into `legacy-reference/`. New solution skeleton at §2.5 with an empty bootable app. Build CI: both builds, both lint, type-check, migrations-on-empty-DB, L1/L2/L3/L6/L14/L15 checkers, and a `verify-all.sh` that is the single gate command. Fix the frontend's two dead imports only if we keep any page; otherwise the new `web/` starts clean. Docker Desktop must be running — it currently is not.
 **Gate:** green pipeline on an app that does nothing yet, on every push. *This is the phase that could not have been skipped.*
+
+#### P0 execution record (2026-10-16)
+
+Frozen and restructured: `legacy-final` → `adbc880`. `backend/`, `frontend/`, `nginx/`, `pgadmin/`, `scripts/`, `ssl/` and the old compose/Makefile/solution moved under `legacy/` with `git mv`, so the read-only reference is the whole tree rather than a hand-picked extract; `legacy/Directory.Build.props` severs root build inheritance so the frozen code still builds as it was tagged. New tree: `GarmentsERP.slnx` with `src/{Core,Platform,Ledger,Api,Modules/{Inventory,Purchasing,Sales,Payroll,Production}}` and `tests/{Unit,Architecture,Integration}`. Docker Desktop was started and is running.
+
+The law checkers are code, not prose — L1, L1b, L2, L3, L6 and L8 live in `tests/Garments.Tests.Architecture` and fail the build. `Directory.Packages.props` pins the whole tree to `net10.0` + EF Core 10.0.13 + Npgsql 10.0.3, ending the mixed 8.0.x split that caused the legacy damage. `verify-all.sh` is the single gate command and CI runs the same steps.
+
+Three things this phase surfaced that are worth keeping:
+
+1. **A green gate over an empty set is not coverage.** The composition-root test passed while matching zero controllers. `verify-all.sh` now prints gate coverage counts — controllers, endpoints, migrations, DB constraints, source and test files — on every run, so an empty-but-green report reads as empty instead of as done. It also gained a boot step, because building is not starting: "does the process come up and answer `/health`" is the cheap check that would have caught 22 commented-out registrations years ago.
+2. **Every law is now proven capable of failing, and that found a bug in the harness itself.** `LawFirepowerTests` plants known-bad files and asserts each law reacts. Its first run failed all six probes — not from subtle detectors but because `SourceTree` cached its file list on first access, so every law was blind to any file created after that moment. A checker that cannot see a new file cannot see a newly introduced breach. The suite is 12 tests: 6 laws holding on the real tree, 6 firing on planted samples, with cleanup verified to leave no residue.
+3. **The one-type-per-file rule needed a second rule to be worth anything.** Standing alone it is routed around: two enums sharing a file already violated it, and a public nested type or an `*Dtos.cs` drawer would too. Added **L1b** (file name must equal the single top-level type it declares; aggregate stems like `*Dtos`, `*Models`, `*Types` fail outright) and extended L1 to reject nested enums and visible nested types. Both are Roslyn-based, and both are covered by firepower probes.
+4. **Environment traps, verified by real binds rather than by reading an exclusion list.** `netsh … excludedportrange` does not clearly report them, so every port below was chosen by opening a listener and watching it succeed or fail: **5199, 5434 and 5435 fail with `EACCES`** (Hyper-V reserves the whole 5432-5435 band), and **6379 and 3000 are already published by another project's `credivect` stack**. An ASP.NET app dying on `SocketException 10013 … forbidden by access permissions` is this, not a bug — which is exactly how it looked at first. Chosen and confirmed free: **Postgres 6432, Redis 6380, API 8080, Next dev 3100, alt 7123.** Also: `docker compose` resolves `.env` against the compose file's own directory, so `infra/compose.dev.yml` needs an explicit `--env-file .env` (now in the Makefile) or `${POSTGRES_PASSWORD:?…}` fails as "missing". The dev stack is up and healthy on those ports. Related product bug found while testing: HTTPS redirection must exempt `/health`, or a load balancer probing plain HTTP gets a 307 — handled with `UseWhen` in `Program.cs`.
+5. **`§4.1`'s Bangla collation assumption is proven, not assumed.** Postgres 17 alpine ships `bn-x-icu`, `bn-BD-x-icu` and `bn-IN-x-icu`, and `ORDER BY … COLLATE "bn-x-icu"` sorts ক, কা, খ, গ in correct varnamala order. A `--locale=C` initdb therefore does not cost proper Bangla sorting; it is declared per column instead.
+6. **Two inherited defects corrected in passing**, both of which made the legacy tree unshippable: the root `.gitignore` ignored `package-lock.json`, `yarn.lock` and `pnpm-lock.yaml`, so no frontend build was ever reproducible (lockfiles are committed now); and `.env.example` carried pgAdmin and Redis-Commander credentials for tooling that must not exist in a production topology at all.
 
 ### P1 — Tenancy, identity, RBAC
 `Tenant`/`Company`, `ApplicationUser`, profiles, roles, `(resource, action)` permissions **seeded** (the old seeder was commented out, so the permission layer was decorative). RLS forced, `set_config` per transaction, JWT with real subject claims — one claim name, not the old three (`NameIdentifier` / `sub` / `id`). Deny-by-default fallback policy. Superuser bootstrap as an offline CLI, never an HTTP endpoint like `POST /api/AdminSetup/create-admin`.
@@ -233,19 +294,24 @@ Products with style/colour/size matrix that must **not** fragment the GL; wareho
 PO → GRN → vendor bill → payment; SO → dispatch/delivery → invoice → receipt → allocation. Tax schemes/rates effective-dated, price lists, partials and credit notes as **reversals** (I3), document workflows with approval. This finally builds the modules `docs/progress.md` marked complete.
 **Gate:** procure-to-pay and order-to-cash cycles post correct balanced journals; AR/AP aging ties; credit note leaves both original and reversal visible.
 
-### P7 — Payroll, HR and Production
-Employees, attendance, leave, payslip generation posting via effective-dated determination rules; **work orders, BOM cost roll-up, WIP as a real GL account fed by consumption, subcontracting (issued-vs-held stock, processing bills), job/order costing per style, COGS.** Apparel specifics from the research: CMT labour at SAM/minute rates, cut-make-trim flow, size-colour matrix costing.
-**Gate:** a complete job — fabric issued, cutting/stitching/packing consumed, subcontracted trim, FG receipt — produces WIP and COGS that tie to the ledger and to the stock ledger simultaneously.
+### P7 — Production and job costing *(Tier A — this is what closes the sale)*
+Work orders, **two modes over one data model**: simple stage progress (cutting → stitching → packing → dispatch) for the small factory, and BOM-driven issue/consume for the mid-size one. BOM cost roll-up, **WIP as a real GL account fed by consumption**, subcontracting (issued-vs-held stock, processing bills), **job/order costing per style**, COGS. CMT labour at SAM/minute rates, size-colour matrix costing. Order progress per buyer against ship date — the morning screen.
+**Excluded here on purpose:** finite-capacity scheduling/APS, MRP explosion, QMS, barcode WMS (§1.4).
+**Gate:** a complete job — fabric issued, cutting/stitching/packing consumed, subcontracted trim, FG receipt — produces WIP and COGS that tie to the ledger **and** to the stock ledger simultaneously; and a "cost per style vs price" report the owner can read without an accountant.
 
-### P8 — SaaS hardening
-Self-serve trial signup, email verification + password reset (neither route existed: `/register`, `/forgot-password`, `/reset-password` were all 404 links), plans/entitlements and billing hooks, demo tenant, onboarding checklist + sample-data generator, production topology split from dev, secret management (post the 2026-10-15 scrub), structured logging with correlation ids, metrics, error tracking, backup **and a restore drill**, documented release runbook + rollback.
-**Gate:** a stranger reaches a working trial workspace in under 3 minutes unassisted; restore drill produces a byte-verified test; prod compose contains no MailHog/pgAdmin/Redis-Commander.
+### P7b — Payroll and HR *(Tier C, deferrable)*
+Employees, attendance, leave, piece/CMT wage calculation, payslips posting through effective-dated determination rules. Deliberately **not** enterprise HR. If the pilot says wages are handled on paper, this slips and the ledger still accepts a manual payroll journal.
+**Gate:** a payroll run posts balanced journals and a payslip prints.
 
-### P9 — Marketing and launch
-Landing page from `design/DESIGN.md`, pricing, product tour and demo video shot against the demo tenant, security/data page, docs hub, MM Fashion before/after case study, launch checklist.
-**Gate:** site live, no placeholder copy, every screenshot traceable to a real screen in the app.
+### P8 — Pilot hardening
+Replaces the old self-serve plan. **Data onboarding tooling is the launch-critical feature**, because a hand-held pilot lives or dies on it: import chart of accounts and opening balances (1 July, per §2.5), buyers/suppliers, styles and size/colour matrices, fabric inventory, open orders, and the cash book history. Plus tenant provisioning from an admin console (no public signup), role setup for owner/manager/accounts/stock-clerk, **printable reports for a paper-first culture**, WhatsApp and email notifications on order status and payment due, VAT/discovery-compliant formats, resilience for flaky connections, and the unglamorous parts: error tracking, structured logs with correlation, backup **and a tested restore drill**, release runbook. Self-serve trial, email verification and billing hooks move to v2.
+**Gate:** a real factory's data loads end-to-end and they can answer "where is order X" and "what did style Y cost" unassisted; restore drill is byte-verified with the `Verifier` control totals; prod compose contains no MailHog/pgAdmin/Redis-Commander.
 
-**Dependency shape:** P0 → P1 → P2 → P3 → P4, then P5/P6/P7 in that order (stock before the cycles that move it; both before payroll/production which consume it). P8 needs P4 to be demoable; P9 needs P8.
+### P9 — Pilot and reference-selling assets
+Built for how this buyer actually decides: a 6-minute walkthrough **in Bangla, on the pilot factory's own numbers**, a printable one-page A4 sheet, pricing in BDT, a go-live pack, and a referral mechanic — the second sale comes from the factory owner down the road, not from search. A minimal public page exists so the product can be found, but it is not the conversion engine and no asset may derive from mock data (L13).
+**Gate:** pilot one live with real data, pilot two (the other size band) onboarded from the go-live pack without heroics, walkthrough and one-pager reviewed by a factory owner who was not involved in building it.
+
+**Dependency shape:** P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7, with P7b optional and P8 needing P4 demoable. Stock (P5) precedes the cycles that move it (P6), which precede production consumption (P7). P9 needs P8. Two pilots are scheduled at P9 — one per factory band.
 
 ---
 
@@ -268,23 +334,27 @@ No legacy runtime data exists, so this is an import, not a migration.
 | Another "temporarily commented out to resolve compilation errors". That phrase is what killed 22 registrations — and it points at the real cause: `net10.0` pinned against `Microsoft.AspNetCore.*` / EF `8.0.x` packages. | Single version set, `dotnet out of support` check in CI, packages upgraded in P0 and locked via `packages.lock.json`. |
 | Correctness verified by eyeball. | Golden-file + property-based tests in P2. `Verifier` control totals in P4 run continuously, not on demand. |
 | Design regressing to inline hex soup. | L15 gate + `impeccable` critique at every UI phase. |
-| Marketing assets built on mock data, as `DevTrialBalanceController` did. | L13 bans mock endpoints in production builds; P9 assets derive only from the P8 demo tenant. |
-| Docker Desktop down, so no phase is verifiable locally. | P0 prerequisite: engine running, `make` targets re-verified against the real daemon. |
+| Marketing assets built on mock data, as `DevTrialBalanceController` did. | L13 bans mock endpoints in production builds; P9 assets derive only from the live pilot tenant. |
+| **"Both bands" drifts into a product too heavy for small factories and too shallow for mid-size ones.** | Tier table §1.4, hard exclusions (APS/MRP/QMS/WMS out of v1), two pilots one band each at the P9 gate, and production shipping as two modes over one data model so the small factory isn't forced to configure a planning department. |
+| Bangla support discovered at P9 instead of P0, forcing a string-layer retrofit through the whole frontend. | L17 makes translation-layer-first coding a build-law with an ESLint gate; §4.1 fixes the typography and collation work into P1 and P4. |
+| ~~Docker Desktop down, so no phase is verifiable locally.~~ | Resolved in P0: engine started and running. Dev port 5199 is Windows-reserved; use 7123. |
 
 ---
 
 ## 8. Open decisions
 
-**Resolved 2026-10-16** and now binding in §2.5: currency scope (BDT functional + full multi-currency) · fiscal calendar (July–June, 12 periods) · deployment target (VPS + Docker Compose).
+**Resolved 2026-10-16** and now binding in §2.5: currency scope (BDT functional + full multi-currency) · fiscal calendar (July–June, 12 periods) · deployment target (VPS + Docker Compose). Also resolved in §1.4: buyer is the garment **factory owner**, target is **both size bands**, go-to-market is a **hand-held pilot then reference selling**, and payroll/HR drops to Tier C.
 
 Still open, none of them blocking P0:
 
-1. **Tax regime.** VAT/discovery rules for garments in the operating country, and whether withholding tax on vendor bills is in v1. Needed before P6, since it changes account determination.
-2. **Billing/entitlement model** for SaaS tiering — plans by users, by modules, or by transaction volume. Needed before P8.
-3. **Which brand aesthetic** to evaluate at the P4 gate (§4) before `design/DESIGN.md` is frozen — Linear, Stripe or Notion.
+1. **Tax regime — blocking before P6.** VAT and discovery rules for garments in Bangladesh, and whether withholding tax on vendor bills is in v1. This changes account determination, so it can be late for P7 but not for P6.
+2. **Which brand aesthetic** to evaluate at the P4 gate (§4) before `design/DESIGN.md` is frozen — Linear, Stripe or Notion.
+3. **Bangla string inventory** — which screens are Bangla-first versus English-first. Needed at P4, not P0, but the L17 translation layer must exist from P0 regardless.
+4. **Pilot factory identity.** Two named pilots, one small and one mid-size (§1.4), are the cheapest control on the "both bands" risk. Needed before P8.
+5. **v2 billing/entitlement model** — moot until self-serve arrives; deferred deliberately with the rest of the SaaS motion.
 
 ---
 
 ## 9. Immediate next action
 
-**P0 — Freeze and truth machine.** Not blocked by any open decision. One prerequisite: **Docker Desktop must be running** — it is currently down, and P0's migrations-apply-to-an-empty-Postgres gate cannot be verified without it.
+**P0 — Freeze and truth machine.** Not blocked by any open decision. Docker Desktop was started on 2026-10-16 and is running, so the empty-database gate is verifiable. **Dev port 5199 is reserved by Windows on this machine — use 7123.**

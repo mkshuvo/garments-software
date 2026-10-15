@@ -1,0 +1,12 @@
+<Project>
+
+  <!-- MSBuild imports only the nearest Directory.Build.props, so the repository gate is pulled in
+       explicitly and then extended. Order matters: import first, relax second. -->
+  <Import Project="..\Directory.Build.props" />
+
+  <PropertyGroup>
+    <!-- Underscore-separated test names are a deliberate convention, not drift. -->
+    <NoWarn>$(NoWarn);CA1707</NoWarn>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <UserSecretsId>garments-erp-api</UserSecretsId>
+    <!-- Program must stay public so the integration host boots the same composition root the
+         deployment does. CA1515 would make it internal, which is exactly how an untestable DI
+         container hides: the legacy app compiled while 22 registrations were commented out. -->
+    <NoWarn>$(NoWarn);CA1515</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Serilog.AspNetCore" />
+    <PackageReference Include="Serilog.Sinks.Console" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Core\Garments.Core.csproj" />
+    <ProjectReference Include="..\Ledger\Garments.Ledger.csproj" />
+    <ProjectReference Include="..\Platform\Garments.Platform.csproj" />
+    <ProjectReference Include="..\Modules\Inventory\Garments.Modules.Inventory.csproj" />
+    <ProjectReference Include="..\Modules\Payroll\Garments.Modules.Payroll.csproj" />
+    <ProjectReference Include="..\Modules\Production\Garments.Modules.Production.csproj" />
+    <ProjectReference Include="..\Modules\Purchasing\Garments.Modules.Purchasing.csproj" />
+    <ProjectReference Include="..\Modules\Sales\Garments.Modules.Sales.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,48 @@
+name: garments-dev
+
+# Dev topology only. The legacy repository had ONE compose file that mixed the application with
+# MailHog, pgAdmin and Redis-Commander and called it production; docs claimed a separate
+# docker-compose.dev.yml that did not exist. Prod lives in compose.prod.yml (P8), and nothing in
+# this file may appear there.
+#
+# HOST PORTS ARE NOT THE DEFAULTS, AND NOT ARBITRARILY. On this machine the obvious choices are
+# unavailable, verified by real binds rather than by reading an exclusion list:
+#   5432-5435  reserved by Windows/Hyper-V -> EACCES, so Postgres cannot publish the default port
+#   6379       already published by another project's Dragonfly container
+#   3000       already published by another project's UI
+#   5199       reserved (this is what made the API look broken when it was only unbindable)
+# Bind-tested free: 6432, 6380, 8080, 3100, 7123.
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: garments-pg
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: garments
+      # Deterministic byte collation for identifiers and codes. Bangla ordering is deliberately not
+      # left to the server default: it is declared per column as COLLATE "bn-x-icu", so a factory
+      # owner searching account names in Bangla gets Bangla ordering on every deployment.
+      POSTGRES_INITDB_ARGS: --locale=C --encoding=UTF8
+    ports: ['6432:5432']
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d garments']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: garments-redis
+    command: ['redis-server', '--save', '', '--appendonly', 'no']
+    ports: ['6380:6379']
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pg_data:

@@ -1,0 +1,15 @@
+# Endpoints allowed to answer without credentials.
+#
+# Changing this file IS the review step: an anonymous endpoint becomes part of the product surface
+# only through a visible diff, never by forgetting to add an attribute. The legacy build had the
+# inverse problem — a bare AddAuthorization() with no fallback policy, which left
+# POST /api/AdminSetup/create-admin and the mock /api/dev/trial-balance fully anonymous.
+#
+# Format: ControllerName/ActionName, one per line, '#' starts a comment.
+# Health probes are mapped via endpoint routing, not a controller, and are allow-listed in code.
+
+Auth/Login
+Auth/Register
+Auth/Refresh
+Auth/ForgotPassword
+Auth/ResetPassword

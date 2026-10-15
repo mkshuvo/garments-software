@@ -451,10 +451,10 @@ pgadmin/pgpass
 # Tools and Utilities
 # =========================
 
-# Package manager files
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
+# Lockfiles ARE committed. The legacy tree ignored npm/yarn/pnpm lockfiles, so no two builds ever
+# resolved the same dependency graph and "works on my machine" was structurally guaranteed.
+# NuGet's packages.lock.json was never ignored, which is why the backend was reproducible and the
+# frontend was not.
 
 # ESLint
 .eslintcache
@@ -587,3 +587,7 @@ uploads/temp/
 pgpass
 *.pgpass
 sample_csv/
+
+# Transient files planted by LawFirepowerTests to prove each law can fail. If this ever
+# appears in a commit, the test crashed mid-run and the plant was not cleaned up.
+src/Garments.LawProbe/
