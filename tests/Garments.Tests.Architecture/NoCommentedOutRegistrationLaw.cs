@@ -23,6 +23,15 @@ internal sealed partial class NoCommentedOutRegistrationLaw : EngineeringLaw
             for (var index = 0; index < lines.Length; index++)
             {
                 var trimmed = lines[index].TrimStart();
+
+                // XML documentation is prose, not disabled code. Without this guard the rule fires on
+                // any doc comment that merely mentions AddDbContext<T> while explaining why pooling is
+                // unsafe — a law with false positives gets silenced rather than obeyed.
+                if (trimmed.StartsWith("///", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
                 if (!trimmed.StartsWith("//", StringComparison.Ordinal))
                 {
                     continue;

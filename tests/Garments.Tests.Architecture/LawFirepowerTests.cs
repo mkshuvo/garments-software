@@ -100,6 +100,50 @@ public class LawFirepowerTests
         }
     }
 
+    /// <summary>
+    /// A law that fires on compliant code gets switched off rather than obeyed, so firing is only
+    /// half the proof. This plants legal prose that mentions the banned shapes and requires silence.
+    /// It is not hypothetical: L2 originally reported every XML doc comment containing
+    /// <c>AddDbContextPool</c> as a commented-out registration.
+    /// </summary>
+    [Fact]
+    public void Laws_stay_silent_on_compliant_prose_that_names_the_banned_shapes()
+    {
+        var root = Path.Combine(SourceTree.RepositoryRoot, "src", "Garments.LawProbe");
+        Directory.CreateDirectory(root);
+        var path = Path.Combine(root, "CompliantProse.cs");
+
+        File.WriteAllText(path, """
+            namespace Garments.LawProbe;
+
+            /// <summary>
+            /// Paired with <c>AddDbContext</c> and never <c>AddDbContextPool</c>, because pooling reuses
+            /// tracked state. We considered <c>AddSingleton&lt;IProbe, Probe&gt;</c> and rejected it, and
+            /// deliberately do not call <c>SeedPermissionsAsync</c> at startup.
+            /// </summary>
+            internal static class CompliantProse
+            {
+            }
+            """);
+
+        try
+        {
+            foreach (var law in EngineeringLaws.All)
+            {
+                var hits = law.FindViolations()
+                    .Where(violation => violation.FilePath.Contains("CompliantProse", StringComparison.Ordinal))
+                    .ToList();
+
+                Assert.Empty(hits);
+            }
+        }
+        finally
+        {
+            TryDelete(path);
+            TryRemoveProbeDirectory();
+        }
+    }
+
     public static TheoryData<string> LawIdsWithProbes()
     {
         var data = new TheoryData<string>();
