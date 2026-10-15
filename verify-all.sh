@@ -122,13 +122,26 @@ if [[ "$QUICK" -eq 0 ]]; then
       step "database: migrations apply to empty Postgres" bash -c '
         set -e
         C=garments-verify-pg-$$
-        docker run -d --rm --name "$C" -e POSTGRES_PASSWORD=verify -e POSTGRES_DB=garments -p 0:5432 postgres:17-alpine >/dev/null
+        docker run -d --rm --name "$C" -e POSTGRES_PASSWORD=verify -e POSTGRES_DB=garments -p 127.0.0.1:0:5432 postgres:17-alpine >/dev/null
         trap "docker stop $C >/dev/null 2>&1 || true" EXIT
-        PORT=$(docker port "$C" 5432 | tail -1 | cut -d: -f2)
         for i in $(seq 1 60); do docker exec "$C" pg_isready -U postgres >/dev/null 2>&1 && break; sleep 1; done
-        dotnet ef database update --project src/Api --startup-project src/Api -v q --nologo \
-          --ConnectionStrings:Default="Host=localhost;Port=$PORT;Database=garments;Username=postgres;Password=verify"
-        docker exec "$C" psql -U postgres -d garments -tAc "select 1" >/dev/null
+
+        # The published host port is chosen by Docker, so it must be read back. Connecting to a bare
+        # 5432 instead reaches whatever else is listening there and fails on the password of a
+        # different server entirely.
+        PORT=$(docker port "$C" 5432 | head -1 | sed 's/.*://')
+
+        # The design-time factory reads this variable, so it must point at the throwaway container;
+        # passing --connection alone would be ignored and the gate would migrate the developer database.
+        export ConnectionStrings__Default="Host=127.0.0.1;Port=$PORT;Database=garments;Username=postgres;Password=verify"
+
+        dotnet ef database update --context GarmentsDbContext \
+          --project src/Platform --startup-project src/Api --no-build
+
+        # A schema that applies but protects nothing is the failure this whole phase exists to catch.
+        # Fed over stdin: writing a Windows path for docker cp is how this went wrong before.
+        docker exec -i "$C" psql -U postgres -d garments -v ON_ERROR_STOP=1 -q -f - \
+          < infra/sql/assert-row-level-security.sql
       '
     else
       printf '\n  (no EF migrations exist yet — L7 database gate activates with P2)\n'

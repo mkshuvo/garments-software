@@ -1,0 +1,36 @@
+# EditorConfig for the new tree. The legacy repository had none, which is part of why four
+# formatting and naming conventions coexisted in one frontend.
+
+root = true
+
+[*]
+charset = utf-8
+insert_final_newline = true
+trim_trailing_whitespace = true
+end_of_line = lf
+
+[*.{cs,csproj,props,targets}]
+indent_style = space
+indent_size = 4
+
+[*.{ts,tsx,js,mjs,cjs,json,yml,yaml,css,html}]
+indent_style = space
+indent_size = 2
+
+[Makefile]
+indent_style = tab
+
+# EF Core writes migration and snapshot files; nobody edits them by hand and nobody can. Holding
+# generated output to the analyzers meant for hand-written code produced 40 CA1861 errors the first
+# time `dotnet ef migrations add` ran, which pushes people toward loosening the rule globally — the
+# wrong fix. Marking the file generated suppresses the style analysers for it alone.
+[**/Data/Migrations/**.cs]
+generated_code = true
+dotnet_diagnostic.CA1861.severity = none
+dotnet_diagnostic.CA1724.severity = none
+dotnet_diagnostic.CA1056.severity = none
+dotnet_diagnostic.CA2007.severity = none
+
+# Test names use underscores deliberately so a failure reads as a sentence.
+[**/tests/**.cs]
+dotnet_diagnostic.CA1707.severity = none

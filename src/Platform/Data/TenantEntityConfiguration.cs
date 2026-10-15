@@ -23,6 +23,10 @@ public static class TenantEntityConfiguration
 
             entity.HasKey(tenant => tenant.Id);
 
+            // The principal side of every tenant foreign key. Stored as uuid like the dependents, so
+            // the relationship is type-compatible in both directions.
+            entity.Property(tenant => tenant.Id).HasConversion(new TenantIdConverter());
+
             entity.Property(tenant => tenant.Slug).HasMaxLength(64);
             entity.Property(tenant => tenant.DisplayName).HasMaxLength(200);
             entity.Property(tenant => tenant.PreferredLanguage).HasMaxLength(16);

@@ -25,12 +25,12 @@ public sealed class TenantDirectory(TenantDirectoryDbContext context) : ITenantD
     public Task<Tenant?> FindAsync(TenantId tenantId, CancellationToken cancellationToken = default) =>
         context.Tenants
             .AsNoTracking()
-            .Where(tenant => tenant.Id == tenantId.Value)
+            .Where(tenant => tenant.Id == tenantId)
             .FirstOrDefaultAsync(cancellationToken);
 
     public async Task<Tenant> CreateAsync(Tenant tenant, CancellationToken cancellationToken = default)
     {
-        if (tenant.Id == Guid.Empty)
+        if (tenant.Id.IsEmpty)
         {
             throw new ArgumentException("A tenant must be created with its id already set.", nameof(tenant));
         }

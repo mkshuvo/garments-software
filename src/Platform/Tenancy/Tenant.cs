@@ -1,3 +1,5 @@
+using Garments.Core;
+
 namespace Garments.Platform.Tenancy;
 
 /// <summary>
@@ -12,7 +14,12 @@ namespace Garments.Platform.Tenancy;
 /// </remarks>
 public class Tenant
 {
-    public required Guid Id { get; set; }
+    /// <summary>
+    /// A <see cref="TenantId"/>, not a bare <c>Guid</c>: every dependent table's <c>TenantId</c> foreign
+    /// key must be type-compatible with this principal key, and the domain wrapper is what stops an
+    /// empty guid from being a valid tenant.
+    /// </summary>
+    public required TenantId Id { get; set; }
 
     /// <summary>Unique, url-safe, immutable once issued: it appears in cache keys and file paths.</summary>
     public required string Slug { get; set; }
