@@ -17,10 +17,27 @@ namespace Garments.Tests.Integration;
 /// </remarks>
 public class WebAppFactory : WebApplicationFactory<Program>
 {
-    protected override void ConfigureWebHost(IWebHostBuilder builder) =>
+    /// <summary>
+    /// A throwaway signing key for the test host. It is not a secret: it signs tokens that can only
+    /// reach a test database, and it exists so the application's refusal to start without a key can
+    /// stay absolute instead of being relaxed for tests.
+    /// </summary>
+    private const string TestSigningKey = "integration-test-only-key-do-not-use-in-any-real-deployment-0123456789";
+
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    {
+        // No fallback connection string. A default pointing at a database that cannot exist turns a
+        // missing environment into a confusing authentication failure, or worse, a test suite that
+        // quietly runs against whatever happens to be listening. The gate exports this.
+        var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__Default")
+            ?? throw new InvalidOperationException(
+                "ConnectionStrings__Default must be set to run the integration tests. Run them through "
+                + "./verify-all.sh, which starts the dev stack and exports it.");
+
         builder.UseEnvironment("Testing")
-            .UseSetting(
-                "ConnectionStrings:Default",
-                Environment.GetEnvironmentVariable("ConnectionStrings__Default")
-                    ?? "Host=127.0.0.1;Port=6432;Database=garments_test;Username=postgres;Password=integration_only");
+            .UseSetting("ConnectionStrings:Default", connectionString)
+            .UseSetting("GarmentsAuth:Issuer", "garments-erp-test")
+            .UseSetting("GarmentsAuth:Audience", "garments-web-test")
+            .UseSetting("GarmentsAuth:SigningKey", TestSigningKey);
+    }
 }

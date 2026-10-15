@@ -32,8 +32,11 @@ public sealed class GarmentsDbContextFactory : IDesignTimeDbContextFactory<Garme
             .UseNpgsql(connectionString)
             .Options;
 
-        // An unscoped context, not a bypassed one: it resolves to TenantId.None, which matches no row.
-        // Migrations issue DDL and never read tenant data, so there is nothing for it to leak.
-        return new GarmentsDbContext(options, new Tenancy.AmbientTenantContext());
+        // Migrations touch global schema, not one tenant's rows, so they run in an explicit system
+        // scope rather than a bare unscoped context — which the session interceptor would refuse.
+        var tenantContext = new Tenancy.AmbientTenantContext();
+        tenantContext.EnterSystemScope();
+
+        return new GarmentsDbContext(options, tenantContext);
     }
 }

@@ -39,7 +39,14 @@ step "backend: build (warnings are errors)" dotnet build "$SOLUTION" --no-restor
 # Engineering law L1/L1b/L2/L3/L6/L8. These fail the build, not a reviewer.
 step "architecture: engineering laws" dotnet test tests/Garments.Tests.Architecture --no-build -v q --nologo
 step "unit: domain primitives" dotnet test tests/Garments.Tests.Unit --no-build -v q --nologo
-step "integration: composition root activates every controller" dotnet test tests/Garments.Tests.Integration --no-build -v q --nologo
+# The integration host boots the real Program, which seeds the permission catalogue and therefore
+# needs a live database. It deliberately has no fallback connection string, so the gate provides one.
+step "integration: composition root activates every controller" bash -c '
+  set -e
+  POSTGRES_PASSWORD=$(grep -E "^POSTGRES_PASSWORD=" .env | cut -d= -f2-)
+  export ConnectionStrings__Default="Host=127.0.0.1;Port=6432;Database=garments;Username=postgres;Password=$POSTGRES_PASSWORD"
+  dotnet test tests/Garments.Tests.Integration --no-build -v q --nologo
+'
 
 # ---------------------------------------------------------------- boot
 # Building is not starting. The legacy tree proved nothing about boot: its accounting controllers
@@ -65,6 +72,13 @@ step "app boots and answers /health" bash -c '
   POSTGRES_PASSWORD=$(grep -E "^POSTGRES_PASSWORD=" .env | cut -d= -f2-)
   export ConnectionStrings__Default="Host=127.0.0.1;Port=6432;Database=garments;Username=postgres;Password=$POSTGRES_PASSWORD"
   export ASPNETCORE_ENVIRONMENT=Development
+
+  # The application refuses to start without a signing key rather than generating one, so the gate
+  # has to supply the dev key from the untracked .env. If it is missing, this fails loudly — which is
+  # the intended behaviour, not a gate bug.
+  while IFS= read -r line; do
+    case "$line" in GarmentsAuth__*) export "${line%%=*}=${line#*=}";; esac
+  done < .env
 
   dotnet run --project src/Api --no-build --no-launch-profile \
     --urls "http://127.0.0.1:0" > "$LOG" 2>&1 &

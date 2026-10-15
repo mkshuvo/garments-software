@@ -16,4 +16,11 @@ public interface ITenantContext
 
     /// <summary>False until a request has been authenticated and scoped to a real tenant.</summary>
     bool HasTenant { get; }
+
+    /// <summary>
+    /// True only for an explicitly opened maintenance scope. Read by
+    /// <see cref="TenantSessionInterceptor"/> to let startup touch global tables without ever letting
+    /// an unscoped <i>request</i> through.
+    /// </summary>
+    bool IsSystemScope { get; }
 }

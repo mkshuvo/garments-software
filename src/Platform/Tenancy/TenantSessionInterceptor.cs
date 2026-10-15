@@ -24,27 +24,34 @@ public sealed class TenantSessionInterceptor(ITenantContext tenantContext) : DbC
 
     public override void ConnectionOpened(DbConnection connection, ConnectionEndEventData eventData)
     {
-        if (!tenantContext.HasTenant)
+        if (!tenantContext.HasTenant && !tenantContext.IsSystemScope)
         {
-            throw new InvalidOperationException(
-                "Refusing to open a database connection with no tenant resolved. Background jobs and CLI paths "
-                + "must establish a tenant explicitly instead of relying on request scope.");
+            throw RefusedBecauseNoTenant();
         }
 
-        Apply(connection, tenantContext.TenantId.ToString());
+        if (tenantContext.HasTenant)
+        {
+            Apply(connection, tenantContext.TenantId.ToString());
+        }
     }
 
     public override async Task ConnectionOpenedAsync(DbConnection connection, ConnectionEndEventData eventData, CancellationToken cancellationToken = default)
     {
-        if (!tenantContext.HasTenant)
+        if (!tenantContext.HasTenant && !tenantContext.IsSystemScope)
         {
-            throw new InvalidOperationException(
-                "Refusing to open a database connection with no tenant resolved. Background jobs and CLI paths "
-                + "must establish a tenant explicitly instead of relying on request scope.");
+            throw RefusedBecauseNoTenant();
         }
 
-        await ApplyAsync(connection, tenantContext.TenantId.ToString(), cancellationToken).ConfigureAwait(false);
+        if (tenantContext.HasTenant)
+        {
+            await ApplyAsync(connection, tenantContext.TenantId.ToString(), cancellationToken).ConfigureAwait(false);
+        }
     }
+
+    private static InvalidOperationException RefusedBecauseNoTenant() => new(
+        "Refusing to open a database connection with no tenant resolved. Background jobs must use "
+        + nameof(TenantScope) + " and maintenance must use " + nameof(AmbientTenantContext.EnterSystemScope)
+        + " explicitly, so that reaching the database without a tenant stays a decision someone wrote down.");
 
     private static void Apply(DbConnection connection, string tenantId)
     {

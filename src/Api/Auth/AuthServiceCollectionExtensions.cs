@@ -1,0 +1,93 @@
+using System.Text;
+using Garments.Platform.Auth;
+using Garments.Platform.Data;
+using Garments.Platform.Identity;
+using Garments.Platform.Rbac;
+using Garments.Platform.Security;
+using Garments.Platform.Tenancy;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
+
+namespace Garments.Api.Auth;
+
+/// <summary>
+/// Registers identity, token validation and the authorisation default.
+/// </summary>
+/// <remarks>
+/// The fallback policy is <c>RequireAuthenticatedUser</c>. The legacy build called a bare
+/// <c>AddAuthorization()</c>, which means "no opinion", which means every action without an
+/// attribute was public — including one that minted administrator accounts. Denying by default makes
+/// exposure a decision someone had to write down.
+/// </remarks>
+internal static class AuthServiceCollectionExtensions
+{
+    public static IServiceCollection AddGarmentsAuth(
+        this IServiceCollection services,
+        AccessTokenOptions tokenOptions)
+    {
+        services.AddSingleton(tokenOptions);
+        services.AddSingleton<AccessTokenIssuer>();
+
+        services.AddIdentityCore<ApplicationUser>()
+            .AddRoles<ApplicationRole>()
+            .AddEntityFrameworkStores<GarmentsDbContext>();
+
+        services.AddHttpContextAccessor();
+        services.AddScoped<ICurrentUser, CurrentUserService>();
+        services.AddScoped<ICurrentActor, CurrentActorService>();
+        services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<PermissionSeeder>();
+
+        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidIssuer = tokenOptions.Issuer,
+                    ValidateAudience = true,
+                    ValidAudience = tokenOptions.Audience,
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenOptions.SigningKey)),
+                    ValidateLifetime = true,
+                    // The legacy tree set this to false and kept it false in production. Clock skew
+                    // tolerance is a convenience for misconfigured clients, not a licence to accept
+                    // tokens whose validity window has closed.
+                    ClockSkew = TimeSpan.FromSeconds(30),
+                    NameClaimType = AuthClaimNames.FullName,
+                };
+            });
+
+        services.AddAuthorization(options =>
+        {
+            options.FallbackPolicy = new AuthorizationPolicyBuilder()
+                .RequireAuthenticatedUser()
+                .Build();
+        });
+
+        return services;
+    }
+
+    /// <summary>
+    /// Reads token settings from the environment, refusing to start without them.
+    /// </summary>
+    public static AccessTokenOptions ReadAccessTokenOptions(IConfiguration configuration)
+    {
+        var section = configuration.GetSection(AccessTokenOptions.SectionName);
+
+        var options = new AccessTokenOptions
+        {
+            Issuer = section[nameof(AccessTokenOptions.Issuer)] ?? string.Empty,
+            Audience = section[nameof(AccessTokenOptions.Audience)] ?? string.Empty,
+            SigningKey = section[nameof(AccessTokenOptions.SigningKey)] ?? string.Empty,
+            LifetimeMinutes = int.TryParse(section[nameof(AccessTokenOptions.LifetimeMinutes)], out var minutes)
+                ? minutes
+                : 30,
+        };
+
+        options.Validate();
+        return options;
+    }
+}

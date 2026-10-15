@@ -1,7 +1,11 @@
+using Garments.Api.Auth;
 using Garments.Api.Composition;
 using Garments.Api.Health;
+using Garments.Api.Middleware;
 using Garments.Api.Observability;
 using Garments.Platform.Data;
+using Garments.Platform.Rbac;
+using Garments.Platform.Tenancy;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,11 +22,6 @@ builder.Host.UseSerilog((context, services, configuration) => configuration
 // without a controller pipeline hides nothing, it just has nothing to protect.
 builder.Services.AddControllers();
 
-// Deny by default. An endpoint that is public is public because it is written down, not because
-// nobody remembered to lock it. The legacy build shipped a bare AddAuthorization() and an
-// unauthenticated POST /api/AdminSetup/create-admin with it.
-builder.Services.AddAuthorization();
-builder.Services.AddAuthentication();
 builder.Services.AddGarmentsObservability();
 builder.Services.AddGarmentsHealth();
 
@@ -30,6 +29,11 @@ builder.Services.AddGarmentsHealth();
 // query, which is how the legacy tree's "dependency check middleware" managed to report healthy
 // against a database it had not actually migrated.
 builder.Services.AddGarmentsData(PlatformDataServiceCollectionExtensions.ReadDatabaseOptions(builder.Configuration));
+
+// Deny by default. An endpoint that is public is public because it is written down, not because
+// nobody remembered to lock it. The legacy build shipped a bare AddAuthorization() and an
+// unauthenticated POST /api/AdminSetup/create-admin with it.
+builder.Services.AddGarmentsAuth(AuthServiceCollectionExtensions.ReadAccessTokenOptions(builder.Configuration));
 
 var app = builder.Build();
 
@@ -46,10 +50,24 @@ if (app.Environment.IsProduction())
 }
 
 app.UseAuthentication();
+
+// Between authentication and authorization: the tenant comes from the token, and nothing downstream
+// may reach the database before it is resolved.
+app.UseMiddleware<TenantResolutionMiddleware>();
+
 app.UseAuthorization();
 
 app.MapControllers();
 app.MapGarmentsHealth();
+
+// The permission catalogue is seeded on every start, and the seeder is idempotent. Leaving this call
+// commented out is what made the legacy [RequirePermission] attribute decorative: the checks were
+// real, and the table they read was empty.
+using (var scope = TenantScope.OpenSystem(app.Services.GetRequiredService<IServiceScopeFactory>()))
+{
+    scope.ServiceProvider.GetRequiredService<PermissionSeeder>()
+        .SeedCatalogueAsync(CancellationToken.None).GetAwaiter().GetResult();
+}
 
 app.Run();
 

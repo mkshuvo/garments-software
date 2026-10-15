@@ -20,4 +20,19 @@ public static class TenantScope
         scope.ServiceProvider.GetRequiredService<AmbientTenantContext>().Set(tenantId);
         return scope;
     }
+
+    /// <summary>
+    /// Opens a scope for startup and maintenance work on global tables.
+    /// </summary>
+    /// <remarks>
+    /// Call this by name at the call site rather than reaching for <c>EnterSystemScope</c> directly,
+    /// so that every use is greppable. Seeding the permission catalogue is the legitimate case; reading
+    /// tenant data through it is not, and row-level security still returns nothing if someone tries.
+    /// </remarks>
+    public static IServiceScope OpenSystem(IServiceScopeFactory scopeFactory)
+    {
+        var scope = scopeFactory.CreateScope();
+        scope.ServiceProvider.GetRequiredService<AmbientTenantContext>().EnterSystemScope();
+        return scope;
+    }
 }
