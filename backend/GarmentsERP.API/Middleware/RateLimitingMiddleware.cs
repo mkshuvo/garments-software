@@ -169,13 +169,4 @@ namespace GarmentsERP.API.Middleware
             await context.Response.WriteAsync(jsonResponse);
         }
     }
-
-    // Extension method for easy middleware registration
-    public static class RateLimitingMiddlewareExtensions
-    {
-        public static IApplicationBuilder UseRateLimiting(this IApplicationBuilder builder)
-        {
-            return builder.UseMiddleware<RateLimitingMiddleware>();
-        }
-    }
 }
