@@ -45,25 +45,46 @@ step "integration: composition root activates every controller" dotnet test test
 # Building is not starting. The legacy tree proved nothing about boot: its accounting controllers
 # threw at activation because 22 registrations sat commented out, and the one thing that would have
 # caught it cheaply — "does the process come up and answer" — was never run.
+#
+# Kestrel is told to bind port 0 and the gate reads back whatever it actually got. This machine
+# reserves whole 100-port blocks to Hyper-V whenever Docker Desktop restarts (currently 7122-7221,
+# previously 5432-5435 and 5199), so any hardcoded dev port eventually fails for a reason that has
+# nothing to do with the code — and a gate that fails for environmental reasons gets ignored.
 step "app boots and answers /health" bash -c '
   set -e
-  PORT=7123
-  dotnet run --project src/Api --no-build --no-launch-profile --urls "http://127.0.0.1:$PORT" > /tmp/garments-boot.log 2>&1 &
+  LOG=/tmp/garments-boot.log
+  : > "$LOG"
+
+  dotnet run --project src/Api --no-build --no-launch-profile \
+    --urls "http://127.0.0.1:0" > "$LOG" 2>&1 &
   PID=$!
-  trap "kill $PID 2>/dev/null || true" EXIT
-  for i in $(seq 1 40); do
-    if curl -fsS "http://127.0.0.1:$PORT/health/live" >/dev/null 2>&1; then break; fi
-    if ! kill -0 $PID 2>/dev/null; then echo "process died:"; tail -n 25 /tmp/garments-boot.log; exit 1; fi
+
+  cleanup() {
+    # dotnet run spawns the real host as a child; killing only the parent leaks the child and
+    # squats a port for every later run.
+    kill "$PID" 2>/dev/null || true
+    pkill -f "Garments.Api" 2>/dev/null || true
+    wait "$PID" 2>/dev/null || true
+  }
+  trap cleanup EXIT
+
+  PORT=""
+  for _ in $(seq 1 40); do
+    PORT=$(grep -oE "Now listening on: http://[0-9.]+:[0-9]+" "$LOG" | grep -oE "[0-9]+$" | head -1)
+    [ -n "$PORT" ] && break
+    kill -0 "$PID" 2>/dev/null || break
     sleep 1
   done
-  curl -fsS "http://127.0.0.1:$PORT/health/live"  > /dev/null
-  curl -fsS "http://127.0.0.1:$PORT/health/ready" > /dev/null
-  if grep -qE "Failed to bind|Hosting failed to start" /tmp/garments-boot.log; then
-    echo "startup logged a failure:"; grep -E "Failed to bind|Hosting failed" /tmp/garments-boot.log | head -3
-    echo "hint: on Windows, netstat -ano | findstr LISTENING and the Hyper-V excluded port ranges"
-    echo "      can reserve dev ports; pick one outside them."
-    exit 1
+
+  if [ -z "$PORT" ]; then
+    echo "never reported a bound address:"; tail -n 25 "$LOG"; exit 1
   fi
+
+  if ! curl -fsS "http://127.0.0.1:$PORT/health/live" >/dev/null 2>&1; then
+    echo "bound port $PORT but /health/live did not answer:"; tail -n 25 "$LOG"; exit 1
+  fi
+  curl -fsS "http://127.0.0.1:$PORT/health/ready" > /dev/null
+  echo "healthy on ephemeral port $PORT"
 '
 
 # ---------------------------------------------------------------- frontend

@@ -11,6 +11,12 @@ public readonly record struct TenantId
 
     private TenantId(Guid value) => _value = value;
 
+    /// <summary>
+    /// The underlying uuid. Persistence and every cache key are built from this, never from a
+    /// re-parsed string, so a tenant can never be addressed by two different textual forms.
+    /// </summary>
+    public Guid Value => _value;
+
     /// <summary>An unassigned tenant. Never valid for a persisted row.</summary>
     public static TenantId None { get; } = new(Guid.Empty);
 

@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <UserSecretsId>garments-erp-api</UserSecretsId>
-    <!-- Program must stay public so the integration host boots the same composition root the
+    <!-- Program must stay public so the integration host boots the identical composition root the
          deployment does. CA1515 would make it internal, which is exactly how an untestable DI
          container hides: the legacy app compiled while 22 registrations were commented out. -->
     <NoWarn>$(NoWarn);CA1515</NoWarn>
@@ -11,6 +11,8 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
     <PackageReference Include="Serilog.AspNetCore" />
     <PackageReference Include="Serilog.Sinks.Console" />
   </ItemGroup>
