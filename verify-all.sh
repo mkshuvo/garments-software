@@ -46,6 +46,13 @@ step "integration: composition root activates every controller" dotnet test test
 # threw at activation because 22 registrations sat commented out, and the one thing that would have
 # caught it cheaply — "does the process come up and answer" — was never run.
 #
+# The app refuses to start without a configured database, so the gate provides one instead of
+# weakening the app. Credentials stay in the untracked .env and reach the process as environment
+# variables, which is the only path .NET config uses for them; no dev password is committed.
+if [[ "$QUICK" -eq 0 ]] || [[ -f .env ]]; then
+  docker compose --env-file .env -f infra/compose.dev.yml up -d >/dev/null 2>&1 || true
+fi
+
 # Kestrel is told to bind port 0 and the gate reads back whatever it actually got. This machine
 # reserves whole 100-port blocks to Hyper-V whenever Docker Desktop restarts (currently 7122-7221,
 # previously 5432-5435 and 5199), so any hardcoded dev port eventually fails for a reason that has
@@ -54,6 +61,10 @@ step "app boots and answers /health" bash -c '
   set -e
   LOG=/tmp/garments-boot.log
   : > "$LOG"
+
+  POSTGRES_PASSWORD=$(grep -E "^POSTGRES_PASSWORD=" .env | cut -d= -f2-)
+  export ConnectionStrings__Default="Host=127.0.0.1;Port=6432;Database=garments;Username=postgres;Password=$POSTGRES_PASSWORD"
+  export ASPNETCORE_ENVIRONMENT=Development
 
   dotnet run --project src/Api --no-build --no-launch-profile \
     --urls "http://127.0.0.1:0" > "$LOG" 2>&1 &

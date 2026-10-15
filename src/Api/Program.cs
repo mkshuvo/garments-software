@@ -1,6 +1,7 @@
 using Garments.Api.Composition;
 using Garments.Api.Health;
 using Garments.Api.Observability;
+using Garments.Platform.Data;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,6 +25,11 @@ builder.Services.AddAuthorization();
 builder.Services.AddAuthentication();
 builder.Services.AddGarmentsObservability();
 builder.Services.AddGarmentsHealth();
+
+// Refuses to start without a configured connection rather than coming up and failing on the first
+// query, which is how the legacy tree's "dependency check middleware" managed to report healthy
+// against a database it had not actually migrated.
+builder.Services.AddGarmentsData(PlatformDataServiceCollectionExtensions.ReadDatabaseOptions(builder.Configuration));
 
 var app = builder.Build();
 
