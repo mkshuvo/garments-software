@@ -3,6 +3,9 @@
   <Folder Name="/src/Api/">
     <Project Path="src/Api/Garments.Api.csproj" />
   </Folder>
+  <Folder Name="/src/Cli/">
+    <Project Path="src/Cli/Garments.Cli.csproj" />
+  </Folder>
   <Folder Name="/src/Core/">
     <Project Path="src/Core/Garments.Core.csproj" />
   </Folder>
