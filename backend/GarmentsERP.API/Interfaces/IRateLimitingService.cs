@@ -25,17 +25,4 @@ namespace GarmentsERP.API.Interfaces
         /// </summary>
         Task<RateLimitInfo> GetRateLimitInfoAsync(string clientId, string endpoint, int maxRequests = 10, TimeSpan? timeWindow = null);
     }
-
-    /// <summary>
-    /// Rate limit information
-    /// </summary>
-    public class RateLimitInfo
-    {
-        public int MaxRequests { get; set; }
-        public int RemainingRequests { get; set; }
-        public DateTime WindowStart { get; set; }
-        public DateTime WindowEnd { get; set; }
-        public TimeSpan TimeWindow { get; set; }
-        public bool IsAllowed { get; set; }
-    }
 }
