@@ -147,8 +147,7 @@ namespace Garments.Platform.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("NormalizedName")
-                        .IsUnique()
-                        .HasDatabaseName("RoleNameIndex");
+                        .HasDatabaseName("IX_roles_normalized_name");
 
                     b.HasIndex("TenantId", "NormalizedName")
                         .IsUnique()
@@ -249,11 +248,10 @@ namespace Garments.Platform.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("NormalizedEmail")
-                        .HasDatabaseName("EmailIndex");
+                        .HasDatabaseName("IX_users_normalized_email");
 
                     b.HasIndex("NormalizedUserName")
-                        .IsUnique()
-                        .HasDatabaseName("UserNameIndex");
+                        .HasDatabaseName("IX_users_normalized_user_name");
 
                     b.HasIndex("TenantId", "NormalizedEmail")
                         .HasDatabaseName("IX_users_tenant_id_normalized_email");

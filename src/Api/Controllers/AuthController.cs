@@ -1,4 +1,5 @@
 using Garments.Platform.Auth;
+using Garments.Platform.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -38,4 +39,25 @@ public class AuthController(IAuthService authService) : ControllerBase
             roles = outcome.Roles ?? [],
         });
     }
+
+    /// <summary>
+    /// Echoes what the server resolved from the presented token.
+    /// </summary>
+    /// <remarks>
+    /// Exists because claim resolution is otherwise invisible: a token can authenticate a caller and
+    /// still yield no tenant, with a bare 403 as the only symptom. Returning the resolved identity
+    /// makes that diagnosable from outside the process, and the client needs it to render the
+    /// signed-in state anyway.
+    /// </remarks>
+    [HttpGet("me")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public IActionResult Me([FromServices] ICurrentUser currentUser) => Ok(new
+    {
+        isAuthenticated = currentUser.IsAuthenticated,
+        userId = currentUser.UserId,
+        tenantId = currentUser.TenantId.IsEmpty ? null : currentUser.TenantId.ToString(),
+        displayName = currentUser.DisplayName,
+        userName = currentUser.UserName,
+    });
 }

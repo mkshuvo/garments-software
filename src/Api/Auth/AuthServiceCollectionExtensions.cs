@@ -43,6 +43,14 @@ internal static class AuthServiceCollectionExtensions
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
+                // Without this, JwtBearer rewrites the wire names on the way in: `sub` arrives as
+                // .../claims/nameidentifier and `tid` as .../claims/tenantid, so every reader keyed
+                // on AuthClaimNames silently finds nothing. The result is not a visible error — the
+                // caller authenticates, the tenant resolves to empty, and every tenant-scoped request
+                // is refused or returns nothing. AuthClaimNames promises that wire names are not
+                // remapped; this is what makes that promise true.
+                options.MapInboundClaims = false;
+
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,

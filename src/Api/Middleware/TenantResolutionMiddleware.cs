@@ -25,16 +25,28 @@ public sealed class TenantResolutionMiddleware(RequestDelegate next)
         {
             var tenantId = currentUser.TenantId;
 
-            if (tenantId.IsEmpty)
+            if (!tenantId.IsEmpty)
             {
+                ambientTenant.Set(tenantId);
+            }
+            else if (!IsSelfIntrospection(context.Request.Path))
+            {
+                // A token that authenticates a person but names no tenant is refused before the
+                // handler runs, rather than reaching the database and returning an empty list that
+                // would look like an empty company.
+                //
+                // The introspection endpoint is exempt because reporting what the server resolved is
+                // its entire purpose — enforcing here would make the one diagnostic unreachable
+                // exactly when it is needed.
                 context.Response.StatusCode = StatusCodes.Status403Forbidden;
                 await context.Response.WriteAsJsonAsync(new { error = "token_carries_no_tenant" }, context.RequestAborted);
                 return;
             }
-
-            ambientTenant.Set(tenantId);
         }
 
         await next(context);
     }
+
+    private static bool IsSelfIntrospection(PathString path) =>
+        path.StartsWithSegments("/api/v1/auth/me");
 }

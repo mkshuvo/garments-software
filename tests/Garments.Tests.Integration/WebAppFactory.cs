@@ -22,7 +22,7 @@ public class WebAppFactory : WebApplicationFactory<Program>
     /// reach a test database, and it exists so the application's refusal to start without a key can
     /// stay absolute instead of being relaxed for tests.
     /// </summary>
-    private const string TestSigningKey = "integration-test-only-key-do-not-use-in-any-real-deployment-0123456789";
+    internal const string TestSigningKey = "integration-test-only-key-do-not-use-in-any-real-deployment-0123456789";
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {

@@ -98,6 +98,18 @@ public class GarmentsDbContext(DbContextOptions<GarmentsDbContext> options, ITen
             // Identity's own indexes are global. A global uniqueness rule across tenants both collides
             // legitimately and tells tenant A that tenant B exists when it tries to add the same
             // address.
+            //
+            // Naming the problem is not fixing it: Identity's UNIQUE "UserNameIndex" is still on the
+            // table unless it is redefined here, so two companies employing the same person's email
+            // would be rejected on the second insert.
+            entity.HasIndex(user => user.NormalizedUserName)
+                .HasDatabaseName("IX_users_normalized_user_name")
+                .IsUnique(false);
+
+            entity.HasIndex(user => user.NormalizedEmail)
+                .HasDatabaseName("IX_users_normalized_email")
+                .IsUnique(false);
+
             entity.HasIndex(user => new { user.TenantId, user.NormalizedUserName })
                 .IsUnique()
                 .HasDatabaseName("UQ_users_tenant_id_normalized_user_name");
@@ -118,6 +130,15 @@ public class GarmentsDbContext(DbContextOptions<GarmentsDbContext> options, ITen
             ConfigureTenantTable(entity, "roles");
 
             entity.Property(role => role.DisplayName).HasMaxLength(128);
+
+            // ASP.NET Identity puts a UNIQUE index on NormalizedName across the whole table. In a
+            // multi-tenant product that is wrong twice: the second company to create an "Owner" role
+            // is rejected outright, and the collision itself confirms to tenant A that a role name
+            // exists somewhere else in the system. Identity's index is replaced, not supplemented —
+            // leaving it in place would keep the global constraint alive.
+            entity.HasIndex(role => role.NormalizedName)
+                .HasDatabaseName("IX_roles_normalized_name")
+                .IsUnique(false);
 
             entity.HasIndex(role => new { role.TenantId, role.NormalizedName })
                 .IsUnique()
