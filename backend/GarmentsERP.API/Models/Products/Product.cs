@@ -62,11 +62,4 @@ namespace GarmentsERP.API.Models.Products
         // Relationships are handled via foreign key IDs only
         // Use services to fetch related data when needed
     }
-
-    public enum ProductType
-    {
-        Finished,
-        RawMaterial,
-        Service
-    }
 }

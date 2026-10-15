@@ -25,15 +25,4 @@ namespace GarmentsERP.API.Models.Settings
 
         public DateTime? UpdatedAt { get; set; }
     }
-
-    public enum SettingCategory
-    {
-        General,
-        Accounting,
-        Inventory,
-        Taxation,
-        Security,
-        Notification,
-        Reporting
-    }
 }

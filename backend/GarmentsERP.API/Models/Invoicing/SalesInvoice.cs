@@ -55,15 +55,4 @@ namespace GarmentsERP.API.Models.Invoicing
         // SIMPLIFIED APPROACH - NO NAVIGATION PROPERTIES
         // Relationships are handled via foreign key IDs only
     }
-
-    public enum InvoiceStatus
-    {
-        Draft,
-        Sent,
-        Paid,
-        PartiallyPaid,
-        Overdue,
-        Cancelled,
-        Void
-    }
 }

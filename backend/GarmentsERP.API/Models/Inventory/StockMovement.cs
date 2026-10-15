@@ -37,16 +37,4 @@ namespace GarmentsERP.API.Models.Inventory
 
         public Guid? PurchaseInvoiceId { get; set; }
     }
-
-    public enum MovementType
-    {
-        Purchase,
-        Sale,
-        Adjustment,
-        Transfer,
-        Opening,
-        Closing,
-        Scrap,
-        Return
-    }
 }

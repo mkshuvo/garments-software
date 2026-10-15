@@ -31,14 +31,4 @@ namespace GarmentsERP.API.Models.Tax
         // SIMPLIFIED APPROACH - NO NAVIGATION PROPERTIES
         // Relationships are handled via foreign key IDs only
     }
-
-    public enum TaxType
-    {
-        GST,
-        VAT,
-        SalesTax,
-        ServiceTax,
-        ExciseDuty,
-        Custom
-    }
 }

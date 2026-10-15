@@ -48,11 +48,4 @@ namespace GarmentsERP.API.Models.Contacts
 
         public DateTime? UpdatedAt { get; set; }
     }
-
-    public enum ContactType
-    {
-        Customer,
-        Supplier,
-        Both
-    }
 }

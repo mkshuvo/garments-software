@@ -34,11 +34,4 @@ namespace GarmentsERP.API.Models.Banking
         [MaxLength(1000)]
         public string? Notes { get; set; }
     }
-
-    public enum ReconciliationStatus
-    {
-        InProgress,
-        Completed,
-        Reviewed
-    }
 }

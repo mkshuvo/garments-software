@@ -49,13 +49,4 @@ namespace GarmentsERP.API.Models.Accounting
         // SIMPLIFIED APPROACH - NO NAVIGATION PROPERTIES
         // Relationships are handled via foreign key IDs only
     }
-
-    public enum AccountType
-    {
-        Asset,
-        Liability,
-        Equity,
-        Revenue,
-        Expense
-    }
 }

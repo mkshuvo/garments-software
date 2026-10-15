@@ -31,11 +31,4 @@ namespace GarmentsERP.API.Models.Contacts
 
         public bool IsDefault { get; set; } = false;
     }
-
-    public enum AddressType
-    {
-        Billing,
-        Shipping,
-        Both
-    }
 }

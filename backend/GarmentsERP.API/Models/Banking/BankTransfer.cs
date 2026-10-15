@@ -41,13 +41,4 @@ namespace GarmentsERP.API.Models.Banking
 
         public DateTime? UpdatedAt { get; set; }
     }
-
-    public enum TransferStatus
-    {
-        Draft,
-        Pending,
-        Completed,
-        Failed,
-        Cancelled
-    }
 }

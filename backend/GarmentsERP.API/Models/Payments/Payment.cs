@@ -47,29 +47,4 @@ namespace GarmentsERP.API.Models.Payments
 
         public DateTime? UpdatedAt { get; set; }
     }
-
-    public enum PaymentType
-    {
-        Receipt,
-        Payment
-    }
-
-    public enum PaymentMethod
-    {
-        Cash,
-        Cheque,
-        BankTransfer,
-        CreditCard,
-        DebitCard,
-        OnlineTransfer
-    }
-
-    public enum PaymentStatus
-    {
-        Draft,
-        Posted,
-        Cleared,
-        Bounced,
-        Cancelled
-    }
 }

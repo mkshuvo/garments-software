@@ -51,34 +51,4 @@ namespace GarmentsERP.API.Models.Accounting
         // Additional properties for compatibility
         public DateTime CreatedDate => CreatedAt;
     }
-
-    public enum JournalType
-    {
-        General,
-        Sales,
-        Purchase,
-        CashReceipt,
-        CashPayment,
-        BankTransfer,
-        Adjustment,
-        Opening,
-        Closing
-    }
-
-    public enum JournalStatus
-    {
-        Draft,
-        Posted,
-        Approved,
-        Reversed
-    }
-
-    public enum TransactionStatus
-    {
-        Draft,
-        Pending,
-        Completed,
-        Locked,
-        Reversed
-    }
 }

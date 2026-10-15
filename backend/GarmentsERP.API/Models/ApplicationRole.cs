@@ -14,13 +14,4 @@ namespace GarmentsERP.API.Models
         // Keep essential Identity navigation properties, remove custom ones
         public virtual ICollection<IdentityUserRole<Guid>> UserRoles { get; set; } = new List<IdentityUserRole<Guid>>();
     }
-
-    public enum UserRoles
-    {
-        Admin,
-        Manager,
-        Employee,
-        Vendor,
-        Customer
-    }
 }

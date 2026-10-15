@@ -25,11 +25,4 @@ namespace GarmentsERP.API.Models.Accounting
         [MaxLength(500)]
         public string? Notes { get; set; }
     }
-
-    public enum ContactRole
-    {
-        Supplier,
-        Buyer,
-        Both
-    }
 }

@@ -28,10 +28,4 @@ namespace GarmentsERP.API.Models.Accounting
         [MaxLength(100)]
         public string? UpdatedBy { get; set; }
     }
-
-    public enum CategoryType
-    {
-        Credit = 0,  // Money In categories (e.g., "Received: Urbo ltd")
-        Debit = 1    // Money Out categories (e.g., "Fabric Purchase", "Electric Bill")
-    }
 }

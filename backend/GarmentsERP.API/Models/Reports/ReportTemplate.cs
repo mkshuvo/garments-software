@@ -30,18 +30,4 @@ namespace GarmentsERP.API.Models.Reports
 
         public DateTime? UpdatedAt { get; set; }
     }
-
-    public enum ReportType
-    {
-        TrialBalance,
-        ProfitAndLoss,
-        BalanceSheet,
-        CashFlow,
-        AgedReceivables,
-        AgedPayables,
-        SalesReport,
-        PurchaseReport,
-        StockReport,
-        Custom
-    }
 }

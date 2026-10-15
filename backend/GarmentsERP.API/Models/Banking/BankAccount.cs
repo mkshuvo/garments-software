@@ -46,13 +46,4 @@ namespace GarmentsERP.API.Models.Banking
         // SIMPLIFIED APPROACH - NO NAVIGATION PROPERTIES
         // Relationships are handled via foreign key IDs only
     }
-
-    public enum BankAccountType
-    {
-        Savings,
-        Current,
-        FixedDeposit,
-        CashCredit,
-        OverdraftAccount
-    }
 }
