@@ -371,21 +371,4 @@ namespace GarmentsERP.API.Controllers
 
         #endregion
     }
-
-    /// <summary>
-    /// Approval request model
-    /// </summary>
-    public class ApprovalRequest
-    {
-        public string? Notes { get; set; }
-    }
-
-    /// <summary>
-    /// Reversal request model
-    /// </summary>
-    public class ReversalRequest
-    {
-        public string Reason { get; set; } = string.Empty;
-    }
 }
-

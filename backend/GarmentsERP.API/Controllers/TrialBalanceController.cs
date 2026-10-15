@@ -513,31 +513,4 @@ namespace GarmentsERP.API.Controllers
         }
 
     }
-
-    // Request DTOs for the new implementation
-    public class CompareTrialBalancesRequest
-    {
-        [Required]
-        public TrialBalanceRequestDto Period1 { get; set; } = new();
-
-        [Required]
-        public TrialBalanceRequestDto Period2 { get; set; } = new();
-    }
-
-    // Enhanced error response DTOs for API documentation
-    public class ErrorResponse
-    {
-        public bool Success { get; set; } = false;
-        public string Message { get; set; } = string.Empty;
-        public string ErrorCode { get; set; } = string.Empty;
-        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
-        public string? RequestId { get; set; }
-        public Dictionary<string, object>? Details { get; set; }
-    }
-
-    public class ValidationErrorResponse : ErrorResponse
-    {
-        public Dictionary<string, string[]> Errors { get; set; } = new();
-        public string[]? Warnings { get; set; }
-    }
 }
