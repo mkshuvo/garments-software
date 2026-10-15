@@ -19,7 +19,7 @@ internal sealed class OneTypePerFileLaw : EngineeringLaw
 
     public IEnumerable<Violation> FindViolations()
     {
-        foreach (var path in SourceTree.AllSourceFiles)
+        foreach (var path in SourceTree.AllSourceFiles())
         {
             var relative = SourceTree.Relative(path);
             var root = CSharpSyntaxTree.ParseText(SourceTree.ReadSource(path), path: path).GetRoot();

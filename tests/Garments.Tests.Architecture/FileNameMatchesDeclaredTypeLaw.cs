@@ -25,7 +25,7 @@ internal sealed class FileNameMatchesDeclaredTypeLaw : EngineeringLaw
 
     public IEnumerable<Violation> FindViolations()
     {
-        foreach (var path in SourceTree.AllSourceFiles)
+        foreach (var path in SourceTree.AllSourceFiles())
         {
             var stem = Path.GetFileNameWithoutExtension(path);
             var relative = SourceTree.Relative(path);

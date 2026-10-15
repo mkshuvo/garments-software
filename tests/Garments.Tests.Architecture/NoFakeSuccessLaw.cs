@@ -10,6 +10,13 @@ namespace Garments.Tests.Architecture;
 /// <c>NotImplementedException</c> behind routes that answered 200. A client must never be told a
 /// financial document was saved unless a row was created.
 /// </summary>
+/// <remarks>
+/// What this catches: a routed method handing back a freshly minted identifier, or answering with
+/// NotImplementedException. What it cannot catch is a method that mints an id AND saves a row under
+/// it — which is legitimate — so this rule is a tripwire, not proof. Real proof of "did it persist"
+/// is the per-endpoint integration assertion required at each phase gate; a green static scan here
+/// must never be read as evidence that a write endpoint works.
+/// </remarks>
 internal sealed class NoFakeSuccessLaw : EngineeringLaw
 {
     private static readonly string[] FabricatedIdProperties =
@@ -23,7 +30,7 @@ internal sealed class NoFakeSuccessLaw : EngineeringLaw
 
     public IEnumerable<Violation> FindViolations()
     {
-        foreach (var path in SourceTree.ProductionSourceFiles)
+        foreach (var path in SourceTree.ProductionSourceFiles())
         {
             var relative = SourceTree.Relative(path);
             var root = CSharpSyntaxTree.ParseText(SourceTree.ReadSource(path), path: path).GetRoot();
@@ -45,32 +52,73 @@ internal sealed class NoFakeSuccessLaw : EngineeringLaw
                 }
             }
 
+            foreach (var anonymous in root.DescendantNodes().OfType<AnonymousObjectCreationExpressionSyntax>())
+            {
+                foreach (var initializer in anonymous.Initializers)
+                {
+                    var propertyName = initializer.NameEquals?.Name.ToString() ?? string.Empty;
+
+                    if (IsFabricatedId(propertyName, initializer.Expression.ToString())
+                        && AnnotatedRouteMethod(anonymous) is not null)
+                    {
+                        yield return Fabrication(relative, initializer, propertyName);
+                    }
+                }
+            }
+
+            foreach (var creation in root.DescendantNodes().OfType<ObjectCreationExpressionSyntax>())
+            {
+                foreach (var expression in creation.Initializer?.Expressions ?? Enumerable.Empty<ExpressionSyntax>())
+                {
+                    if (expression is not AssignmentExpressionSyntax memberAssignment)
+                    {
+                        continue;
+                    }
+
+                    var propertyName = LastSegment(memberAssignment.Left.ToString());
+
+                    if (IsFabricatedId(propertyName, memberAssignment.Right.ToString())
+                        && AnnotatedRouteMethod(creation) is not null)
+                    {
+                        yield return Fabrication(relative, memberAssignment, propertyName);
+                    }
+                }
+            }
+
             foreach (var assignment in root.DescendantNodes().OfType<AssignmentExpressionSyntax>())
             {
-                if (assignment.Left is not MemberAccessExpressionSyntax
-                    || assignment.Right is not InvocationExpressionSyntax)
+                // Initializer forms above already report this node; only plain statements land here.
+                if (assignment.Parent is AnonymousObjectMemberDeclaratorSyntax
+                    || assignment.Parent is InitializerExpressionSyntax
+                    || assignment.Parent is EqualsValueClauseSyntax)
                 {
                     continue;
                 }
 
-                var left = assignment.Left.ToString();
-                var propertyName = left[(left.LastIndexOf('.') + 1)..];
+                var propertyName = LastSegment(assignment.Left.ToString());
 
-                var isFabricatedId = assignment.Right.ToString().Contains("Guid.NewGuid()", StringComparison.Ordinal)
-                    && FabricatedIdProperties.Contains(propertyName, StringComparer.OrdinalIgnoreCase)
-                    && propertyName.EndsWith("Id", StringComparison.Ordinal);
-
-                if (isFabricatedId && AnnotatedRouteMethod(assignment) is not null)
+                if (IsFabricatedId(propertyName, assignment.Right.ToString())
+                    && AnnotatedRouteMethod(assignment) is not null)
                 {
-                    yield return new Violation(
-                        relative,
-                        assignment.GetLocation().GetLineSpan().StartLinePosition.Line + 1,
-                        Id,
-                        $"'{propertyName} = Guid.NewGuid()' in a routed method reports an identifier that was never persisted.");
+                    yield return Fabrication(relative, assignment, propertyName);
                 }
             }
         }
     }
+
+    private static string LastSegment(string dotted) => dotted[(dotted.LastIndexOf('.') + 1)..];
+
+    private static bool IsFabricatedId(string propertyName, string rightHandSide) =>
+        propertyName.EndsWith("Id", StringComparison.Ordinal)
+        && FabricatedIdProperties.Contains(propertyName, StringComparer.OrdinalIgnoreCase)
+        && rightHandSide.Contains("Guid.NewGuid()", StringComparison.Ordinal);
+
+    private Violation Fabrication(string relative, SyntaxNode node, string propertyName) =>
+        new(
+            relative,
+            node.GetLocation().GetLineSpan().StartLinePosition.Line + 1,
+            Id,
+            $"'{propertyName} = Guid.NewGuid()' in a routed method reports an identifier that was never persisted.");
 
     private static MethodDeclarationSyntax? AnnotatedRouteMethod(SyntaxNode node)
     {

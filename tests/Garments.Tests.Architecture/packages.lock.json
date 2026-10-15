@@ -295,7 +295,8 @@
           "Garments.Platform": "[1.0.0, )",
           "Microsoft.AspNetCore.OpenApi": "[10.0.13, )",
           "Serilog.AspNetCore": "[8.0.3, )",
-          "Serilog.Sinks.Console": "[6.1.1, )"
+          "Serilog.Sinks.Console": "[6.1.1, )",
+          "xunit": "[2.9.3, )"
         }
       },
       "garments.core": {

@@ -3,18 +3,27 @@ namespace Garments.Tests.Architecture;
 /// <summary>
 /// Locates and enumerates the source files the engineering-law rules run against.
 /// </summary>
+/// <remarks>
+/// Enumeration is a method call, never a cached property. The first version of this class cached
+/// the file list on first access, which made every law blind to files created afterwards and caused
+/// all six firepower probes to fail for the wrong reason: a law that cannot see a new file cannot
+/// see a newly introduced breach either.
+/// </remarks>
 internal static class SourceTree
 {
     private static readonly string[] BuildArtifactDirs = ["obj", "bin", "node_modules", ".next", "legacy"];
 
     internal static string RepositoryRoot { get; } = FindRepositoryRoot();
 
-    internal static IReadOnlyList<string> ProductionSourceFiles { get; } = EnumerateSourceFiles("src");
+    /// <summary>Production sources only: the rules about DI, fake success and authorization.</summary>
+    internal static IReadOnlyList<string> ProductionSourceFiles() => EnumerateSourceFiles("src");
 
-    internal static IReadOnlyList<string> AllSourceFiles { get; } = EnumerateSourceFiles("src", "tests");
+    /// <summary>Everything we author, including tests: the file-shape rules apply to all of it.</summary>
+    internal static IReadOnlyList<string> AllSourceFiles() => EnumerateSourceFiles("src", "tests");
 
-    internal static IReadOnlyList<string> ProductionProjectFiles { get; } =
+    internal static IReadOnlyList<string> ProductionProjectFiles() =>
         Directory.EnumerateFiles(Path.Combine(RepositoryRoot, "src"), "*.csproj", SearchOption.AllDirectories)
+            .Where(path => !IsBuildArtifact(path))
             .OrderBy(path => path, StringComparer.Ordinal)
             .ToArray();
 
@@ -26,6 +35,13 @@ internal static class SourceTree
     /// <summary>Repository-relative path with forward slashes, for readable failure output.</summary>
     internal static string Relative(string path) =>
         Path.GetRelativePath(RepositoryRoot, path).Replace('\\', '/');
+
+    private static bool IsBuildArtifact(string path)
+    {
+        var relative = Relative(path);
+        return BuildArtifactDirs.Any(segment => relative.Contains($"/{segment}/", StringComparison.Ordinal))
+            || relative.StartsWith("legacy/", StringComparison.Ordinal);
+    }
 
     private static string[] EnumerateSourceFiles(params string[] roots)
     {
@@ -41,10 +57,7 @@ internal static class SourceTree
 
             foreach (var candidate in Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories))
             {
-                var relative = Path.GetRelativePath(RepositoryRoot, candidate).Replace('\\', '/');
-                if (BuildArtifactDirs.Any(segment => relative.Contains($"/{segment}/", StringComparison.Ordinal))
-                    || relative.StartsWith("legacy/", StringComparison.Ordinal)
-                    || relative.EndsWith(".AssemblyInfo.cs", StringComparison.Ordinal))
+                if (IsBuildArtifact(candidate) || candidate.EndsWith(".AssemblyInfo.cs", StringComparison.Ordinal))
                 {
                     continue;
                 }
@@ -58,8 +71,7 @@ internal static class SourceTree
 
     private static string FindRepositoryRoot()
     {
-        var start = AppContext.BaseDirectory;
-        var probe = new DirectoryInfo(start);
+        var probe = new DirectoryInfo(AppContext.BaseDirectory);
 
         while (probe is not null)
         {
@@ -72,6 +84,6 @@ internal static class SourceTree
         }
 
         throw new InvalidOperationException(
-            $"Could not locate the repository root above {start}. Run tests from the GarmentsERP solution.");
+            $"Could not locate the repository root above {AppContext.BaseDirectory}. Run tests from the GarmentsERP solution.");
     }
 }

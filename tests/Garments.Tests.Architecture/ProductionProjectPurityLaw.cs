@@ -29,7 +29,7 @@ internal sealed class ProductionProjectPurityLaw : EngineeringLaw
 
     public IEnumerable<Violation> FindViolations()
     {
-        foreach (var path in SourceTree.ProductionProjectFiles)
+        foreach (var path in SourceTree.ProductionProjectFiles())
         {
             XDocument document;
             try

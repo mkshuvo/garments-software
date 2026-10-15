@@ -15,7 +15,7 @@ internal sealed partial class NoCommentedOutRegistrationLaw : EngineeringLaw
 
     public IEnumerable<Violation> FindViolations()
     {
-        foreach (var path in SourceTree.ProductionSourceFiles)
+        foreach (var path in SourceTree.ProductionSourceFiles())
         {
             var relative = SourceTree.Relative(path);
             var lines = SourceTree.ReadSource(path).Split('\n');

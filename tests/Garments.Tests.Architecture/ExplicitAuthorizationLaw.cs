@@ -12,21 +12,16 @@ namespace Garments.Tests.Architecture;
 /// </summary>
 internal sealed class ExplicitAuthorizationLaw : EngineeringLaw
 {
-    private static readonly string[] AllowListedAnonymous =
-    [
-        "Auth/Login",
-        "Auth/Register",
-        "Health/Readiness",
-        "Health/Liveness",
-    ];
+    private const string AllowListFileName = "anonymous-allowlist.txt";
 
     public string Id => "L8";
 
-    public string Rule => "Every controller action declares an authorisation policy, or is explicitly allow-listed as anonymous.";
+    public string Rule => "Every controller action declares an authorisation policy, or is listed in anonymous-allowlist.txt.";
 
     public IEnumerable<Violation> FindViolations()
     {
-        foreach (var path in SourceTree.ProductionSourceFiles)
+        var allowListed = ReadAllowList();
+        foreach (var path in SourceTree.ProductionSourceFiles())
         {
             var root = CSharpSyntaxTree.ParseText(SourceTree.ReadSource(path), path: path).GetRoot();
 
@@ -48,7 +43,7 @@ internal sealed class ExplicitAuthorizationLaw : EngineeringLaw
                         continue;
                     }
 
-                    if (AllowListedAnonymous.Contains(actionName, StringComparer.OrdinalIgnoreCase))
+                    if (allowListed.Contains(actionName, StringComparer.OrdinalIgnoreCase))
                     {
                         continue;
                     }
@@ -57,10 +52,24 @@ internal sealed class ExplicitAuthorizationLaw : EngineeringLaw
                         SourceTree.Relative(path),
                         action.GetLocation().GetLineSpan().StartLinePosition.Line + 1,
                         Id,
-                        $"'{actionName}' has no authorisation. Add [Authorize], or add it to the reviewed anonymous allow-list.");
+                        $"'{actionName}' has no authorisation. Add [Authorize], or list it in {AllowListFileName} and expect that diff to be reviewed.");
                 }
             }
         }
+    }
+
+    private static HashSet<string> ReadAllowList()
+    {
+        var path = Path.Combine(SourceTree.RepositoryRoot, AllowListFileName);
+        if (!File.Exists(path))
+        {
+            return [];
+        }
+
+        return File.ReadLines(path)
+            .Select(line => line.Split('#')[0].Trim())
+            .Where(entry => entry.Length > 0 && entry.Contains('/'))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
     }
 
     private static bool IsController(ClassDeclarationSyntax declaration) =>
