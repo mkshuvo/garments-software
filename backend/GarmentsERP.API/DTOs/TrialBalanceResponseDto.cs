@@ -11,17 +11,4 @@ namespace GarmentsERP.API.DTOs
         public DateTime GeneratedAt { get; set; } = DateTime.UtcNow;
         public int TotalTransactions { get; set; }
     }
-
-    public class DateRangeDto
-    {
-        public DateTime StartDate { get; set; }
-        public DateTime EndDate { get; set; }
-    }
-
-    public class AccountCategoryDto
-    {
-        public string Name { get; set; } = string.Empty; // Assets, Liabilities, Equity, Income, Expenses
-        public List<TrialBalanceAccountDto> Accounts { get; set; } = new();
-        public decimal Subtotal { get; set; }
-    }
 }
