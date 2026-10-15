@@ -1,7 +1,7 @@
 import { createTheme } from '@mui/material/styles'
 import { designTokens } from './Tokens'
 
-const { color, radius, space, type } = designTokens
+const { color, radius, type } = designTokens
 
 export const appTheme = createTheme({
   palette: {
@@ -27,7 +27,9 @@ export const appTheme = createTheme({
     caption: { fontSize: type.labelSize, color: color.textSecondary },
     button: { textTransform: 'none', fontWeight: 500 },
   },
-  spacing: space.sm,
+  // One spacing unit in pixels. Design tokens carry their own units (see Tokens.ts), so this is
+  // only here for components and third-party code that call theme.spacing() directly.
+  spacing: 8,
   components: {
     MuiPaper: { styleOverrides: { root: { backgroundImage: 'none' } } },
     MuiTableCell: {

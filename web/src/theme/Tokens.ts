@@ -31,14 +31,18 @@ export const designTokens = {
     small: 4,
     medium: 6,
   },
+  // Spacing carries explicit units on purpose. MUI's `sx` reads a bare number as a multiple of
+  // `theme.spacing`, so `gap: 16` silently became 128px and the login form rendered with a field
+  // per screen. A token that means "16 of something" is not a single source of truth; a token that
+  // means 16px is.
   space: {
-    xxs: 2,
-    xs: 4,
-    sm: 8,
-    md: 12,
-    lg: 16,
-    xl: 24,
-    xxl: 32,
+    xxs: '2px',
+    xs: '4px',
+    sm: '8px',
+    md: '12px',
+    lg: '16px',
+    xl: '24px',
+    xxl: '32px',
   },
   type: {
     // next/font exposes these as CSS variables in AppFonts; naming a family here instead would
@@ -52,11 +56,11 @@ export const designTokens = {
     titleSize: '1.125rem',
   },
   density: {
-    tableRowPaddingY: 8,
-    stickyHeaderHeight: 44,
+    tableRowPaddingY: '8px',
+    stickyHeaderHeight: '44px',
   },
   layout: {
-    formWidth: 384,
-    contentMaxWidth: 1200,
+    formWidth: '384px',
+    contentMaxWidth: '1200px',
   },
 } as const
