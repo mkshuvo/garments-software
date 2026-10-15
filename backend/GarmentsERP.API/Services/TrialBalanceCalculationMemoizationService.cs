@@ -271,27 +271,4 @@ namespace GarmentsERP.API.Services
             _cleanupTimer?.Dispose();
         }
     }
-
-    /// <summary>
-    /// Cached calculation result
-    /// </summary>
-    internal class CachedCalculation
-    {
-        public TrialBalanceCalculation? Result { get; set; }
-        public string? Expression { get; set; }
-        public decimal FinalBalance { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public DateTime ExpiresAt { get; set; }
-    }
-
-    /// <summary>
-    /// Memoization cache statistics
-    /// </summary>
-    public class MemoizationStatistics
-    {
-        public int TotalEntries { get; set; }
-        public int ActiveEntries { get; set; }
-        public int ExpiredEntries { get; set; }
-        public int CacheExpiryMinutes { get; set; }
-    }
 }

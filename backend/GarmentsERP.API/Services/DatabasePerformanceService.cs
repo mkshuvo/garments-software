@@ -7,32 +7,6 @@ using System.Diagnostics;
 namespace GarmentsERP.API.Services
 {
     /// <summary>
-    /// Service for monitoring and optimizing database performance
-    /// </summary>
-    public interface IDatabasePerformanceService
-    {
-        /// <summary>
-        /// Get database performance metrics
-        /// </summary>
-        Task<DatabasePerformanceMetrics> GetPerformanceMetricsAsync();
-
-        /// <summary>
-        /// Optimize database queries for journal entries
-        /// </summary>
-        Task<QueryOptimizationResult> OptimizeJournalEntryQueriesAsync();
-
-        /// <summary>
-        /// Check index usage and performance
-        /// </summary>
-        Task<IndexPerformanceReport> GetIndexPerformanceReportAsync();
-
-        /// <summary>
-        /// Run database maintenance tasks
-        /// </summary>
-        Task<MaintenanceResult> RunMaintenanceAsync();
-    }
-
-    /// <summary>
     /// Implementation of database performance service
     /// </summary>
     public class DatabasePerformanceService : IDatabasePerformanceService
@@ -444,48 +418,4 @@ namespace GarmentsERP.API.Services
 
         #endregion
     }
-
-    #region DTOs
-
-    public class DatabasePerformanceMetrics
-    {
-        public long JournalEntryQueryTime { get; set; }
-        public long StatisticsQueryTime { get; set; }
-        public long SearchQueryTime { get; set; }
-        public string ConnectionPoolSize { get; set; } = string.Empty;
-        public int ActiveConnections { get; set; }
-        public long TotalExecutionTime { get; set; }
-        public bool HasErrors { get; set; }
-        public string ErrorMessage { get; set; } = string.Empty;
-    }
-
-    public class QueryOptimizationResult
-    {
-        public List<string> Recommendations { get; set; } = new();
-        public string ExecutionPlanAnalysis { get; set; } = string.Empty;
-        public long OptimizationTime { get; set; }
-        public bool HasErrors { get; set; }
-        public string ErrorMessage { get; set; } = string.Empty;
-    }
-
-    public class IndexPerformanceReport
-    {
-        public Dictionary<string, object> IndexUsageStatistics { get; set; } = new();
-        public List<string> UnusedIndexes { get; set; } = new();
-        public List<string> MissingIndexes { get; set; } = new();
-        public Dictionary<string, object> FragmentationInfo { get; set; } = new();
-        public bool HasErrors { get; set; }
-        public string ErrorMessage { get; set; } = string.Empty;
-    }
-
-    public class MaintenanceResult
-    {
-        public List<string> TasksCompleted { get; set; } = new();
-        public Dictionary<string, object> BloatInformation { get; set; } = new();
-        public long MaintenanceTime { get; set; }
-        public bool HasErrors { get; set; }
-        public string ErrorMessage { get; set; } = string.Empty;
-    }
-
-    #endregion
 }

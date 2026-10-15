@@ -348,45 +348,4 @@ namespace GarmentsERP.API.Services
             result.TrialBalanceValidated = true;
         }
     }
-
-    // DTOs for the import service
-    public class CashBookImportRequest
-    {
-        public List<CashBookTransaction> Transactions { get; set; } = new();
-        public List<string> Categories { get; set; } = new();
-        public List<string> Suppliers { get; set; } = new();
-        public List<string> Buyers { get; set; } = new();
-        public TrialBalanceData TrialBalance { get; set; } = new();
-    }
-
-    public class CashBookTransaction
-    {
-        public DateTime Date { get; set; }
-        public string CreditCategory { get; set; } = string.Empty;
-        public string DebitCategory { get; set; } = string.Empty;
-        public string Supplier { get; set; } = string.Empty;
-        public string Buyer { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
-        public decimal CreditAmount { get; set; }
-        public decimal DebitAmount { get; set; }
-        public string? Reference { get; set; }
-    }
-
-    public class TrialBalanceData
-    {
-        public decimal TotalReceived { get; set; }
-        public decimal TotalExpenses { get; set; }
-        public decimal CashInHand { get; set; }
-        public DateTime AsOfDate { get; set; }
-    }
-
-    public class ImportResult
-    {
-        public bool IsSuccess { get; set; }
-        public string Message { get; set; } = string.Empty;
-        public int AccountsCreated { get; set; }
-        public int ContactsCreated { get; set; }
-        public int TransactionsImported { get; set; }
-        public bool TrialBalanceValidated { get; set; }
-    }
 }
