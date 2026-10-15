@@ -27,7 +27,12 @@ export function ApplicationShell({ children }: { readonly children: ReactNode })
           <LocaleSwitcher />
         </Toolbar>
       </AppBar>
-      <Container maxWidth={false} sx={{ py: designTokens.space.xl, width: designTokens.layout.contentMaxWidth }}>
+      {/* A cap, not a fixed width: `width: 1200px` overflowed a narrower viewport horizontally,
+          which is a layout bug no type-check or unit test can see. */}
+      <Container
+        maxWidth={false}
+        sx={{ py: designTokens.space.xl, maxWidth: designTokens.layout.contentMaxWidth, mx: 'auto' }}
+      >
         {children}
       </Container>
     </Box>

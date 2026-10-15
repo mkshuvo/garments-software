@@ -60,7 +60,12 @@ export function LoginPanel() {
     <Box
       component="form"
       onSubmit={submit}
-      sx={{ display: 'grid', gap: designTokens.space.lg, width: designTokens.layout.formWidth }}
+      sx={{
+        display: 'grid',
+        gap: designTokens.space.lg,
+        width: '100%',
+        maxWidth: designTokens.layout.formWidth,
+      }}
     >
       <Box>
         <Typography variant="h1" component="h1">
