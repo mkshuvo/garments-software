@@ -38,7 +38,6 @@ public sealed class LedgerInvariantTests(WebAppFactory factory) : IClassFixture<
 
         var failure = await Record.ExceptionAsync(() => WriteAsync(world, entry =>
         {
-            entry.Status = GlEntryStatus.Posted;
             entry.Lines.Add(Line(world.Cash, debit: 500m));
             entry.Lines.Add(Line(world.Income, credit: 500m));
         }));
@@ -53,8 +52,6 @@ public sealed class LedgerInvariantTests(WebAppFactory factory) : IClassFixture<
 
         var message = await StoreErrorAsync(() => WriteAsync(world, entry =>
         {
-            // Draft lines may be unfinished, so the status flip is what makes this invalid.
-            entry.Status = GlEntryStatus.Posted;
             entry.Lines.Add(Line(world.Cash, debit: 500m));
             entry.Lines.Add(Line(world.Income, credit: 499.99m));
         }));
@@ -69,7 +66,6 @@ public sealed class LedgerInvariantTests(WebAppFactory factory) : IClassFixture<
 
         var message = await StoreErrorAsync(() => WriteAsync(world, entry =>
         {
-            entry.Status = GlEntryStatus.Posted;
             entry.Lines.Add(Line(world.Cash, debit: 1.00m));
             entry.Lines.Add(Line(world.Income, credit: 0.99m));
         }));
@@ -86,7 +82,6 @@ public sealed class LedgerInvariantTests(WebAppFactory factory) : IClassFixture<
 
         var message = await StoreErrorAsync(() => WriteAsync(world, entry =>
         {
-            entry.Status = GlEntryStatus.Posted;
             entry.Lines.Add(Line(world.Cash, debit: 500m));
         }));
 
@@ -100,7 +95,6 @@ public sealed class LedgerInvariantTests(WebAppFactory factory) : IClassFixture<
 
         var message = await StoreErrorAsync(() => WriteAsync(world, entry =>
         {
-            entry.Status = GlEntryStatus.Posted;
             entry.Lines.Add(new GlLine
             {
                 TenantId = world.TenantId,
@@ -124,7 +118,6 @@ public sealed class LedgerInvariantTests(WebAppFactory factory) : IClassFixture<
 
         await WriteAsync(world, entry =>
         {
-            entry.Status = GlEntryStatus.Posted;
             entry.Lines.Add(Line(world.Cash, debit: 500m));
             entry.Lines.Add(Line(world.Income, credit: 500m));
         });
@@ -148,13 +141,64 @@ public sealed class LedgerInvariantTests(WebAppFactory factory) : IClassFixture<
     }
 
     [Fact]
+    public async Task A_line_cannot_be_added_to_a_posted_entry()
+    {
+        var world = await ProvisionAsync();
+
+        await WriteAsync(world, entry =>
+        {
+            entry.Lines.Add(Line(world.Cash, debit: 500m));
+            entry.Lines.Add(Line(world.Income, credit: 500m));
+        });
+
+        // A balanced pair appended on its own satisfies every other rule in this migration; only
+        // immutability refuses it. This is why the line trigger covers insert and not just update.
+        var message = await StoreErrorAsync(async () =>
+        {
+            using var scope = TenantScope.Open(
+                factory.Services.GetRequiredService<IServiceScopeFactory>(), world.TenantId);
+
+            var context = scope.ServiceProvider.GetRequiredService<GarmentsDbContext>();
+
+            var posted = await context.GlEntries.SingleAsync();
+
+            context.GlLines.Add(new GlLine
+            {
+                TenantId = world.TenantId,
+                EntryId = posted.Id,
+                AccountId = world.Income,
+                LineOrder = 3,
+                Credit = 250m,
+                Currency = CurrencyCode.Bdt,
+                AmountInCurrency = 250m,
+                ExchangeRate = 1m,
+            });
+
+            context.GlLines.Add(new GlLine
+            {
+                TenantId = world.TenantId,
+                EntryId = posted.Id,
+                AccountId = world.Cash,
+                LineOrder = 4,
+                Debit = 250m,
+                Currency = CurrencyCode.Bdt,
+                AmountInCurrency = 250m,
+                ExchangeRate = 1m,
+            });
+
+            await context.SaveChangesAsync();
+        });
+
+        Assert.Contains("Invariant I3", message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task A_posted_entrys_lines_cannot_be_deleted()
     {
         var world = await ProvisionAsync();
 
         await WriteAsync(world, entry =>
         {
-            entry.Status = GlEntryStatus.Posted;
             entry.Lines.Add(Line(world.Cash, debit: 500m));
             entry.Lines.Add(Line(world.Income, credit: 500m));
         });
@@ -184,7 +228,6 @@ public sealed class LedgerInvariantTests(WebAppFactory factory) : IClassFixture<
 
         var message = await StoreErrorAsync(() => WriteAsync(world, entry =>
         {
-            entry.Status = GlEntryStatus.Posted;
             entry.Lines.Add(Line(world.Cash, debit: 500m));
             entry.Lines.Add(Line(world.Income, credit: 500m));
         }));
@@ -285,7 +328,7 @@ public sealed class LedgerInvariantTests(WebAppFactory factory) : IClassFixture<
         await context.SaveChangesAsync();
     }
 
-    private async Task WriteAsync(LedgerWorld world, Action<GlEntry> shape)
+    private async Task WriteAsync(LedgerWorld world, Action<GlEntry> shape, bool post = true)
     {
         using var scope = TenantScope.Open(
             factory.Services.GetRequiredService<IServiceScopeFactory>(), world.TenantId);
@@ -318,6 +361,16 @@ public sealed class LedgerInvariantTests(WebAppFactory factory) : IClassFixture<
 
         context.GlEntries.Add(entry);
 
+        // Two saves, because that is the protocol the triggers impose: a Posted entry's lines are
+        // untouchable, so the lines have to exist while the entry is still a draft.
+        await context.SaveChangesAsync();
+
+        if (!post)
+        {
+            return;
+        }
+
+        entry.Status = GlEntryStatus.Posted;
         await context.SaveChangesAsync();
     }
 

@@ -19,11 +19,15 @@ namespace Garments.Data.Migrations;
 /// </para>
 ///
 /// <para>
-/// <b>The order a posting must be written in.</b> <c>reject_posted_line_mutation</c> reads the entry's
-/// status to decide whether a line may change, so the poster inserts every line while the entry is still
-/// <c>Draft</c> and flips the status last. A poster that set <c>Posted</c> first would be refused by this
-/// trigger — loudly, in the same transaction, with the entry id in the message. That is the intended
-/// behaviour, not a hazard: the alternative is a rule that can be broken quietly.
+/// <b>The order a posting must be written in.</b> <c>reject_posted_line_mutation</c> covers insert,
+/// update and delete, and reads the entry's status to decide whether a line may change, so posting is
+/// necessarily two steps: write the entry and all of its lines while it is <c>Draft</c>, then flip the
+/// status. A caller that saved an entry already marked <c>Posted</c> would be refused on its own first
+/// line — loudly, in the same transaction, with the entry id in the message.
+///
+/// That ordering is not an inconvenience worked around by leaving inserts unprotected. Adding line
+/// coverage was the point: without it, a balanced pair of lines smuggled into an existing posted entry
+/// passed every other rule here and silently rewrote history with a plausible-looking audit trail.
 /// </para>
 ///
 /// <para>
@@ -192,7 +196,7 @@ public partial class AddLedgerEnforcement : Migration
 
             DROP TRIGGER IF EXISTS CK_gl_line_immutable_when_posted ON gl_lines;
             CREATE TRIGGER CK_gl_line_immutable_when_posted
-                BEFORE UPDATE OR DELETE ON gl_lines
+                BEFORE INSERT OR UPDATE OR DELETE ON gl_lines
                 FOR EACH ROW EXECUTE FUNCTION reject_posted_line_mutation();
             """);
 
