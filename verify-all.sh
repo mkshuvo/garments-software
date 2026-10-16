@@ -41,10 +41,18 @@ step "architecture: engineering laws" dotnet test tests/Garments.Tests.Architect
 step "unit: domain primitives" dotnet test tests/Garments.Tests.Unit --no-build -v q --nologo
 # The integration host boots the real Program, which seeds the permission catalogue and therefore
 # needs a live database. It deliberately has no fallback connection string, so the gate provides one.
-step "integration: composition root activates every controller" bash -c '
+step "integration: tenant isolation and ledger invariants on a real database" bash -c '
   set -e
   POSTGRES_PASSWORD=$(grep -E "^POSTGRES_PASSWORD=" .env | cut -d= -f2-)
   export ConnectionStrings__Default="Host=127.0.0.1;Port=6432;Database=garments;Username=postgres;Password=$POSTGRES_PASSWORD"
+
+  # Bring the developer database up to the current model before testing against it. P2 found the
+  # ledger invariant suite failing on a stale schema with an error about Npgsql not knowing the
+  # `ltree` type — which reads as a driver bug and is really a migration that was never applied
+  # here, because the gate only applied migrations to a throwaway container it then threw away.
+  dotnet ef database update --context GarmentsDbContext \
+    --project src/Data --startup-project src/Api --no-build
+
   dotnet test tests/Garments.Tests.Integration --no-build -v q --nologo
 '
 

@@ -1,6 +1,6 @@
 using Garments.Ledger;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Garments.Data;
 
@@ -9,12 +9,19 @@ namespace Garments.Data;
 /// rather than merely discouraged.
 /// </summary>
 /// <remarks>
-/// Lives with the ledger rather than in the data layer so a new entity cannot be added without
-/// meeting these rules — the mapping and the invariants are one decision, not two files that drift.
-///
+/// <para>
 /// Every CHECK here exists because the legacy build proved what happens without it. A grep across all
 /// 15 of its migration files found no check constraint of any kind: debits-equals-credits was a C#
 /// comparison with a 0.01 tolerance, and the cash-book path bypassed even that.
+/// </para>
+///
+/// <para>
+/// <b>Delete behaviour is Restrict everywhere except an entry's own lines.</b> Convention would make a
+/// posting cascade from its period, its journal and the entry it reverses, so deleting a fiscal period
+/// would take the general ledger with it — a silent, plausible-looking way to destroy accounting history.
+/// The exceptions are the tenancy foreign key, where a tenant leaving the platform should take its own
+/// rows, and entry to lines, which are parts of one whole and are never addressed apart from it.
+/// </para>
 /// </remarks>
 public static class LedgerModelConfiguration
 {
@@ -22,14 +29,14 @@ public static class LedgerModelConfiguration
     {
         ConfigureAccounts(builder.Entity<ChartOfAccount>());
         ConfigureJournals(builder.Entity<Journal>());
+        ConfigurePeriods(builder.Entity<FiscalPeriod>());
         ConfigureEntries(builder.Entity<GlEntry>());
         ConfigureLines(builder.Entity<GlLine>());
-        ConfigurePeriods(builder.Entity<FiscalPeriod>());
     }
 
     private static void ConfigureAccounts(EntityTypeBuilder<ChartOfAccount> account)
     {
-        account.ToTable("accounts");
+        TenantTableConfiguration.ApplyTenantScope(account, "accounts");
         account.HasKey(x => x.Id);
 
         account.Property(x => x.Code).HasMaxLength(32).IsRequired();
@@ -51,14 +58,19 @@ public static class LedgerModelConfiguration
 
         // A parent with children cannot itself be postable, and a leaf cannot have children. Enforced
         // in the database because the service layer is the thing that gets bypassed.
-        account.ToTable(s => s.HasCheckConstraint(
+        account.ToTable(t => t.HasCheckConstraint(
             "CK_accounts_postable_is_leaf",
             "\"is_postable\" OR \"parent_id\" IS NULL"));
+
+        // Restrict, not cascade: deleting an account that postings reference would rewrite history,
+        // and deleting a parent would orphan the subtree its ltree paths are built from.
+        account.HasOne<ChartOfAccount>().WithMany().HasForeignKey(x => x.ParentId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 
     private static void ConfigureJournals(EntityTypeBuilder<Journal> journal)
     {
-        journal.ToTable("journals", t => t.HasCheckConstraint("CK_journals_next_number", "\"next_number\" >= 1"));
+        TenantTableConfiguration.ApplyTenantScope(journal, "journals");
         journal.HasKey(x => x.Id);
 
         journal.Property(x => x.Code).HasMaxLength(16).IsRequired();
@@ -67,17 +79,40 @@ public static class LedgerModelConfiguration
         journal.Property(x => x.NumberPrefix).HasMaxLength(8).IsRequired();
 
         journal.HasIndex(x => new { x.TenantId, x.Code }).IsUnique();
+
+        journal.ToTable(t => t.HasCheckConstraint("CK_journals_next_number", "\"next_number\" >= 1"));
+
+        journal.HasOne<ChartOfAccount>().WithMany().HasForeignKey(x => x.DefaultDebitAccountId)
+            .OnDelete(DeleteBehavior.Restrict);
+        journal.HasOne<ChartOfAccount>().WithMany().HasForeignKey(x => x.DefaultCreditAccountId)
+            .OnDelete(DeleteBehavior.Restrict);
+    }
+
+    private static void ConfigurePeriods(EntityTypeBuilder<FiscalPeriod> period)
+    {
+        TenantTableConfiguration.ApplyTenantScope(period, "fiscal_periods");
+        period.HasKey(x => x.Id);
+
+        period.Property(x => x.Name).HasMaxLength(64);
+        period.Property(x => x.NameBangla).HasMaxLength(64);
+        period.Property(x => x.StartDate).HasColumnType("date");
+        period.Property(x => x.EndDate).HasColumnType("date");
+        period.Property(x => x.SoftLockedOn).HasColumnType("date");
+        period.Property(x => x.HardLockedOn).HasColumnType("date");
+        period.Property(x => x.TaxLockedOn).HasColumnType("date");
+
+        period.HasIndex(x => new { x.TenantId, x.FiscalYear, x.Number }).IsUnique();
+
+        period.ToTable(t =>
+        {
+            t.HasCheckConstraint("CK_fiscal_periods_number_in_year", "\"number\" BETWEEN 1 AND 12");
+            t.HasCheckConstraint("CK_fiscal_periods_ordered", "\"end_date\" >= \"start_date\"");
+        });
     }
 
     private static void ConfigureEntries(EntityTypeBuilder<GlEntry> entry)
     {
-        entry.ToTable("gl_entries", t =>
-        {
-            t.HasCheckConstraint("CK_gl_entries_iteration", "\"iteration\" >= 1");
-            t.HasCheckConstraint(
-                "CK_gl_entries_reversal_not_self",
-                "\"reverses_entry_id\" IS NULL OR \"reverses_entry_id\" <> \"id\"");
-        });
+        TenantTableConfiguration.ApplyTenantScope(entry, "gl_entries");
         entry.HasKey(x => x.Id);
 
         entry.Property(x => x.Number).HasMaxLength(32);
@@ -99,11 +134,51 @@ public static class LedgerModelConfiguration
         entry.HasIndex(x => new { x.TenantId, x.PostingDate });
         entry.HasIndex(x => x.ReversesEntryId);
 
+        entry.ToTable(t =>
+        {
+            t.HasCheckConstraint("CK_gl_entries_iteration", "\"iteration\" >= 1");
+            t.HasCheckConstraint(
+                "CK_gl_entries_reversal_not_self",
+                "\"reverses_entry_id\" IS NULL OR \"reverses_entry_id\" <> \"id\"");
+        });
+
+        // A period is never deleted out from under a posting, so this is the guard that keeps a period
+        // closing from becoming a way to erase a year.
+        entry.HasOne<FiscalPeriod>().WithMany().HasForeignKey(x => x.PeriodId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Composite on purpose: the journal is looked up by code, and a bare foreign key on the code
+        // alone would let one company's journal satisfy another's posting.
+        entry.HasOne<Journal>().WithMany()
+            .HasForeignKey(x => new { x.TenantId, x.JournalCode })
+            .HasPrincipalKey(x => new { x.TenantId, x.Code })
+            .OnDelete(DeleteBehavior.Restrict);
+
+        entry.HasOne<GlEntry>().WithMany().HasForeignKey(x => x.ReversesEntryId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        entry.HasMany(x => x.Lines).WithOne().HasForeignKey(x => x.EntryId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 
     private static void ConfigureLines(EntityTypeBuilder<GlLine> line)
     {
-        line.ToTable("gl_lines", t =>
+        TenantTableConfiguration.ApplyTenantScope(line, "gl_lines");
+        line.HasKey(x => x.Id);
+
+        line.Property(x => x.Debit).HasColumnType("numeric(18,2)");
+        line.Property(x => x.Credit).HasColumnType("numeric(18,2)");
+        line.Property(x => x.AmountInCurrency).HasColumnType("numeric(18,4)");
+        line.Property(x => x.ExchangeRate).HasColumnType("numeric(18,9)");
+        line.Property(x => x.Currency).HasConversion(new CurrencyCodeConverter()).HasMaxLength(3).IsRequired();
+        line.Property(x => x.Memo).HasMaxLength(500);
+        line.Property(x => x.ExchangeRateDate).HasColumnType("date");
+
+        line.HasIndex(x => new { x.TenantId, x.AccountId, x.EntryId });
+        line.HasIndex(x => new { x.AccountId, x.TenantId });
+        line.HasIndex(x => new { x.EntryId, x.LineOrder });
+
+        line.ToTable(t =>
         {
             t.HasCheckConstraint(
                 "CK_gl_line_debit_xor_credit",
@@ -111,40 +186,8 @@ public static class LedgerModelConfiguration
             t.HasCheckConstraint("CK_gl_line_currency_amount", "\"amount_in_currency\" <> 0");
             t.HasCheckConstraint("CK_gl_line_rate_positive", "\"exchange_rate\" > 0");
         });
-        line.HasKey(x => x.Id);
 
-        line.Property(x => x.Debit).HasColumnType("numeric(18,2)");
-        line.Property(x => x.Credit).HasColumnType("numeric(18,2)");
-        line.Property(x => x.AmountInCurrency).HasColumnType("numeric(18,4)");
-        line.Property(x => x.ExchangeRate).HasColumnType("numeric(18,9)");
-        line.Property(x => x.Currency).HasConversion<string>().HasMaxLength(3);
-        line.Property(x => x.Memo).HasMaxLength(500);
-        line.Property(x => x.ExchangeRateDate).HasColumnType("date");
-
-        line.HasIndex(x => new { x.TenantId, x.AccountId, x.EntryId });
-        line.HasIndex(x => new { x.AccountId, x.TenantId });
-        line.HasIndex(x => x.EntryId);
-
-    }
-
-    private static void ConfigurePeriods(EntityTypeBuilder<FiscalPeriod> period)
-    {
-        period.ToTable("fiscal_periods", t =>
-        {
-            t.HasCheckConstraint("CK_fiscal_periods_number_in_year", "\"number\" BETWEEN 1 AND 12");
-            t.HasCheckConstraint("CK_fiscal_periods_ordered", "\"end_date\" >= \"start_date\"");
-        });
-        period.HasKey(x => x.Id);
-
-        period.Property(x => x.Name).HasMaxLength(64);
-        period.Property(x => x.NameBangla).HasMaxLength(64);
-        period.Property(x => x.StartDate).HasColumnType("date");
-        period.Property(x => x.EndDate).HasColumnType("date");
-        period.Property(x => x.SoftLockedOn).HasColumnType("date");
-        period.Property(x => x.HardLockedOn).HasColumnType("date");
-        period.Property(x => x.TaxLockedOn).HasColumnType("date");
-
-        period.HasIndex(x => new { x.TenantId, x.FiscalYear, x.Number }).IsUnique();
-
+        line.HasOne<ChartOfAccount>().WithMany().HasForeignKey(x => x.AccountId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

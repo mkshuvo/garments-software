@@ -20,7 +20,423 @@ namespace Garments.Data.Migrations
                 .HasAnnotation("ProductVersion", "10.0.13")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
+            NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "ltree");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("Garments.Ledger.ChartOfAccount", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("code");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsPostable")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_postable");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("NameBangla")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name_bangla");
+
+                    b.Property<Guid?>("ParentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("parent_id");
+
+                    b.Property<string>("Path")
+                        .IsRequired()
+                        .HasColumnType("ltree")
+                        .HasColumnName("path");
+
+                    b.Property<string>("SubType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("sub_type");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("type");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ParentId");
+
+                    b.HasIndex("Path");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Path"), "gist");
+
+                    b.HasIndex("TenantId", "Code")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId", "ParentId");
+
+                    b.ToTable("accounts", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_accounts_postable_is_leaf", "\"is_postable\" OR \"parent_id\" IS NULL");
+
+                            t.HasCheckConstraint("CK_accounts_tenant_scope", "tenant_id IS NOT NULL AND tenant_id = current_setting('app.tenant_id', true)::uuid");
+                        });
+                });
+
+            modelBuilder.Entity("Garments.Ledger.FiscalPeriod", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateOnly>("EndDate")
+                        .HasColumnType("date")
+                        .HasColumnName("end_date");
+
+                    b.Property<int>("FiscalYear")
+                        .HasColumnType("integer")
+                        .HasColumnName("fiscal_year");
+
+                    b.Property<DateOnly?>("HardLockedOn")
+                        .HasColumnType("date")
+                        .HasColumnName("hard_locked_on");
+
+                    b.Property<bool>("IsClosed")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_closed");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("NameBangla")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("name_bangla");
+
+                    b.Property<int>("Number")
+                        .HasColumnType("integer")
+                        .HasColumnName("number");
+
+                    b.Property<DateOnly?>("SoftLockedOn")
+                        .HasColumnType("date")
+                        .HasColumnName("soft_locked_on");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date")
+                        .HasColumnName("start_date");
+
+                    b.Property<DateOnly?>("TaxLockedOn")
+                        .HasColumnType("date")
+                        .HasColumnName("tax_locked_on");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "FiscalYear", "Number")
+                        .IsUnique();
+
+                    b.ToTable("fiscal_periods", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_fiscal_periods_number_in_year", "\"number\" BETWEEN 1 AND 12");
+
+                            t.HasCheckConstraint("CK_fiscal_periods_ordered", "\"end_date\" >= \"start_date\"");
+
+                            t.HasCheckConstraint("CK_fiscal_periods_tenant_scope", "tenant_id IS NOT NULL AND tenant_id = current_setting('app.tenant_id', true)::uuid");
+                        });
+                });
+
+            modelBuilder.Entity("Garments.Ledger.GlEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<int>("Iteration")
+                        .HasColumnType("integer")
+                        .HasColumnName("iteration");
+
+                    b.Property<string>("JournalCode")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("journal_code");
+
+                    b.Property<string>("Memo")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("memo");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("number");
+
+                    b.Property<Guid>("PeriodId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("period_id");
+
+                    b.Property<Guid?>("PostedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("posted_by_user_id");
+
+                    b.Property<DateOnly>("PostingDate")
+                        .HasColumnType("date")
+                        .HasColumnName("posting_date");
+
+                    b.Property<Guid?>("ReversesEntryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("reverses_entry_id");
+
+                    b.Property<Guid?>("SourceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_id");
+
+                    b.Property<string>("SourceType")
+                        .IsRequired()
+                        .HasMaxLength(48)
+                        .HasColumnType("character varying(48)")
+                        .HasColumnName("source_type");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<bool>("UsesStorno")
+                        .HasColumnType("boolean")
+                        .HasColumnName("uses_storno");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PeriodId");
+
+                    b.HasIndex("ReversesEntryId");
+
+                    b.HasIndex("TenantId", "PostingDate");
+
+                    b.HasIndex("TenantId", "JournalCode", "PeriodId", "Number")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_gl_entries_number");
+
+                    b.HasIndex("TenantId", "SourceType", "SourceId", "Iteration")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_gl_entries_source_key");
+
+                    b.ToTable("gl_entries", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_gl_entries_iteration", "\"iteration\" >= 1");
+
+                            t.HasCheckConstraint("CK_gl_entries_reversal_not_self", "\"reverses_entry_id\" IS NULL OR \"reverses_entry_id\" <> \"id\"");
+
+                            t.HasCheckConstraint("CK_gl_entries_tenant_scope", "tenant_id IS NOT NULL AND tenant_id = current_setting('app.tenant_id', true)::uuid");
+                        });
+                });
+
+            modelBuilder.Entity("Garments.Ledger.GlLine", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("account_id");
+
+                    b.Property<decimal>("AmountInCurrency")
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("amount_in_currency");
+
+                    b.Property<Guid?>("AnalysisId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("analysis_id");
+
+                    b.Property<decimal?>("Credit")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("credit");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)")
+                        .HasColumnName("currency");
+
+                    b.Property<decimal?>("Debit")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("debit");
+
+                    b.Property<Guid>("EntryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("entry_id");
+
+                    b.Property<decimal>("ExchangeRate")
+                        .HasColumnType("numeric(18,9)")
+                        .HasColumnName("exchange_rate");
+
+                    b.Property<DateOnly>("ExchangeRateDate")
+                        .HasColumnType("date")
+                        .HasColumnName("exchange_rate_date");
+
+                    b.Property<int>("LineOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("line_order");
+
+                    b.Property<string>("Memo")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("memo");
+
+                    b.Property<Guid?>("RuleVersionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("rule_version_id");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId", "TenantId");
+
+                    b.HasIndex("EntryId", "LineOrder");
+
+                    b.HasIndex("TenantId", "AccountId", "EntryId");
+
+                    b.ToTable("gl_lines", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_gl_line_currency_amount", "\"amount_in_currency\" <> 0");
+
+                            t.HasCheckConstraint("CK_gl_line_debit_xor_credit", "(\"debit\" > 0 AND \"credit\" IS NULL) OR (\"credit\" > 0 AND \"debit\" IS NULL)");
+
+                            t.HasCheckConstraint("CK_gl_line_rate_positive", "\"exchange_rate\" > 0");
+
+                            t.HasCheckConstraint("CK_gl_lines_tenant_scope", "tenant_id IS NOT NULL AND tenant_id = current_setting('app.tenant_id', true)::uuid");
+                        });
+                });
+
+            modelBuilder.Entity("Garments.Ledger.Journal", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("AllowsDrafts")
+                        .HasColumnType("boolean")
+                        .HasColumnName("allows_drafts");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("code");
+
+                    b.Property<Guid?>("DefaultCreditAccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("default_credit_account_id");
+
+                    b.Property<Guid?>("DefaultDebitAccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("default_debit_account_id");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("NameBangla")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name_bangla");
+
+                    b.Property<int>("NextNumber")
+                        .HasColumnType("integer")
+                        .HasColumnName("next_number");
+
+                    b.Property<string>("NumberPrefix")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)")
+                        .HasColumnName("number_prefix");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<bool>("UsesStorno")
+                        .HasColumnType("boolean")
+                        .HasColumnName("uses_storno");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DefaultCreditAccountId");
+
+                    b.HasIndex("DefaultDebitAccountId");
+
+                    b.HasIndex("TenantId", "Code")
+                        .IsUnique();
+
+                    b.ToTable("journals", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_journals_next_number", "\"next_number\" >= 1");
+
+                            t.HasCheckConstraint("CK_journals_tenant_scope", "tenant_id IS NOT NULL AND tenant_id = current_setting('app.tenant_id', true)::uuid");
+                        });
+                });
 
             modelBuilder.Entity("Garments.Platform.Audit.AuditLogEntry", b =>
                 {
@@ -704,6 +1120,96 @@ namespace Garments.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Garments.Ledger.ChartOfAccount", b =>
+                {
+                    b.HasOne("Garments.Ledger.ChartOfAccount", null)
+                        .WithMany()
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Garments.Platform.Tenancy.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Garments.Ledger.FiscalPeriod", b =>
+                {
+                    b.HasOne("Garments.Platform.Tenancy.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Garments.Ledger.GlEntry", b =>
+                {
+                    b.HasOne("Garments.Ledger.FiscalPeriod", null)
+                        .WithMany()
+                        .HasForeignKey("PeriodId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Garments.Ledger.GlEntry", null)
+                        .WithMany()
+                        .HasForeignKey("ReversesEntryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Garments.Platform.Tenancy.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Garments.Ledger.Journal", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "JournalCode")
+                        .HasPrincipalKey("TenantId", "Code")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Garments.Ledger.GlLine", b =>
+                {
+                    b.HasOne("Garments.Ledger.ChartOfAccount", null)
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Garments.Ledger.GlEntry", null)
+                        .WithMany("Lines")
+                        .HasForeignKey("EntryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Garments.Platform.Tenancy.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Garments.Ledger.Journal", b =>
+                {
+                    b.HasOne("Garments.Ledger.ChartOfAccount", null)
+                        .WithMany()
+                        .HasForeignKey("DefaultCreditAccountId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Garments.Ledger.ChartOfAccount", null)
+                        .WithMany()
+                        .HasForeignKey("DefaultDebitAccountId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Garments.Platform.Tenancy.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Garments.Platform.Audit.AuditLogEntry", b =>
                 {
                     b.HasOne("Garments.Platform.Tenancy.Tenant", null)
@@ -743,6 +1249,12 @@ namespace Garments.Data.Migrations
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Garments.Platform.Tenancy.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
@@ -813,6 +1325,11 @@ namespace Garments.Data.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Garments.Ledger.GlEntry", b =>
+                {
+                    b.Navigation("Lines");
                 });
 #pragma warning restore 612, 618
         }

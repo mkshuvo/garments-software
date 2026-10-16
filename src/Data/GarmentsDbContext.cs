@@ -1,4 +1,5 @@
 using Garments.Core;
+using Garments.Ledger;
 using Garments.Platform.Audit;
 using Garments.Platform.Identity;
 using Garments.Platform.Rbac;
@@ -68,6 +69,16 @@ public class GarmentsDbContext(DbContextOptions<GarmentsDbContext> options, ITen
 
     public DbSet<AuditLogEntry> AuditLogs => Set<AuditLogEntry>();
 
+    public DbSet<ChartOfAccount> Accounts => Set<ChartOfAccount>();
+
+    public DbSet<Journal> Journals => Set<Journal>();
+
+    public DbSet<GlEntry> GlEntries => Set<GlEntry>();
+
+    public DbSet<GlLine> GlLines => Set<GlLine>();
+
+    public DbSet<FiscalPeriod> FiscalPeriods => Set<FiscalPeriod>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -79,6 +90,17 @@ public class GarmentsDbContext(DbContextOptions<GarmentsDbContext> options, ITen
         ConfigureResourceActions(builder);
         ConfigureRoleGrants(builder);
         ConfigureAuditLogs(builder);
+        LedgerModelConfiguration.Apply(builder);
+
+        // Applied here rather than inside the ledger's own mapping because the filter has to close over
+        // this context's tenant, and a static configuration class cannot reach it. Five calls instead of
+        // a loop: a filter registered by reflection is one an entity can miss without a compile error,
+        // which is the exact shape of the hole this project was rebuilt to close.
+        TenantQueryFilter<ChartOfAccount>(builder);
+        TenantQueryFilter<Journal>(builder);
+        TenantQueryFilter<FiscalPeriod>(builder);
+        TenantQueryFilter<GlEntry>(builder);
+        TenantQueryFilter<GlLine>(builder);
 
         SnakeCaseModelNames.Apply(builder);
     }
@@ -117,11 +139,6 @@ public class GarmentsDbContext(DbContextOptions<GarmentsDbContext> options, ITen
             entity.HasIndex(user => new { user.TenantId, user.NormalizedEmail })
                 .HasDatabaseName("IX_users_tenant_id_normalized_email");
 
-            entity.HasOne<Tenant>()
-                .WithMany()
-                .HasForeignKey(user => user.TenantId)
-                .OnDelete(DeleteBehavior.Restrict);
-
             entity.HasQueryFilter(user => user.TenantId == CurrentTenantId);
         });
 
@@ -143,11 +160,6 @@ public class GarmentsDbContext(DbContextOptions<GarmentsDbContext> options, ITen
             entity.HasIndex(role => new { role.TenantId, role.NormalizedName })
                 .IsUnique()
                 .HasDatabaseName("UQ_roles_tenant_id_normalized_name");
-
-            entity.HasOne<Tenant>()
-                .WithMany()
-                .HasForeignKey(role => role.TenantId)
-                .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasQueryFilter(role => role.TenantId == CurrentTenantId);
         });
@@ -212,11 +224,6 @@ public class GarmentsDbContext(DbContextOptions<GarmentsDbContext> options, ITen
                 .IsUnique()
                 .HasDatabaseName("UQ_company_profiles_tenant_id");
 
-            entity.HasOne<Tenant>()
-                .WithMany()
-                .HasForeignKey(company => company.TenantId)
-                .OnDelete(DeleteBehavior.Restrict);
-
             entity.HasQueryFilter(company => company.TenantId == CurrentTenantId);
         });
 
@@ -238,11 +245,6 @@ public class GarmentsDbContext(DbContextOptions<GarmentsDbContext> options, ITen
 
             entity.HasIndex(department => new { department.TenantId, department.SortOrder })
                 .HasDatabaseName("IX_departments_tenant_id_sort_order");
-
-            entity.HasOne<Tenant>()
-                .WithMany()
-                .HasForeignKey(department => department.TenantId)
-                .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasQueryFilter(department => department.TenantId == CurrentTenantId);
         });
@@ -309,41 +311,32 @@ public class GarmentsDbContext(DbContextOptions<GarmentsDbContext> options, ITen
             entity.HasIndex(audit => new { audit.TenantId, audit.Resource, audit.ResourceId })
                 .HasDatabaseName("IX_audit_logs_tenant_id_resource_resource_id");
 
-            entity.HasOne<Tenant>()
-                .WithMany()
-                .HasForeignKey(audit => audit.TenantId)
-                .OnDelete(DeleteBehavior.Restrict);
-
             entity.HasQueryFilter(audit => audit.TenantId == CurrentTenantId);
         });
 
     /// <summary>
     /// Table name plus the tenancy column plus the check constraint, in one call, so a tenant-owned
-    /// table cannot be declared without all three.
+    /// table cannot be declared without all three. The implementation is shared with
+    /// <see cref="LedgerModelConfiguration"/> so the ledger cannot be given a weaker guarantee.
     /// </summary>
     private static void ConfigureTenantTable<TEntity>(EntityTypeBuilder<TEntity> entity, string tableName)
-        where TEntity : class, ITenantScoped
-    {
-        ApplyTenantCheckConstraint(entity, tableName);
-
-        entity.Property(tenantScoped => tenantScoped.TenantId)
-            .IsRequired()
-            .HasConversion(new TenantIdConverter());
-    }
+        where TEntity : class, ITenantScoped =>
+        TenantTableConfiguration.ApplyTenantScope(entity, tableName);
 
     private static void ConfigureShadowTenantTable<TEntity>(EntityTypeBuilder<TEntity> entity, string tableName)
-        where TEntity : class
-    {
-        ApplyTenantCheckConstraint(entity, tableName);
-
-        entity.Property<TenantId>(TenantOwnedTables.PropertyName)
-            .IsRequired()
-            .HasConversion(new TenantIdConverter());
-    }
-
-    private static void ApplyTenantCheckConstraint<TEntity>(EntityTypeBuilder<TEntity> entity, string tableName)
         where TEntity : class =>
-        entity.ToTable(tableName, table => table.HasCheckConstraint(
-            TenantOwnedTables.CheckName(tableName),
-            $"{TenantOwnedTables.PropertyColumnName} IS NOT NULL AND {TenantOwnedTables.TenantScopePredicate()}"));
+        TenantTableConfiguration.ApplyShadowTenantScope(entity, tableName);
+
+    /// <summary>
+    /// Restricts every read of a tenant-owned entity to the session's tenant.
+    /// </summary>
+    /// <remarks>
+    /// Row-level security already does this in the database, and the two are not redundant: RLS is what
+    /// stops a raw SQL read or a component that never goes through EF, while the query filter is what
+    /// makes an <c>Include</c>, a projection or a generated <c>count</c> come back with one company's
+    /// rows. An entity with only the first is invisible to nobody — it just leaks through the ORM.
+    /// </remarks>
+    private void TenantQueryFilter<TEntity>(ModelBuilder builder)
+        where TEntity : class, ITenantScoped =>
+        builder.Entity<TEntity>().HasQueryFilter(entity => entity.TenantId == CurrentTenantId);
 }
