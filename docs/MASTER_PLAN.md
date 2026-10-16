@@ -186,30 +186,71 @@ design/                DESIGN.md token source, component specs
 infra/                 compose.dev.yml  compose.prod.yml  ci/  observability/
 ```
 
-### 2.7 Known layering defect: the persistence project is missing (found in P2)
+### 2.7 Known layering defect: entities and persistence are fused in `Platform` (found in P2)
 
-`GarmentsDbContext` currently lives in `Platform`, but the ledger entities live in `Ledger`, which
-depends on `Platform` for `ITenantScoped`. Registering the ledger in the context therefore requires
-`Platform → Ledger`, which closes a cycle. The ledger types in `src/Ledger` are built and tested but
-**not yet wired into the model**, and this must be resolved before the P2 migration is written.
+**Diagnosis, corrected on inspection.** `Platform` currently holds two things that must not be in the
+same project: the **domain entities** (`Tenant`, `CompanyProfile`, `Department`, `ResourceAction`,
+`RoleGrant`, `AuditLogEntry`, `ApplicationUser`, `ApplicationRole`) and the **persistence layer** that
+maps them (`GarmentsDbContext`, migrations, `TenantIdConverter`, `RlsSafetyProbe`, `MigrationRunner`),
+plus services that use that context directly (`PermissionSeeder`, `TenantDirectory`).
 
-Chosen resolution: a dedicated `src/Data/Garments.Data` project owning the context, migrations, the
-design-time factory and the tenant-constraint helpers, moving out of `Platform`. Resulting layering,
-which is acyclic and keeps every rule where it is enforced:
+The dependency runs **both** ways, verified by grep rather than assumed:
 
 ```
-Core  ←  Platform  ←  Data  ←  Api
-Core  ←  Ledger    ←  Data
-Core  ←  Platform  ←  Ledger          (for ITenantScoped)
+Platform/Rbac/PermissionSeeder  →  Platform/Data/GarmentsDbContext   (needs the context)
+Platform/Data/GarmentsDbContext →  Platform/Tenancy/Tenant, Rbac/…   (maps the entities)
 ```
 
-`ITenantScoped` should move to `Core` in the same change, which removes the `Ledger → Platform` edge
-entirely and leaves `Ledger` depending on nothing but `Core`.
+So creating a `Data` project alone does **not** break the cycle — `Data` would need `Platform` for the
+entities while `Platform`'s services needed `Data` for the context. This is why the ledger entities in
+`src/Ledger` are built, tested and deliberately **not yet registered**: registering them requires this
+to be resolved first.
 
-Rejected alternatives, recorded so they are not re-litigated: a model-contributor callback injected
-into the context (defers the problem and hides which entities are mapped); declaring ledger `DbSet`s
-in `Platform` with types duplicated there (two sources of truth); putting the context in `Api`
-(unusable by unit tests and drags the host into the data layer).
+**Target layering.** Split along the seam that already exists in `Ledger`, where entities and rules
+live together and nothing about persistence is known:
+
+```
+Core      primitives + ITenantScoped (moved down from Platform.Tenancy)
+Platform  domain entities and pure services: tenancy context, RBAC model, audit model,
+          identity users, token issuing, current-user reads.  NO DbContext reference.
+Ledger    ledger entities and rules                            → Core
+Data      GarmentsDbContext, migrations, design-time factory, TenantEntityConfiguration,
+          SnakeCaseModelNames, TenantIdConverter, TenantOwnedTables, GarmentsDatabaseOptions,
+          RlsSafetyProbe, MigrationRunner, and the two context-using services
+          (TenantDirectory, PermissionSeeder)                   → Core, Platform, Ledger
+Api / Cli composition root, controllers, middleware, DI wiring  → Data, Platform, Ledger
+```
+
+Acyclic: `Data` depends on the entity projects; nothing depends on `Data` except the hosts.
+
+**Why the services move rather than being abstracted behind interfaces.** A repository or
+`IDbContext`-shaped interface would break the cycle too, but it buys indirection with no seam we
+actually want: there is one context, one database, and the isolation guarantee depends on that
+concrete context owning the tenant query filters. Hiding it behind an interface makes the tenancy
+rules easier to bypass, which is the opposite of this project's direction.
+
+**Execution notes for whoever does it.**
+- `git mv` preserves history; do the moves first, then fix namespaces in one pass, then build.
+- Namespaces change from `Garments.Platform.Data` → `Garments.Data`. `TenantIdConverter` and
+  `TenantEntityConfiguration` are referenced by `Ledger/LedgerModelConfiguration.cs`, which must be
+  updated in the same change.
+- Migrations carry their own namespace in the generated `Designer.cs` files and in
+  `GarmentsDbContextModelSnapshot.cs`; renaming them without also renaming the snapshot's namespace
+  breaks `dotnet ef` discovery. Regenerate rather than hand-edit if in doubt.
+- **Verify with the gate, not by eye:** `./verify-all.sh` must reach 12 checks green, and the
+  `database: migrations apply to empty Postgres` step is what proves the migration history survived the
+  move. If that step goes red, the migration IDs or snapshot namespace are wrong — revert and retry
+  rather than patching forward.
+- `ITenantScoped` moving to `Core` touches every entity file's `using`; it is a mechanical edit but it
+  touches the most files, so do it last.
+
+**Rejected alternatives, recorded so they are not re-litigated.**
+- *Move the context into `Api`*: unusable by unit tests and drags the host into the data layer.
+- *Move ledger entities into `Platform`*: puts the kernel inside infrastructure.
+- *A model-contributor callback injected into the context*: hides which entities are mapped, and a
+  silently unmapped entity is a table that never gets created.
+- *Leave it and register the ledger from `Platform` anyway*: compiles only by deleting the cycle's
+  evidence, and every later module inherits the tangle.
 
 ---
 
