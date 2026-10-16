@@ -186,6 +186,33 @@ design/                DESIGN.md token source, component specs
 infra/                 compose.dev.yml  compose.prod.yml  ci/  observability/
 ```
 
+### 2.7 Known layering defect: the persistence project is missing (found in P2)
+
+`GarmentsDbContext` currently lives in `Platform`, but the ledger entities live in `Ledger`, which
+depends on `Platform` for `ITenantScoped`. Registering the ledger in the context therefore requires
+`Platform → Ledger`, which closes a cycle. The ledger types in `src/Ledger` are built and tested but
+**not yet wired into the model**, and this must be resolved before the P2 migration is written.
+
+Chosen resolution: a dedicated `src/Data/Garments.Data` project owning the context, migrations, the
+design-time factory and the tenant-constraint helpers, moving out of `Platform`. Resulting layering,
+which is acyclic and keeps every rule where it is enforced:
+
+```
+Core  ←  Platform  ←  Data  ←  Api
+Core  ←  Ledger    ←  Data
+Core  ←  Platform  ←  Ledger          (for ITenantScoped)
+```
+
+`ITenantScoped` should move to `Core` in the same change, which removes the `Ledger → Platform` edge
+entirely and leaves `Ledger` depending on nothing but `Core`.
+
+Rejected alternatives, recorded so they are not re-litigated: a model-contributor callback injected
+into the context (defers the problem and hides which entities are mapped); declaring ledger `DbSet`s
+in `Platform` with types duplicated there (two sources of truth); putting the context in `Api`
+(unusable by unit tests and drags the host into the data layer).
+
+---
+
 ---
 
 ## 3. Engineering law — enforced by CI, not by memory

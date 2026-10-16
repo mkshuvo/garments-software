@@ -429,7 +429,13 @@
         "type": "Project"
       },
       "garments.ledger": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "Garments.Core": "[1.0.0, )",
+          "Garments.Platform": "[1.0.0, )",
+          "Microsoft.EntityFrameworkCore": "[10.0.13, )",
+          "Microsoft.EntityFrameworkCore.Relational": "[10.0.13, )"
+        }
       },
       "garments.modules.inventory": {
         "type": "Project"
