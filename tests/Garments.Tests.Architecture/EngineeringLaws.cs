@@ -14,6 +14,7 @@ internal static class EngineeringLaws
         new NoFakeSuccessLaw(),
         new ProductionProjectPurityLaw(),
         new ExplicitAuthorizationLaw(),
+        new PersistenceBelongsToOneProjectLaw(),
     ];
 
     internal static EngineeringLaw ById(string lawId) =>

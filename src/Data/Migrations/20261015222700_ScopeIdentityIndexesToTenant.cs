@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace Garments.Platform.Data.Migrations
+namespace Garments.Data.Migrations
 {
     /// <inheritdoc />
     public partial class ScopeIdentityIndexesToTenant : Migration

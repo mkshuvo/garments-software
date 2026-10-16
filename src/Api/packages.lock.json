@@ -276,13 +276,22 @@
       "garments.core": {
         "type": "Project"
       },
-      "garments.ledger": {
+      "garments.data": {
         "type": "Project",
         "dependencies": {
           "Garments.Core": "[1.0.0, )",
+          "Garments.Ledger": "[1.0.0, )",
           "Garments.Platform": "[1.0.0, )",
+          "Microsoft.AspNetCore.Identity.EntityFrameworkCore": "[10.0.13, )",
           "Microsoft.EntityFrameworkCore": "[10.0.13, )",
-          "Microsoft.EntityFrameworkCore.Relational": "[10.0.13, )"
+          "Microsoft.EntityFrameworkCore.Relational": "[10.0.13, )",
+          "Npgsql.EntityFrameworkCore.PostgreSQL": "[10.0.3, )"
+        }
+      },
+      "garments.ledger": {
+        "type": "Project",
+        "dependencies": {
+          "Garments.Core": "[1.0.0, )"
         }
       },
       "garments.modules.inventory": {
@@ -304,10 +313,6 @@
         "type": "Project",
         "dependencies": {
           "Garments.Core": "[1.0.0, )",
-          "Microsoft.AspNetCore.Identity.EntityFrameworkCore": "[10.0.13, )",
-          "Microsoft.EntityFrameworkCore": "[10.0.13, )",
-          "Microsoft.EntityFrameworkCore.Relational": "[10.0.13, )",
-          "Npgsql.EntityFrameworkCore.PostgreSQL": "[10.0.3, )",
           "System.IdentityModel.Tokens.Jwt": "[8.19.2, )"
         }
       },

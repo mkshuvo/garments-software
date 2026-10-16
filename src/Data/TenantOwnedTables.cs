@@ -1,7 +1,7 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore;
 
-namespace Garments.Platform.Data;
+namespace Garments.Data;
 
 /// <summary>
 /// Reads the tenant boundary straight off the EF model, so "which tables carry tenant data" has one
@@ -58,9 +58,9 @@ public static class TenantOwnedTables
     /// <remarks>
     /// <c>missing_ok = true</c> makes an unset session read as "no rows" instead of an error; the check
     /// constraint on the same expression makes an unset session an error instead of a silent empty
-    /// tenant on writes; and <see cref="Tenancy.TenantSessionInterceptor"/> refuses to open the
+    /// tenant on writes; and <see cref="TenantSessionInterceptor"/> refuses to open the
     /// connection at all. Three different failure modes, and none of them is "worked, returned nothing".
     /// </remarks>
     public static string TenantScopePredicate() =>
-        $"{PropertyColumnName} = current_setting('{Tenancy.TenantSessionInterceptor.TenantSettingName}', true)::uuid";
+        $"{PropertyColumnName} = current_setting('{TenantSessionInterceptor.TenantSettingName}', true)::uuid";
 }

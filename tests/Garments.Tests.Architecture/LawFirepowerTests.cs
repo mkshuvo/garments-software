@@ -73,6 +73,17 @@ public class LawFirepowerTests
                 public IActionResult Read() => Ok();
             }
             """,
+
+        ["L18"] = """
+            using Microsoft.EntityFrameworkCore;
+
+            namespace Garments.LawProbe;
+
+            public sealed class ProbeL18
+            {
+                public DbSet<object>? Rows { get; set; }
+            }
+            """,
     });
 
     [Theory]

@@ -4,7 +4,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Garments.Platform.Data.Migrations
+namespace Garments.Data.Migrations
 {
     /// <inheritdoc />
     public partial class InitialTenantSchema : Migration

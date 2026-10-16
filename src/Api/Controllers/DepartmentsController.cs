@@ -1,4 +1,4 @@
-using Garments.Platform.Data;
+using Garments.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;

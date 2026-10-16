@@ -3,7 +3,7 @@ using Garments.Api.Composition;
 using Garments.Api.Health;
 using Garments.Api.Middleware;
 using Garments.Api.Observability;
-using Garments.Platform.Data;
+using Garments.Data;
 using Garments.Platform.Rbac;
 using Garments.Platform.Tenancy;
 using Serilog;
@@ -28,7 +28,7 @@ builder.Services.AddGarmentsHealth();
 // Refuses to start without a configured connection rather than coming up and failing on the first
 // query, which is how the legacy tree's "dependency check middleware" managed to report healthy
 // against a database it had not actually migrated.
-builder.Services.AddGarmentsData(PlatformDataServiceCollectionExtensions.ReadDatabaseOptions(builder.Configuration));
+builder.Services.AddGarmentsData(DataServiceCollectionExtensions.ReadDatabaseOptions(builder.Configuration));
 
 // Deny by default. An endpoint that is public is public because it is written down, not because
 // nobody remembered to lock it. The legacy build shipped a bare AddAuthorization() and an

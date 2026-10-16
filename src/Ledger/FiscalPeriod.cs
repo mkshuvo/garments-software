@@ -1,5 +1,4 @@
 using Garments.Core;
-using Garments.Platform.Tenancy;
 
 namespace Garments.Ledger;
 

@@ -1,5 +1,5 @@
 using Garments.Core;
-using Garments.Platform.Data;
+using Garments.Data;
 using Garments.Platform.Rbac;
 using Garments.Platform.Tenancy;
 using Microsoft.AspNetCore.Identity;

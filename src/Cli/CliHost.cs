@@ -1,4 +1,4 @@
-using Garments.Platform.Data;
+using Garments.Data;
 using Garments.Platform.Rbac;
 using Garments.Platform.Security;
 using Garments.Platform.Tenancy;
@@ -31,7 +31,7 @@ internal static class CliHost
             .ConfigureAppConfiguration((_, configuration) => configuration.AddEnvironmentVariables())
             .ConfigureServices((context, services) =>
             {
-                var databaseOptions = PlatformDataServiceCollectionExtensions.ReadDatabaseOptions(context.Configuration);
+                var databaseOptions = DataServiceCollectionExtensions.ReadDatabaseOptions(context.Configuration);
 
                 services.AddGarmentsData(databaseOptions);
                 services.AddIdentityCore<Platform.Identity.ApplicationUser>()

@@ -1,9 +1,10 @@
 using Garments.Core;
-using Microsoft.EntityFrameworkCore;
+using Garments.Platform.Tenancy;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.EntityFrameworkCore;
 
-namespace Garments.Platform.Tenancy;
+namespace Garments.Data;
 
 /// <summary>
 /// Writes the resolved tenant onto every inserted row and refuses to mutate a row that belongs to

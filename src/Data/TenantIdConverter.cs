@@ -1,7 +1,7 @@
 using Garments.Core;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
-namespace Garments.Platform.Data;
+namespace Garments.Data;
 
 /// <summary>
 /// Stores <see cref="TenantId"/> as a Postgres <c>uuid</c>.

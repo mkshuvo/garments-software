@@ -1,8 +1,8 @@
-using Garments.Platform.Data;
-using Microsoft.EntityFrameworkCore;
+using Garments.Ledger;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore;
 
-namespace Garments.Ledger;
+namespace Garments.Data;
 
 /// <summary>
 /// Maps the ledger onto the schema, including the constraints that make a wrong posting impossible

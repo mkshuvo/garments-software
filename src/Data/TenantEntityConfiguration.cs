@@ -1,7 +1,7 @@
 using Garments.Platform.Tenancy;
 using Microsoft.EntityFrameworkCore;
 
-namespace Garments.Platform.Data;
+namespace Garments.Data;
 
 /// <summary>
 /// Maps the tenant directory table once, for every context that needs to read it.

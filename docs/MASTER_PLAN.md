@@ -186,7 +186,7 @@ design/                DESIGN.md token source, component specs
 infra/                 compose.dev.yml  compose.prod.yml  ci/  observability/
 ```
 
-### 2.7 Known layering defect: entities and persistence are fused in `Platform` (found in P2)
+### 2.7 Layering: entities and persistence were fused in `Platform` (found and split in P2)
 
 **Diagnosis, corrected on inspection.** `Platform` currently holds two things that must not be in the
 same project: the **domain entities** (`Tenant`, `CompanyProfile`, `Department`, `ResourceAction`,
@@ -229,20 +229,27 @@ actually want: there is one context, one database, and the isolation guarantee d
 concrete context owning the tenant query filters. Hiding it behind an interface makes the tenancy
 rules easier to bypass, which is the opposite of this project's direction.
 
-**Execution notes for whoever does it.**
-- `git mv` preserves history; do the moves first, then fix namespaces in one pass, then build.
-- Namespaces change from `Garments.Platform.Data` → `Garments.Data`. `TenantIdConverter` and
-  `TenantEntityConfiguration` are referenced by `Ledger/LedgerModelConfiguration.cs`, which must be
-  updated in the same change.
-- Migrations carry their own namespace in the generated `Designer.cs` files and in
-  `GarmentsDbContextModelSnapshot.cs`; renaming them without also renaming the snapshot's namespace
-  breaks `dotnet ef` discovery. Regenerate rather than hand-edit if in doubt.
-- **Verify with the gate, not by eye:** `./verify-all.sh` must reach 12 checks green, and the
-  `database: migrations apply to empty Postgres` step is what proves the migration history survived the
-  move. If that step goes red, the migration IDs or snapshot namespace are wrong — revert and retry
-  rather than patching forward.
-- `ITenantScoped` moving to `Core` touches every entity file's `using`; it is a mechanical edit but it
-  touches the most files, so do it last.
+**Closed in P2.** The split ran as recorded: `git mv` first, then namespaces in one pass, then build.
+`src/Data/Garments.Data.csproj` now holds both contexts, the migrations, the two tenant interceptors,
+`TenantDirectory`, `PermissionSeeder` and `LedgerModelConfiguration`; `Platform` compiles with no EF
+package at all, and `Ledger` references only `Core`. `ITenantScoped` moved to `Core` — the marker has to
+sit below every project that implements it, and putting it beside the entities is what forced the merge.
+
+Two things the plan did not predict:
+
+- Relative namespace names broke, not the usings. Code written as `new Tenancy.AmbientTenantContext()`
+  resolved because the file sat in `Garments.Platform.Data` and `Tenancy` was a sibling. From
+  `Garments.Data` it is not, so eleven call sites needed `Platform.` qualification. The usings, which
+  is what the plan warned about, needed only five edits.
+- `Platform` still compiles without `Microsoft.AspNetCore.Identity.EntityFrameworkCore`, because
+  `IdentityUser`, `IdentityRole` and `UserManager` are all in the ASP.NET Core shared framework. Only
+  the *stores* are EF-specific, and they were the thing moving anyway.
+
+**Kept closed by L18.** A law rather than a review note, because the fusion is invisible in any single
+file: one navigation attribute on a domain entity starts the cycle, and by the time it shows up in a
+diff the way out is a refactor of both sides. L18 fails any domain project that references
+`Garments.Data`, takes an EF package, or writes an EF `using` — and its firepower probe plants exactly
+that, so the law is known to be able to fail.
 
 **Rejected alternatives, recorded so they are not re-litigated.**
 - *Move the context into `Api`*: unusable by unit tests and drags the host into the data layer.
@@ -279,6 +286,7 @@ The failure mode of the previous build was not ignorance, it was **no gate**. Ea
 | L15 | Design tokens have one source. No inline hex/`rgba` literals in components (~40 in the old trial balance alone). | Stylelint/ESLint rule; token file is the only place colours exist. |
 | L16 | No dead code ships. Unreachable components are deleted in the phase that replaces them. | Bundle/Knit coverage + explicit "components reachable" report per gate. |
 | L17 | **Every user-facing string goes through a translation layer from P0.** The buyer is a Bangladeshi factory owner; the operating language is Bangla, with English retained for reports and account codes. Retrofitting i18n into a finished app is the expensive version of this. | ESLint rule failing any hardcoded JSX string; CI asserts no untranslated keys in the shipped bundle. Postgres collation and number/date formatting verified with Bangla data at the P4 gate, not discovered later. |
+| L18 | **Persistence knowledge lives in one project.** No domain project may reference `Garments.Data`, take an Entity Framework package, or write an EF `using`. Hosts (`Api`, `Cli`) are exempt because a composition root must register a context; a domain project has no such excuse. Found in P2 as §2.7. | csproj scan plus a source scan of `src/`, with the §2.7 layering as its exemption list. The probe plants a domain file holding a `DbSet` property, so the law is known to fire — the failure mode it prevents is invisible in any single file. |
 
 **Every law must be shown to be capable of failing.** The legacy repository's checks had never been observed to reject anything — a test folder excluded from compilation, a validator never registered, a cache invalidator that logged and returned — which makes a rule that does nothing indistinguishable from a rule that is working. So each law ships with two tests: that it holds on the real tree, and that it fires on a planted known-bad sample. `LawFirepowerTests` writes deliberately non-compliant files under `src/`, re-runs every law, and asserts each one reacts, then cleans up. A law added without a firepower probe is not a law.
 

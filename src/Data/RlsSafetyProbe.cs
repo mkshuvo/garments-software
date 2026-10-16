@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
-namespace Garments.Platform.Data;
+namespace Garments.Data;
 
 /// <summary>
 /// Checks, against the live database, that the connection the application actually uses cannot step
@@ -133,5 +133,5 @@ public sealed class RlsSafetyProbe(GarmentsDatabaseOptions options)
         new DbContextOptionsBuilder<GarmentsDbContext>()
             .UseNpgsql("Host=localhost;Database=garments;Username=garments;Password=garments")
             .Options,
-        new Tenancy.AmbientTenantContext());
+        new Platform.Tenancy.AmbientTenantContext());
 }

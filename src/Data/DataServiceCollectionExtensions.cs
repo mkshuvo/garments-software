@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Garments.Platform.Data;
+namespace Garments.Data;
 
 /// <summary>
 /// Registers the two database contexts and the tenant plumbing that goes with them.
@@ -14,7 +14,7 @@ namespace Garments.Platform.Data;
 /// to the next request. The legacy tree pooled at 128 with no reset per open, which is the same bug as
 /// having no tenancy column at all, only harder to see.
 /// </remarks>
-public static class PlatformDataServiceCollectionExtensions
+public static class DataServiceCollectionExtensions
 {
     public static IServiceCollection AddGarmentsData(this IServiceCollection services, GarmentsDatabaseOptions options)
     {

@@ -1,8 +1,9 @@
 using Garments.Core;
-using Garments.Platform.Data;
+using Garments.Platform.Rbac;
+using Garments.Platform.Tenancy;
 using Microsoft.EntityFrameworkCore;
 
-namespace Garments.Platform.Rbac;
+namespace Garments.Data;
 
 /// <summary>
 /// Creates the permission catalogue and the system roles a company starts with.
@@ -62,7 +63,7 @@ public sealed class PermissionSeeder(GarmentsDbContext context)
 
             if (!hasRole)
             {
-                context.Roles.Add(new Identity.ApplicationRole
+                context.Roles.Add(new Platform.Identity.ApplicationRole
                 {
                     Id = Guid.NewGuid(),
                     TenantId = tenantId,

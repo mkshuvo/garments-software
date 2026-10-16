@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Core\Garments.Core.csproj" />
+    <ProjectReference Include="..\Data\Garments.Data.csproj" />
     <ProjectReference Include="..\Ledger\Garments.Ledger.csproj" />
     <ProjectReference Include="..\Platform\Garments.Platform.csproj" />
     <ProjectReference Include="..\Modules\Inventory\Garments.Modules.Inventory.csproj" />

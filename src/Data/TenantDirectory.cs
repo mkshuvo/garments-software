@@ -1,8 +1,8 @@
 using Garments.Core;
-using Garments.Platform.Data;
+using Garments.Platform.Tenancy;
 using Microsoft.EntityFrameworkCore;
 
-namespace Garments.Platform.Tenancy;
+namespace Garments.Data;
 
 /// <summary>
 /// Directory access over the tenant directory context.

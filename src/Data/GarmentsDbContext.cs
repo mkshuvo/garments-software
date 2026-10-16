@@ -3,12 +3,12 @@ using Garments.Platform.Audit;
 using Garments.Platform.Identity;
 using Garments.Platform.Rbac;
 using Garments.Platform.Tenancy;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore;
 
-namespace Garments.Platform.Data;
+namespace Garments.Data;
 
 /// <summary>
 /// The schema the product runs on: the tenant directory, ASP.NET Identity, RBAC, the tenant's own

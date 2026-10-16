@@ -4,7 +4,7 @@ using System.Net.Http.Json;
 using Garments.Core;
 using Garments.Platform.Auth;
 using Garments.Platform.Security;
-using Garments.Platform.Data;
+using Garments.Data;
 using Garments.Platform.Identity;
 using Garments.Platform.Rbac;
 using Garments.Platform.Tenancy;

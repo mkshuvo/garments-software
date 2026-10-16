@@ -1,4 +1,4 @@
-namespace Garments.Platform.Data;
+namespace Garments.Data;
 
 /// <summary>
 /// Everything about database connectivity a host has to decide.

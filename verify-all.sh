@@ -149,8 +149,12 @@ if [[ "$QUICK" -eq 0 ]]; then
         # passing --connection alone would be ignored and the gate would migrate the developer database.
         export ConnectionStrings__Default="Host=127.0.0.1;Port=$PORT;Database=garments;Username=postgres;Password=verify"
 
+        # The project that holds the migrations is named here, so it is a fact the gate has to keep
+        # true. P2 moved them from src/Platform to src/Data; a stale path reads as "No DbContext named
+        # 'GarmentsDbContext' was found", which looks like a broken model and is really the gate
+        # pointing at the wrong assembly.
         dotnet ef database update --context GarmentsDbContext \
-          --project src/Platform --startup-project src/Api --no-build
+          --project src/Data --startup-project src/Api --no-build
 
         # A schema that applies but protects nothing is the failure this whole phase exists to catch.
         # Fed over stdin: writing a Windows path for docker cp is how this went wrong before.

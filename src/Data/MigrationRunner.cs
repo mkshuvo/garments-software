@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace Garments.Platform.Data;
+namespace Garments.Data;
 
 /// <summary>
 /// Applies pending migrations using the migration principal.
@@ -28,5 +28,5 @@ public sealed class MigrationRunner(GarmentsDatabaseOptions options)
             new DbContextOptionsBuilder<GarmentsDbContext>()
                 .UseNpgsql(connectionString)
                 .Options,
-            new Tenancy.AmbientTenantContext());
+            new Platform.Tenancy.AmbientTenantContext());
 }
