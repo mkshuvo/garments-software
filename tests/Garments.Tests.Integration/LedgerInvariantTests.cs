@@ -18,28 +18,30 @@ namespace Garments.Tests.Integration;
 /// </para>
 ///
 /// <para>
-/// Written against <see cref="GarmentsDbContext"/> on a real Postgres rather than through HTTP, because
-/// what is under test is the schema: a posting path that validates in C# and a schema that enforces
-/// nothing would pass an endpoint test and still corrupt a ledger on the first code path that forgot to
-/// validate. The legacy build is that case study.
+/// Written against <see cref="GarmentsDbContext"/> on a real Postgres rather than through
+/// <see cref="IPoster"/>, because what is under test is the schema. A posting path that validates in C#
+/// over a schema that enforces nothing would pass an end-to-end test and still corrupt a ledger on the
+/// first code path that forgot to validate — and the legacy build is that case study.
 /// </para>
 ///
 /// <para>
-/// <b>Each test carries a matching refusal.</b> The positive control below is not a courtesy: five
-/// triggers that reject everything would make four of these tests green while the product was unusable.
+/// <b>Each refusal has a matching acceptance.</b> The positive control below is not a courtesy: five
+/// triggers that rejected everything would make the other tests green while the product was unusable.
 /// </para>
 /// </remarks>
 public sealed class LedgerInvariantTests(WebAppFactory factory) : IClassFixture<WebAppFactory>
 {
+    private readonly LedgerHarness ledger = new(factory);
+
     [Fact]
     public async Task A_balanced_entry_in_an_open_period_posts()
     {
-        var world = await ProvisionAsync();
+        var world = await ledger.ProvisionAsync();
 
-        var failure = await Record.ExceptionAsync(() => WriteAsync(world, entry =>
+        var failure = await Record.ExceptionAsync(() => ledger.WriteRawAsync(world, entry =>
         {
-            entry.Lines.Add(Line(world.Cash, debit: 500m));
-            entry.Lines.Add(Line(world.Income, credit: 500m));
+            entry.Lines.Add(LedgerHarness.Line(world.Cash, debit: 500m));
+            entry.Lines.Add(LedgerHarness.Line(world.Income, credit: 500m));
         }));
 
         Assert.Null(failure);
@@ -48,12 +50,12 @@ public sealed class LedgerInvariantTests(WebAppFactory factory) : IClassFixture<
     [Fact]
     public async Task An_unbalanced_posted_entry_is_refused_by_the_database()
     {
-        var world = await ProvisionAsync();
+        var world = await ledger.ProvisionAsync();
 
-        var message = await StoreErrorAsync(() => WriteAsync(world, entry =>
+        var message = await StoreErrorAsync(() => ledger.WriteRawAsync(world, entry =>
         {
-            entry.Lines.Add(Line(world.Cash, debit: 500m));
-            entry.Lines.Add(Line(world.Income, credit: 499.99m));
+            entry.Lines.Add(LedgerHarness.Line(world.Cash, debit: 500m));
+            entry.Lines.Add(LedgerHarness.Line(world.Income, credit: 499.99m));
         }));
 
         Assert.Contains("Invariant I1", message, StringComparison.Ordinal);
@@ -62,12 +64,12 @@ public sealed class LedgerInvariantTests(WebAppFactory factory) : IClassFixture<
     [Fact]
     public async Task A_one_paisa_imbalance_is_refused_because_there_is_no_tolerance()
     {
-        var world = await ProvisionAsync();
+        var world = await ledger.ProvisionAsync();
 
-        var message = await StoreErrorAsync(() => WriteAsync(world, entry =>
+        var message = await StoreErrorAsync(() => ledger.WriteRawAsync(world, entry =>
         {
-            entry.Lines.Add(Line(world.Cash, debit: 1.00m));
-            entry.Lines.Add(Line(world.Income, credit: 0.99m));
+            entry.Lines.Add(LedgerHarness.Line(world.Cash, debit: 1.00m));
+            entry.Lines.Add(LedgerHarness.Line(world.Income, credit: 0.99m));
         }));
 
         Assert.Contains("Invariant I1", message, StringComparison.Ordinal);
@@ -76,13 +78,13 @@ public sealed class LedgerInvariantTests(WebAppFactory factory) : IClassFixture<
     [Fact]
     public async Task A_single_sided_posted_entry_is_refused()
     {
-        // The exact row the legacy cash book wrote: one line, status Posted, nothing checking it. The
-        // line-level CHECK passes, because one line with a debit and no credit is a well-formed line.
-        var world = await ProvisionAsync();
+        // The exact row the legacy cash book wrote: one line, posted, nothing checking it. The line-level
+        // CHECK passes, because one line carrying a debit and no credit is a well-formed line.
+        var world = await ledger.ProvisionAsync();
 
-        var message = await StoreErrorAsync(() => WriteAsync(world, entry =>
+        var message = await StoreErrorAsync(() => ledger.WriteRawAsync(world, entry =>
         {
-            entry.Lines.Add(Line(world.Cash, debit: 500m));
+            entry.Lines.Add(LedgerHarness.Line(world.Cash, debit: 500m));
         }));
 
         Assert.Contains("Invariant I1", message, StringComparison.Ordinal);
@@ -91,9 +93,9 @@ public sealed class LedgerInvariantTests(WebAppFactory factory) : IClassFixture<
     [Fact]
     public async Task A_line_with_both_sides_is_refused()
     {
-        var world = await ProvisionAsync();
+        var world = await ledger.ProvisionAsync();
 
-        var message = await StoreErrorAsync(() => WriteAsync(world, entry =>
+        var message = await StoreErrorAsync(() => ledger.WriteRawAsync(world, entry =>
         {
             entry.Lines.Add(new GlLine
             {
@@ -114,13 +116,7 @@ public sealed class LedgerInvariantTests(WebAppFactory factory) : IClassFixture<
     [Fact]
     public async Task A_posted_entry_cannot_be_changed()
     {
-        var world = await ProvisionAsync();
-
-        await WriteAsync(world, entry =>
-        {
-            entry.Lines.Add(Line(world.Cash, debit: 500m));
-            entry.Lines.Add(Line(world.Income, credit: 500m));
-        });
+        var world = await PostBalancedAsync();
 
         var message = await StoreErrorAsync(async () =>
         {
@@ -143,16 +139,10 @@ public sealed class LedgerInvariantTests(WebAppFactory factory) : IClassFixture<
     [Fact]
     public async Task A_line_cannot_be_added_to_a_posted_entry()
     {
-        var world = await ProvisionAsync();
+        var world = await PostBalancedAsync();
 
-        await WriteAsync(world, entry =>
-        {
-            entry.Lines.Add(Line(world.Cash, debit: 500m));
-            entry.Lines.Add(Line(world.Income, credit: 500m));
-        });
-
-        // A balanced pair appended on its own satisfies every other rule in this migration; only
-        // immutability refuses it. This is why the line trigger covers insert and not just update.
+        // A balanced pair appended on its own satisfies every other rule in the enforcement migration;
+        // only immutability refuses it. This is why the line trigger covers insert, not just update.
         var message = await StoreErrorAsync(async () =>
         {
             using var scope = TenantScope.Open(
@@ -195,13 +185,7 @@ public sealed class LedgerInvariantTests(WebAppFactory factory) : IClassFixture<
     [Fact]
     public async Task A_posted_entrys_lines_cannot_be_deleted()
     {
-        var world = await ProvisionAsync();
-
-        await WriteAsync(world, entry =>
-        {
-            entry.Lines.Add(Line(world.Cash, debit: 500m));
-            entry.Lines.Add(Line(world.Income, credit: 500m));
-        });
+        var world = await PostBalancedAsync();
 
         var message = await StoreErrorAsync(async () =>
         {
@@ -210,7 +194,7 @@ public sealed class LedgerInvariantTests(WebAppFactory factory) : IClassFixture<
 
             var context = scope.ServiceProvider.GetRequiredService<GarmentsDbContext>();
 
-            var line = await context.GlLines.OrderBy(x => x.LineOrder).Skip(1).SingleAsync();
+            var line = await context.GlLines.OrderBy(each => each.LineOrder).Skip(1).SingleAsync();
             context.GlLines.Remove(line);
 
             await context.SaveChangesAsync();
@@ -222,156 +206,30 @@ public sealed class LedgerInvariantTests(WebAppFactory factory) : IClassFixture<
     [Fact]
     public async Task A_locked_period_refuses_a_backdated_posting()
     {
-        var world = await ProvisionAsync();
+        var world = await ledger.ProvisionAsync();
 
-        await LockPeriodAsync(world);
+        await ledger.LockPeriodAsync(world);
 
-        var message = await StoreErrorAsync(() => WriteAsync(world, entry =>
+        var message = await StoreErrorAsync(() => ledger.WriteRawAsync(world, entry =>
         {
-            entry.Lines.Add(Line(world.Cash, debit: 500m));
-            entry.Lines.Add(Line(world.Income, credit: 500m));
+            entry.Lines.Add(LedgerHarness.Line(world.Cash, debit: 500m));
+            entry.Lines.Add(LedgerHarness.Line(world.Income, credit: 500m));
         }));
 
         Assert.Contains("Invariant I6", message, StringComparison.Ordinal);
     }
 
-    private static GlLine Line(Guid accountId, decimal debit = 0m, decimal credit = 0m) => new()
+    private async Task<LedgerWorld> PostBalancedAsync()
     {
-        AccountId = accountId,
-        LineOrder = debit > 0m ? 1 : 2,
-        Debit = debit > 0m ? debit : null,
-        Credit = credit > 0m ? credit : null,
-        Currency = CurrencyCode.Bdt,
-        AmountInCurrency = debit > 0m ? debit : credit,
-        ExchangeRate = 1m,
-    };
+        var world = await ledger.ProvisionAsync();
 
-    /// <summary>
-    /// Creates one company's worth of ledger and returns the ids a posting needs.
-    /// </summary>
-    private async Task<LedgerWorld> ProvisionAsync()
-    {
-        var slug = "led-" + Guid.NewGuid().ToString("N")[..8];
-
-        using (var systemScope = TenantScope.OpenSystem(
-                   factory.Services.GetRequiredService<IServiceScopeFactory>()))
+        await ledger.WriteRawAsync(world, entry =>
         {
-            await systemScope.ServiceProvider.GetRequiredService<ITenantDirectory>().CreateAsync(new Tenant
-            {
-                Id = TenantId.New(),
-                Slug = slug,
-                DisplayName = slug,
-            });
-        }
-
-        var tenantId = (await ReadTenantAsync(slug)).Id;
-        var start = new DateOnly(2026, 7, 1);
-
-        using var scope = TenantScope.Open(
-            factory.Services.GetRequiredService<IServiceScopeFactory>(), tenantId);
-
-        var context = scope.ServiceProvider.GetRequiredService<GarmentsDbContext>();
-
-        var cash = NewAccount(tenantId, "1000", "Cash", AccountType.Asset, AccountSubType.Cash, "cash");
-        var income = NewAccount(tenantId, "4000", "Sales Revenue", AccountType.Income, AccountSubType.SalesRevenue, "sales");
-
-        context.Accounts.AddRange(cash, income);
-        context.Journals.Add(new Journal
-        {
-            Id = Guid.NewGuid(),
-            TenantId = tenantId,
-            Code = "GL",
-            Name = "General",
-            NumberPrefix = "GL",
-        });
-        context.FiscalPeriods.Add(new FiscalPeriod
-        {
-            Id = Guid.NewGuid(),
-            TenantId = tenantId,
-            Number = 1,
-            FiscalYear = 2026,
-            StartDate = start,
-            EndDate = start.AddMonths(1).AddDays(-1),
-            Name = "July 2026",
+            entry.Lines.Add(LedgerHarness.Line(world.Cash, debit: 500m));
+            entry.Lines.Add(LedgerHarness.Line(world.Income, credit: 500m));
         });
 
-        await context.SaveChangesAsync();
-
-        return new LedgerWorld(tenantId, cash.Id, income.Id, start);
-    }
-
-    private async Task<Tenant> ReadTenantAsync(string slug)
-    {
-        using var systemScope = TenantScope.OpenSystem(
-            factory.Services.GetRequiredService<IServiceScopeFactory>());
-
-        var directory = systemScope.ServiceProvider.GetRequiredService<ITenantDirectory>();
-        var tenant = await directory.FindBySlugAsync(slug);
-
-        Assert.NotNull(tenant);
-        return tenant;
-    }
-
-    private async Task LockPeriodAsync(LedgerWorld world)
-    {
-        using var scope = TenantScope.Open(
-            factory.Services.GetRequiredService<IServiceScopeFactory>(), world.TenantId);
-
-        var context = scope.ServiceProvider.GetRequiredService<GarmentsDbContext>();
-
-        var period = await context.FiscalPeriods.SingleAsync();
-
-        // Locked through the last day, which is the whole period. An open period would accept the same
-        // posting, and that is the positive control above.
-        period.SoftLockedOn = period.EndDate;
-
-        await context.SaveChangesAsync();
-    }
-
-    private async Task WriteAsync(LedgerWorld world, Action<GlEntry> shape, bool post = true)
-    {
-        using var scope = TenantScope.Open(
-            factory.Services.GetRequiredService<IServiceScopeFactory>(), world.TenantId);
-
-        var context = scope.ServiceProvider.GetRequiredService<GarmentsDbContext>();
-
-        var period = await context.FiscalPeriods.SingleAsync();
-        var number = (await context.GlEntries.CountAsync()) + 1;
-
-        var entry = new GlEntry
-        {
-            Id = Guid.NewGuid(),
-            TenantId = world.TenantId,
-            Number = $"GL-{number:000}",
-            JournalCode = "GL",
-            PeriodId = period.Id,
-            PostingDate = world.PostingDate,
-            SourceType = "test.manual",
-            SourceId = Guid.NewGuid(),
-            Memo = "written by the invariant suite",
-            Status = GlEntryStatus.Draft,
-        };
-
-        shape(entry);
-
-        foreach (var line in entry.Lines)
-        {
-            line.TenantId = world.TenantId;
-        }
-
-        context.GlEntries.Add(entry);
-
-        // Two saves, because that is the protocol the triggers impose: a Posted entry's lines are
-        // untouchable, so the lines have to exist while the entry is still a draft.
-        await context.SaveChangesAsync();
-
-        if (!post)
-        {
-            return;
-        }
-
-        entry.Status = GlEntryStatus.Posted;
-        await context.SaveChangesAsync();
+        return world;
     }
 
     /// <summary>
@@ -379,8 +237,8 @@ public sealed class LedgerInvariantTests(WebAppFactory factory) : IClassFixture<
     /// </summary>
     /// <remarks>
     /// The success branch throws rather than returning, because "the invariant did not fire" is the
-    /// finding here — a test that simply failed an assertion would report it as a mismatch of two
-    /// strings and hide the fact that an unbalanced posting reached the general ledger.
+    /// finding here — a test that merely failed an assertion would report a mismatch of two strings and
+    /// hide the fact that an unbalanced posting reached the general ledger.
     /// </remarks>
     private static async Task<string> StoreErrorAsync(Func<Task> action)
     {
@@ -404,24 +262,4 @@ public sealed class LedgerInvariantTests(WebAppFactory factory) : IClassFixture<
             yield return current;
         }
     }
-    private static ChartOfAccount NewAccount(
-        TenantId tenantId,
-        string code,
-        string name,
-        AccountType type,
-        AccountSubType subType,
-        string path) => new()
-        {
-            Id = Guid.NewGuid(),
-            TenantId = tenantId,
-            Code = code,
-            Name = name,
-            Type = type,
-            SubType = subType,
-            // A leaf: the table's own check refuses a postable account that has a parent.
-            ParentId = null,
-            Path = path,
-            IsPostable = true,
-            IsActive = true,
-        };
 }

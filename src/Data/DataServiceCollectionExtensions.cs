@@ -1,3 +1,4 @@
+using Garments.Ledger;
 using Garments.Platform.Tenancy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -35,6 +36,7 @@ public static class DataServiceCollectionExtensions
             builder.UseNpgsql(options.RuntimeConnectionStringOrDefault()));
 
         services.AddScoped<ITenantDirectory, TenantDirectory>();
+        services.AddScoped<IPoster, Poster>();
         services.AddScoped<MigrationRunner>();
         services.AddSingleton<RlsSafetyProbe>();
 

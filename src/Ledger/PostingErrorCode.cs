@@ -39,4 +39,33 @@ public enum PostingErrorCode
 
     /// <summary>An exchange rate of zero or less, which cannot be inverted or explained.</summary>
     InvalidExchangeRate,
+
+    /// <summary>
+    /// The tenant does not own a journal with that code. Checked before the entry is built because the
+    /// database refuses it too, through a foreign key, and a caller that gets a foreign-key violation
+    /// here has been handed a schema detail instead of a sentence about their own document.
+    /// </summary>
+    JournalNotFound,
+
+    /// <summary>
+    /// No fiscal period covers the posting date. A year that was never provisioned is a different
+    /// finding from a period someone forgot to open, and both differ from a locked one.
+    /// </summary>
+    PeriodNotFound,
+
+    /// <summary>The period covering the posting date is locked. Lifting a lock is a separate, audited act.</summary>
+    PeriodLocked,
+
+    /// <summary>
+    /// A line names an account the tenant does not own, or one that cannot be posted to. Account
+    /// resolution happens before numbering, so a rejected posting does not consume a journal number.
+    /// </summary>
+    AccountUnpostable,
+
+    /// <summary>
+    /// The database refused the posting after the application had accepted it. Reported as its own code
+    /// because it means the two layers disagree, which is a defect in this one regardless of which side
+    /// is wrong.
+    /// </summary>
+    RefusedByDatabase,
 }
