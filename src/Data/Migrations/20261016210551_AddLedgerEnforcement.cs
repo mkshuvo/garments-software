@@ -200,6 +200,50 @@ public partial class AddLedgerEnforcement : Migration
                 FOR EACH ROW EXECUTE FUNCTION reject_posted_line_mutation();
             """);
 
+        // I3, second half: a posted entry is corrected by a new entry that names it, and only once.
+        //
+        // The partial unique index is what makes "only once" a fact rather than a convention. Without
+        // it, two clicks on a reversal button post two mirrors of one mistake, and the period then
+        // reports a correction twice — while every entry involved is individually valid, balanced, and
+        // would pass every other check in this file.
+        migrationBuilder.Sql("""
+            CREATE OR REPLACE FUNCTION assert_reversed_entry_is_posted() RETURNS trigger
+            LANGUAGE plpgsql AS $$
+            DECLARE
+                reversed_status text;
+            BEGIN
+                IF NEW.reverses_entry_id IS NULL THEN
+                    RETURN NEW;
+                END IF;
+
+                SELECT status INTO reversed_status FROM gl_entries WHERE id = NEW.reverses_entry_id;
+
+                IF NOT FOUND THEN
+                    RAISE EXCEPTION
+                        'Invariant I3: entry % claims to reverse entry %, which does not exist',
+                        NEW.id, NEW.reverses_entry_id;
+                END IF;
+
+                IF reversed_status <> 'Posted' THEN
+                    RAISE EXCEPTION
+                        'Invariant I3: entry % reverses entry %, which is not posted. A draft is edited, not reversed.',
+                        NEW.id, NEW.reverses_entry_id;
+                END IF;
+
+                RETURN NEW;
+            END
+            $$;
+
+            DROP TRIGGER IF EXISTS CK_gl_entry_reversal_target_posted ON gl_entries;
+            CREATE TRIGGER CK_gl_entry_reversal_target_posted
+                BEFORE INSERT OR UPDATE OF reverses_entry_id ON gl_entries
+                FOR EACH ROW EXECUTE FUNCTION assert_reversed_entry_is_posted();
+
+            CREATE UNIQUE INDEX IF NOT EXISTS UQ_gl_entries_one_reversal
+                ON gl_entries (tenant_id, reverses_entry_id)
+                WHERE reverses_entry_id IS NOT NULL;
+            """);
+
         // I6 — a locked period refuses a posting date, so closing a year cannot be reopened by a
         // back-dated entry typed in later. Three locks because they expire differently in practice:
         // management may lift a soft lock, an auditor's tax lock is not theirs to lift, and a hard lock
@@ -255,12 +299,16 @@ public partial class AddLedgerEnforcement : Migration
     {
         migrationBuilder.Sql("""
             DROP TRIGGER IF EXISTS CK_gl_entry_period_open ON gl_entries;
+            DROP TRIGGER IF EXISTS CK_gl_entry_reversal_target_posted ON gl_entries;
             DROP TRIGGER IF EXISTS CK_gl_line_immutable_when_posted ON gl_lines;
             DROP TRIGGER IF EXISTS CK_gl_entry_immutable_when_posted ON gl_entries;
             DROP TRIGGER IF EXISTS CK_gl_entry_balanced_on_entry ON gl_entries;
             DROP TRIGGER IF EXISTS CK_gl_entry_balanced_on_line ON gl_lines;
 
+            DROP INDEX IF EXISTS "UQ_gl_entries_one_reversal";
+
             DROP FUNCTION IF EXISTS reject_locked_period();
+            DROP FUNCTION IF EXISTS assert_reversed_entry_is_posted();
             DROP FUNCTION IF EXISTS reject_posted_line_mutation();
             DROP FUNCTION IF EXISTS reject_posted_entry_mutation();
             DROP FUNCTION IF EXISTS assert_entry_balanced();

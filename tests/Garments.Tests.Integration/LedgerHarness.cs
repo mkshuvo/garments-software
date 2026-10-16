@@ -268,6 +268,58 @@ internal sealed class LedgerHarness(WebAppFactory factory)
         ExchangeRate = 1m,
     };
 
+    /// <summary>An entry id belonging to this company, newest first.</summary>
+    internal async Task<IReadOnlyList<Guid>> EntryIdsAsync(LedgerWorld world)
+    {
+        using var scope = TenantScope.Open(
+            factory.Services.GetRequiredService<IServiceScopeFactory>(), world.TenantId);
+
+        var context = scope.ServiceProvider.GetRequiredService<GarmentsDbContext>();
+
+        return await context.GlEntries
+            .OrderByDescending(entry => entry.CreatedAt)
+            .Select(entry => entry.Id)
+            .ToListAsync();
+    }
+
+    /// <summary>
+    /// What each account is left holding after every entry in the world, debit positive.
+    /// </summary>
+    /// <remarks>
+    /// The check that a reversal actually undid something. Two balanced entries side by side are a
+    /// balanced ledger whether or not the second one cancels the first, so "the trial balance still
+    /// balances" is not evidence that a correction worked — only the per-account net is.
+    /// </remarks>
+    internal async Task<IReadOnlyDictionary<Guid, decimal>> NetByAccountAsync(LedgerWorld world)
+    {
+        using var scope = TenantScope.Open(
+            factory.Services.GetRequiredService<IServiceScopeFactory>(), world.TenantId);
+
+        var context = scope.ServiceProvider.GetRequiredService<GarmentsDbContext>();
+
+        var lines = await context.GlLines.ToListAsync();
+
+        return lines
+            .GroupBy(line => line.AccountId)
+            .ToDictionary(
+                group => group.Key,
+                group => group.Sum(line => (line.Debit ?? 0m) - (line.Credit ?? 0m)));
+    }
+
+    internal async Task<PostingOutcome> ReverseAsync(
+        LedgerWorld world,
+        Guid entryId,
+        string memo = "corrected by the test suite",
+        DateOnly? reversalDate = null)
+    {
+        using var scope = TenantScope.Open(
+            factory.Services.GetRequiredService<IServiceScopeFactory>(), world.TenantId);
+
+        var poster = scope.ServiceProvider.GetRequiredService<IPoster>();
+
+        return await poster.ReverseAsync(entryId, reversalDate ?? world.PostingDate, memo);
+    }
+
     private async Task<TenantId> ReadTenantIdAsync(string slug)
     {
         using var systemScope = TenantScope.OpenSystem(

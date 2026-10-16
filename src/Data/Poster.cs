@@ -130,6 +130,66 @@ public sealed class Poster(
         return new PostingOutcome(PostingOutcomeStatus.Posted, [], entry.Id, number);
     }
 
+    public async Task<PostingOutcome> ReverseAsync(
+        Guid entryId,
+        DateOnly reversalDate,
+        string memo,
+        CancellationToken cancellationToken = default)
+    {
+        var original = await context.GlEntries
+            .Include(each => each.Lines)
+            .FirstOrDefaultAsync(each => each.Id == entryId, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (original is null)
+        {
+            return new PostingOutcome(PostingOutcomeStatus.Rejected, [new PostingError(
+                PostingErrorCode.EntryNotFound,
+                "There is no entry here with that id.")]);
+        }
+
+        if (original.Status != GlEntryStatus.Posted)
+        {
+            return new PostingOutcome(PostingOutcomeStatus.Rejected, [new PostingError(
+                PostingErrorCode.EntryNotPosted,
+                $"{original.Number} is still a draft. Edit it instead of reversing it — a reversal "
+                + "exists to correct a fact the ledger has already stated.")]);
+        }
+
+        // Checked before the mirror is built so a double click cannot post two corrections. The partial
+        // unique index in the enforcement migration is the same rule; this is the readable version of it,
+        // and the race the index exists to lose is one user's second click.
+        var alreadyReversed = await context.GlEntries
+            .AnyAsync(each => each.ReversesEntryId == entryId, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (alreadyReversed)
+        {
+            return new PostingOutcome(PostingOutcomeStatus.Rejected, [new PostingError(
+                PostingErrorCode.AlreadyReversed,
+                $"{original.Number} has already been reversed. A second reversal would double the "
+                + "correction while leaving both entries looking like the single one intended.")]);
+        }
+
+        var mirrored = original.Lines
+            .OrderBy(line => line.LineOrder)
+            .Select(Mirror)
+            .ToList();
+
+        return await PostAsync(new PostingRequest
+        {
+            JournalCode = original.JournalCode,
+            PostingDate = reversalDate,
+            // Keyed on the entry being corrected, so the database's idempotency index makes a retried
+            // reversal the same posting rather than a second one.
+            SourceType = "ledger.reversal",
+            SourceId = original.Id,
+            Memo = memo,
+            ReversesEntryId = original.Id,
+            Lines = mirrored,
+        }, cancellationToken).ConfigureAwait(false);
+    }
+
     /// <summary>
     /// Confirms every account is one this tenant owns and can actually be posted to.
     /// </summary>
@@ -270,10 +330,37 @@ public sealed class Poster(
         SourceType = request.SourceType,
         SourceId = request.SourceId,
         Iteration = request.Iteration,
+        ReversesEntryId = request.ReversesEntryId,
         Status = GlEntryStatus.Draft,
         CreatedByUserId = currentUser.UserId,
         PostedByUserId = currentUser.UserId,
     };
+
+    /// <summary>
+    /// Flips one line to the other side, changing nothing else about it.
+    /// </summary>
+    /// <remarks>
+    /// The account, currency, current-currency amount and rate all carry over untouched. Only the side
+    /// moves: a reversal that also re-derived the exchange difference would be a second, different
+    /// correction riding along with the one that was asked for.
+    /// </remarks>
+    private static PostingLine Mirror(GlLine source)
+    {
+        var currency = Currency.Of(source.Currency);
+
+        return new PostingLine
+        {
+            AccountId = source.AccountId,
+            Debit = source.Credit is null ? null : new Money(currency, source.Credit.Value),
+            Credit = source.Debit is null ? null : new Money(currency, source.Debit.Value),
+            Currency = source.Currency,
+            AmountInCurrency = source.AmountInCurrency,
+            ExchangeRate = source.ExchangeRate,
+            ExchangeRateDate = source.ExchangeRateDate,
+            AnalysisId = source.AnalysisId,
+            Memo = source.Memo,
+        };
+    }
 
     private static GlLine BuildLine(PostingLine source, TenantId tenantId, Guid entryId, int lineOrder) => new()
     {

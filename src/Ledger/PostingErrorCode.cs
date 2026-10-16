@@ -63,6 +63,21 @@ public enum PostingErrorCode
     AccountUnpostable,
 
     /// <summary>
+    /// Nothing to reverse. A guessed entry id must not be answerable as "already reversed", because the
+    /// difference tells a caller whether the entry they meant exists somewhere they cannot see.
+    /// </summary>
+    EntryNotFound,
+
+    /// <summary>
+    /// The entry is still a draft. A draft is corrected by editing it; only a posted entry needs a
+    /// reversal, and reversing a draft would leave two unfinished entries pointing at each other.
+    /// </summary>
+    EntryNotPosted,
+
+    /// <summary>The entry has already been reversed. A second reversal would double the correction.</summary>
+    AlreadyReversed,
+
+    /// <summary>
     /// The database refused the posting after the application had accepted it. Reported as its own code
     /// because it means the two layers disagree, which is a defect in this one regardless of which side
     /// is wrong.

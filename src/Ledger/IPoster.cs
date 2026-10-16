@@ -16,4 +16,19 @@ public interface IPoster
     /// outcome so a caller can show all of them at once.
     /// </summary>
     Task<PostingOutcome> PostAsync(PostingRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Corrects a posted entry by posting its mirror and linking the two.
+    /// </summary>
+    /// <remarks>
+    /// The only way to change what a posted entry says, because the entry itself is immutable
+    /// (invariant I3). Mirroring is derived from the original's own lines rather than typed in, so a
+    /// correction cannot accidentally be a different amount — the failure mode of a hand-keyed reversing
+    /// journal, and the reason a period can look closed while being off by whatever was mistyped.
+    /// </remarks>
+    Task<PostingOutcome> ReverseAsync(
+        Guid entryId,
+        DateOnly reversalDate,
+        string memo,
+        CancellationToken cancellationToken = default);
 }

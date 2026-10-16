@@ -31,6 +31,16 @@ public sealed record PostingRequest
     /// <summary>The source document's revision. A corrected document raises this; a retry does not.</summary>
     public int Iteration { get; init; } = 1;
 
+    /// <summary>
+    /// The posted entry this one corrects. Null for an ordinary posting.
+    /// </summary>
+    /// <remarks>
+    /// A link rather than a flag, because invariant I3 forbids changing the original: an auditor has to
+    /// see both the mistake and its correction, and a reversal that does not name what it reverses is a
+    /// second entry that silently changes what the period reports.
+    /// </remarks>
+    public Guid? ReversesEntryId { get; init; }
+
     public string Memo { get; init; } = string.Empty;
 
     public required IReadOnlyList<PostingLine> Lines { get; init; }
