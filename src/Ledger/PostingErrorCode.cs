@@ -63,6 +63,19 @@ public enum PostingErrorCode
     AccountUnpostable,
 
     /// <summary>
+    /// A balance sheet named account codes the company does not have. Reported as one list rather than
+    /// one error per line, because an opening balance sheet is typed from paper and a person correcting
+    /// it wants the whole set of misread codes in one go.
+    /// </summary>
+    UnknownAccountCodes,
+
+    /// <summary>The same account code appeared twice in one request, which is ambiguous rather than additive.</summary>
+    DuplicateAccountCode,
+
+    /// <summary>Nothing was given. A company with no opening balances still needs that said out loud.</summary>
+    NoBalances,
+
+    /// <summary>
     /// Nothing to reverse. A guessed entry id must not be answerable as "already reversed", because the
     /// difference tells a caller whether the entry they meant exists somewhere they cannot see.
     /// </summary>

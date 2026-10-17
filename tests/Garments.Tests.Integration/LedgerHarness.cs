@@ -22,7 +22,45 @@ namespace Garments.Tests.Integration;
 /// </remarks>
 internal sealed class LedgerHarness(WebAppFactory factory)
 {
-    internal async Task<LedgerWorld> ProvisionAsync()
+    /// <summary>
+    /// Creates a company the way the product does: provisioner, base chart, standard journals, twelve
+    /// periods.
+    /// </summary>
+    /// <remarks>
+    /// Kept apart from <see cref="ProvisionAsync"/>, which hand-builds a world. The invariant suite must
+    /// not build its fixture with the code it is testing — if the provisioner were to write periods with
+    /// wrong dates, a posting test using those periods would agree with it and stay green.
+    /// </remarks>
+    internal async Task<LedgerWorld> ProvisionedCompanyAsync(int fiscalYear = 2026)
+    {
+        var world = await ProvisionAsync(tenantOnly: true);
+
+        using var scope = TenantScope.Open(
+            factory.Services.GetRequiredService<IServiceScopeFactory>(), world.TenantId);
+
+        await scope.ServiceProvider.GetRequiredService<ILedgerProvisioner>()
+            .ProvisionAsync(fiscalYear);
+
+        var cash = await FindAccountByCodeAsync(world.TenantId, "1010");
+        var income = await FindAccountByCodeAsync(world.TenantId, "4010");
+
+        return world with
+        {
+            Cash = cash,
+            Income = income,
+            PostingDate = new DateOnly(fiscalYear, 7, 1),
+        };
+    }
+
+    /// <summary>
+    /// Creates a tenant with a hand-built ledger: one open July period, two postable leaf accounts, one
+    /// journal.
+    /// </summary>
+    /// <remarks>
+    /// The fixture for the schema-level tests. Every value here is written directly so a test can be sure
+    /// what the row says without trusting any product code to have produced it.
+    /// </remarks>
+    internal async Task<LedgerWorld> ProvisionAsync(bool tenantOnly = false)
     {
         var slug = "led-" + Guid.NewGuid().ToString("N")[..8];
 
@@ -39,6 +77,11 @@ internal sealed class LedgerHarness(WebAppFactory factory)
 
         var tenantId = await ReadTenantIdAsync(slug);
         var start = new DateOnly(2026, 7, 1);
+
+        if (tenantOnly)
+        {
+            return new LedgerWorld(tenantId, Guid.Empty, Guid.Empty, start);
+        }
 
         using var scope = TenantScope.Open(
             factory.Services.GetRequiredService<IServiceScopeFactory>(), tenantId);
@@ -71,6 +114,108 @@ internal sealed class LedgerHarness(WebAppFactory factory)
         await context.SaveChangesAsync();
 
         return new LedgerWorld(tenantId, cash.Id, income.Id, start);
+    }
+
+    /// <summary>Runs provisioning again for the same company, which is what an interrupted import does.</summary>
+    /// <remarks>
+    /// Awaiting rather than returning the task: the scope owns the context, and a method that hands back
+    /// an unfinished task while its <c>using</c> disposes the scope mid-flight produces a protocol error
+    /// from the driver that names neither the scope nor the mistake.
+    /// </remarks>
+    internal async Task ProvisionAgainAsync(LedgerWorld world, int fiscalYear)
+    {
+        using var scope = TenantScope.Open(
+            factory.Services.GetRequiredService<IServiceScopeFactory>(), world.TenantId);
+
+        await scope.ServiceProvider.GetRequiredService<ILedgerProvisioner>()
+            .ProvisionAsync(fiscalYear);
+    }
+
+    internal async Task<Guid> FindAccountByCodeAsync(TenantId tenantId, string code)
+    {
+        using var scope = TenantScope.Open(
+            factory.Services.GetRequiredService<IServiceScopeFactory>(), tenantId);
+
+        var context = scope.ServiceProvider.GetRequiredService<GarmentsDbContext>();
+
+        return await context.Accounts
+            .Where(account => account.Code == code)
+            .Select(account => account.Id)
+            .SingleAsync();
+    }
+
+    /// <summary>The company's whole chart as code, path, parent and postability — the template's shape.</summary>
+    internal async Task<IReadOnlyList<AccountShape>> AccountsAsync(LedgerWorld world)
+    {
+        using var scope = TenantScope.Open(
+            factory.Services.GetRequiredService<IServiceScopeFactory>(), world.TenantId);
+
+        var context = scope.ServiceProvider.GetRequiredService<GarmentsDbContext>();
+
+        return await context.Accounts
+            .OrderBy(account => account.Code)
+            .Select(account => new AccountShape(
+                account.Id, account.Code, account.Path, account.ParentId, account.IsPostable, account.IsActive))
+            .ToListAsync();
+    }
+
+    internal async Task<IReadOnlyList<string>> JournalCodesAsync(LedgerWorld world)
+    {
+        using var scope = TenantScope.Open(
+            factory.Services.GetRequiredService<IServiceScopeFactory>(), world.TenantId);
+
+        var context = scope.ServiceProvider.GetRequiredService<GarmentsDbContext>();
+
+        return await context.Journals
+            .OrderBy(journal => journal.Code)
+            .Select(journal => journal.Code)
+            .ToListAsync();
+    }
+
+    internal async Task<int> PeriodCountAsync(LedgerWorld world, int fiscalYear)
+    {
+        using var scope = TenantScope.Open(
+            factory.Services.GetRequiredService<IServiceScopeFactory>(), world.TenantId);
+
+        var context = scope.ServiceProvider.GetRequiredService<GarmentsDbContext>();
+
+        return await context.FiscalPeriods.CountAsync(each => each.FiscalYear == fiscalYear);
+    }
+
+    /// <summary>Which period and date an entry actually landed on.</summary>
+    internal async Task<(int PeriodNumber, DateOnly PostingDate)> EntryPlacementAsync(
+        LedgerWorld world,
+        Guid entryId)
+    {
+        using var scope = TenantScope.Open(
+            factory.Services.GetRequiredService<IServiceScopeFactory>(), world.TenantId);
+
+        var context = scope.ServiceProvider.GetRequiredService<GarmentsDbContext>();
+
+        var entry = await context.GlEntries
+            .Where(each => each.Id == entryId)
+            .Select(each => new { each.PeriodId, each.PostingDate })
+            .SingleAsync();
+
+        var periodNumber = await context.FiscalPeriods
+            .Where(each => each.Id == entry.PeriodId)
+            .Select(each => each.Number)
+            .SingleAsync();
+
+        return (periodNumber, entry.PostingDate);
+    }
+
+    internal async Task<PostingOutcome> PostOpeningBalancesAsync(
+        LedgerWorld world,
+        int fiscalYear,
+        IReadOnlyList<OpeningBalance> balances)
+    {
+        using var scope = TenantScope.Open(
+            factory.Services.GetRequiredService<IServiceScopeFactory>(), world.TenantId);
+
+        var service = scope.ServiceProvider.GetRequiredService<IOpeningBalances>();
+
+        return await service.PostAsync(fiscalYear, balances);
     }
 
     /// <summary>

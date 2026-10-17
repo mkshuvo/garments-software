@@ -37,6 +37,8 @@ public static class DataServiceCollectionExtensions
 
         services.AddScoped<ITenantDirectory, TenantDirectory>();
         services.AddScoped<IPoster, Poster>();
+        services.AddScoped<ILedgerProvisioner, LedgerProvisioner>();
+        services.AddScoped<IOpeningBalances, OpeningBalances>();
         services.AddScoped<MigrationRunner>();
         services.AddSingleton<RlsSafetyProbe>();
 
