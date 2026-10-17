@@ -41,6 +41,19 @@ public sealed record PostingRequest
     /// </remarks>
     public Guid? ReversesEntryId { get; init; }
 
+    /// <summary>
+    /// The user this posting is attributed to, declared by the caller rather than read from the ambient
+    /// request.
+    /// </summary>
+    /// <remarks>
+    /// Required so that it cannot be forgotten. Deriving the actor from whatever the HTTP context happens
+    /// to hold is the shape that leaves a CLI import, a scheduled job or a retry writing money with no
+    /// name against it — and an audit trail that is silent about the actor is not a partial record, it is
+    /// a record that cannot be used. A system-initiated posting declares a system account; it does not
+    /// default to nobody.
+    /// </remarks>
+    public required Guid ActorUserId { get; init; }
+
     public string Memo { get; init; } = string.Empty;
 
     public required IReadOnlyList<PostingLine> Lines { get; init; }

@@ -64,6 +64,7 @@ public sealed class PosterTests(WebAppFactory factory) : IClassFixture<WebAppFac
 
         var refused = await ledger.PostAsync(world, new PostingRequest
         {
+            ActorUserId = LedgerHarness.Actor,
             JournalCode = "GL",
             PostingDate = world.PostingDate,
             SourceType = "test.manual",
@@ -189,6 +190,7 @@ public sealed class PosterTests(WebAppFactory factory) : IClassFixture<WebAppFac
 
         var outcome = await ledger.PostAsync(world, new PostingRequest
         {
+            ActorUserId = LedgerHarness.Actor,
             JournalCode = "MISSING",
             PostingDate = world.PostingDate,
             SourceType = "test.manual",

@@ -1,5 +1,7 @@
+using System.Globalization;
 using Garments.Core;
 using Garments.Ledger;
+using Garments.Platform.Audit;
 using Garments.Platform.Security;
 using Garments.Platform.Tenancy;
 using Microsoft.EntityFrameworkCore;
@@ -35,8 +37,14 @@ namespace Garments.Data;
 public sealed class Poster(
     GarmentsDbContext context,
     ITenantContext tenantContext,
-    ICurrentUser currentUser) : IPoster
+    ICurrentActor actor,
+    IAuditWriter audit) : IPoster
 {
+    private const string PostAction = "ledger.posting.post";
+    private const string RetryAction = "ledger.posting.retry";
+    private const string RejectAction = "ledger.posting.reject";
+    private const string GlEntryResource = "gl_entry";
+
     public async Task<PostingOutcome> PostAsync(
         PostingRequest request,
         CancellationToken cancellationToken = default)
@@ -53,7 +61,7 @@ public sealed class Poster(
         var balance = PostingBalance.Check(request.Lines.ToList());
         if (!balance.Succeeded)
         {
-            return new PostingOutcome(PostingOutcomeStatus.Rejected, balance.Errors);
+            return await RefuseAsync(request, balance.Errors, cancellationToken).ConfigureAwait(false);
         }
 
         var journal = await context.Journals
@@ -62,31 +70,37 @@ public sealed class Poster(
 
         if (journal is null)
         {
-            return new PostingOutcome(PostingOutcomeStatus.Rejected, [new PostingError(
+            return await RefuseAsync(request, [new PostingError(
                 PostingErrorCode.JournalNotFound,
-                $"This company has no journal called '{request.JournalCode}'.")]);
+                $"This company has no journal called '{request.JournalCode}'.")], cancellationToken)
+                .ConfigureAwait(false);
         }
 
         var refused = await RefuseUnpostableAccountsAsync(request, cancellationToken).ConfigureAwait(false);
         if (refused is not null)
         {
-            return refused;
+            return await RecordAsync(refused, request, AuditOutcome.Failed, cancellationToken).ConfigureAwait(false);
         }
 
         var (period, periodRefusal) = await FindOpenPeriodAsync(request, cancellationToken).ConfigureAwait(false);
         if (periodRefusal is not null)
         {
-            return periodRefusal;
+            return await RecordAsync(periodRefusal, request, AuditOutcome.Failed, cancellationToken)
+                .ConfigureAwait(false);
         }
 
         var existing = await FindExistingAsync(request, cancellationToken).ConfigureAwait(false);
         if (existing is not null)
         {
-            return new PostingOutcome(
-                PostingOutcomeStatus.AlreadyPosted,
-                [],
-                existing.Id,
-                existing.Number);
+            // Recorded, because "the same document was submitted twice" is precisely the fact an auditor
+            // of a duplicated payment wants to see, and a retry that leaves no trace is indistinguishable
+            // from a retry that never arrived.
+            return await RecordAsync(
+                new PostingOutcome(PostingOutcomeStatus.AlreadyPosted, [], existing.Id, existing.Number),
+                request,
+                AuditOutcome.Allowed,
+                cancellationToken,
+                RetryAction).ConfigureAwait(false);
         }
 
         await using var transaction = await context.Database
@@ -111,6 +125,11 @@ public sealed class Poster(
 
         entry.Status = GlEntryStatus.Posted;
 
+        // Appended before the save that flips the status, so the audit row and the posting are written by
+        // the same commit. This is the one place the ordering matters: append after the commit and a
+        // failure between the two leaves a posted entry nobody recorded posting.
+        AppendAuditRecord(entry.Id, number, request, AuditOutcome.Allowed, PostAction, null);
+
         try
         {
             await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -122,9 +141,16 @@ public sealed class Poster(
 
             // The balance trigger is deferred to commit, so this is where an entry the application
             // wrongly accepted is actually stopped — and where the number it took is given back.
-            return new PostingOutcome(PostingOutcomeStatus.Rejected, [new PostingError(
+            IReadOnlyList<PostingError> errors = [new PostingError(
                 PostingErrorCode.RefusedByDatabase,
-                $"The database refused this posting: {RootMessage(exception)}")]);
+                $"The database refused this posting: {RootMessage(exception)}")];
+
+            // The rollback discarded the staged audit row along with the entry. The tracker still holds
+            // both, so saving without clearing it would re-attempt the posting the database just refused
+            // and fail on it a second time.
+            context.ChangeTracker.Clear();
+
+            return await RefuseAsync(request, errors, cancellationToken).ConfigureAwait(false);
         }
 
         return new PostingOutcome(PostingOutcomeStatus.Posted, [], entry.Id, number);
@@ -186,6 +212,13 @@ public sealed class Poster(
             SourceId = original.Id,
             Memo = memo,
             ReversesEntryId = original.Id,
+            // The person clicking "reverse" is the actor, not whoever posted the original — but when no
+            // request is in flight there is nobody to ask, so the entry's own posted-by is the last
+            // defensible answer and an empty Guid would be nobody at all.
+            ActorUserId = actor.Current?.UserId ?? original.PostedByUserId ?? original.CreatedByUserId
+                ?? throw new InvalidOperationException(
+                    $"Reversing entry {original.Id} needs an actor, and the entry records none. Nothing "
+                    + "may be written to the ledger against no name."),
             Lines = mirrored,
         }, cancellationToken).ConfigureAwait(false);
     }
@@ -317,7 +350,7 @@ public sealed class Poster(
         return journal.NextNumber - 1;
     }
 
-    private GlEntry BuildEntry(PostingRequest request, TenantId tenantId, Guid periodId, string number) => new()
+    private static GlEntry BuildEntry(PostingRequest request, TenantId tenantId, Guid periodId, string number) => new()
     {
         Id = Guid.NewGuid(),
         TenantId = tenantId,
@@ -332,8 +365,8 @@ public sealed class Poster(
         Iteration = request.Iteration,
         ReversesEntryId = request.ReversesEntryId,
         Status = GlEntryStatus.Draft,
-        CreatedByUserId = currentUser.UserId,
-        PostedByUserId = currentUser.UserId,
+        CreatedByUserId = request.ActorUserId,
+        PostedByUserId = request.ActorUserId,
     };
 
     /// <summary>
@@ -378,6 +411,77 @@ public sealed class Poster(
         AnalysisId = source.AnalysisId,
         Memo = source.Memo,
     };
+
+    /// <summary>
+    /// Records a refusal and returns it.
+    /// </summary>
+    /// <remarks>
+    /// A rejected attempt is written down on purpose. An audit trail that only contains successes cannot
+    /// answer the question an auditor actually asks — how many times did someone try to post this, and
+    /// why did it not go through — and a failed posting is the one event where a person was about to
+    /// change the ledger and did not.
+    /// </remarks>
+    private async Task<PostingOutcome> RefuseAsync(
+        PostingRequest request,
+        IReadOnlyList<PostingError> errors,
+        CancellationToken cancellationToken) =>
+        await RecordAsync(
+            new PostingOutcome(PostingOutcomeStatus.Rejected, errors),
+            request,
+            AuditOutcome.Failed,
+            cancellationToken,
+            RejectAction)
+            .ConfigureAwait(false);
+
+    private async Task<PostingOutcome> RecordAsync(
+        PostingOutcome outcome,
+        PostingRequest request,
+        AuditOutcome auditOutcome,
+        CancellationToken cancellationToken,
+        string action = PostAction)
+    {
+        AppendAuditRecord(outcome.EntryId, outcome.Number, request, auditOutcome, action, outcome.Errors);
+
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        return outcome;
+    }
+
+    private void AppendAuditRecord(
+        Guid? entryId,
+        string? number,
+        PostingRequest request,
+        AuditOutcome outcome,
+        string action,
+        IReadOnlyList<PostingError>? errors)
+    {
+        // ResourceId stays empty when nothing was written. A refusal has no row to name, and inventing an
+        // id for it would give the trail an entry that points nowhere — the same shape as the fabricated
+        // identifiers law L3 exists to forbid, arriving from the logging side instead.
+        // The id is the one the caller declared and always arrives. The name, correlation and address
+        // are enriched from the ambient request when there is one: outside HTTP, such as a CLI import,
+        // there is no principal to read them from, and inventing a display name would put words in a
+        // mouth that was not present. The id is what the trail is legally read for.
+        audit.Append(new AuditRecord(
+            ActorUserId: request.ActorUserId,
+            ActorName: actor.Current?.Name ?? string.Empty,
+            Action: action,
+            Resource: GlEntryResource,
+            ResourceId: entryId?.ToString("D") ?? string.Empty,
+            Outcome: outcome,
+            CorrelationId: actor.CorrelationId,
+            SourceAddress: actor.SourceAddress,
+            Detail: new
+            {
+                journal = request.JournalCode,
+                postingDate = request.PostingDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                sourceType = request.SourceType,
+                sourceId = request.SourceId,
+                lineCount = request.Lines.Count,
+                entryNumber = number,
+                refusals = errors?.Select(each => each.Code.ToString()).ToArray(),
+            }));
+    }
 
     /// <summary>
     /// Whether an exception is the database enforcing a rule, as opposed to the process failing.

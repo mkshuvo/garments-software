@@ -40,6 +40,7 @@ public sealed class OpeningBalances(
     public async Task<PostingOutcome> PostAsync(
         int fiscalYear,
         IReadOnlyList<OpeningBalance> balances,
+        Guid actorUserId,
         CancellationToken cancellationToken = default)
     {
         var tenantId = tenantContext.TenantId;
@@ -180,6 +181,7 @@ public sealed class OpeningBalances(
             SourceType = "ledger.opening",
             SourceId = tenantId.Value,
             Memo = $"Opening balances for fiscal year {fiscalYear}",
+            ActorUserId = actorUserId,
             Lines = lines,
         }, cancellationToken).ConfigureAwait(false);
     }

@@ -24,5 +24,6 @@ public interface IOpeningBalances
     Task<PostingOutcome> PostAsync(
         int fiscalYear,
         IReadOnlyList<OpeningBalance> balances,
+        Guid actorUserId,
         CancellationToken cancellationToken = default);
 }

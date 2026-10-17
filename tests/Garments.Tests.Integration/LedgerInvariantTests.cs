@@ -52,7 +52,7 @@ public sealed class LedgerInvariantTests(WebAppFactory factory) : IClassFixture<
     {
         var world = await ledger.ProvisionAsync();
 
-        var message = await StoreErrorAsync(() => ledger.WriteRawAsync(world, entry =>
+        var message = await LedgerHarness.StoreErrorAsync(() => ledger.WriteRawAsync(world, entry =>
         {
             entry.Lines.Add(LedgerHarness.Line(world.Cash, debit: 500m));
             entry.Lines.Add(LedgerHarness.Line(world.Income, credit: 499.99m));
@@ -66,7 +66,7 @@ public sealed class LedgerInvariantTests(WebAppFactory factory) : IClassFixture<
     {
         var world = await ledger.ProvisionAsync();
 
-        var message = await StoreErrorAsync(() => ledger.WriteRawAsync(world, entry =>
+        var message = await LedgerHarness.StoreErrorAsync(() => ledger.WriteRawAsync(world, entry =>
         {
             entry.Lines.Add(LedgerHarness.Line(world.Cash, debit: 1.00m));
             entry.Lines.Add(LedgerHarness.Line(world.Income, credit: 0.99m));
@@ -82,7 +82,7 @@ public sealed class LedgerInvariantTests(WebAppFactory factory) : IClassFixture<
         // CHECK passes, because one line carrying a debit and no credit is a well-formed line.
         var world = await ledger.ProvisionAsync();
 
-        var message = await StoreErrorAsync(() => ledger.WriteRawAsync(world, entry =>
+        var message = await LedgerHarness.StoreErrorAsync(() => ledger.WriteRawAsync(world, entry =>
         {
             entry.Lines.Add(LedgerHarness.Line(world.Cash, debit: 500m));
         }));
@@ -95,7 +95,7 @@ public sealed class LedgerInvariantTests(WebAppFactory factory) : IClassFixture<
     {
         var world = await ledger.ProvisionAsync();
 
-        var message = await StoreErrorAsync(() => ledger.WriteRawAsync(world, entry =>
+        var message = await LedgerHarness.StoreErrorAsync(() => ledger.WriteRawAsync(world, entry =>
         {
             entry.Lines.Add(new GlLine
             {
@@ -118,7 +118,7 @@ public sealed class LedgerInvariantTests(WebAppFactory factory) : IClassFixture<
     {
         var world = await PostBalancedAsync();
 
-        var message = await StoreErrorAsync(async () =>
+        var message = await LedgerHarness.StoreErrorAsync(async () =>
         {
             using var scope = TenantScope.Open(
                 factory.Services.GetRequiredService<IServiceScopeFactory>(), world.TenantId);
@@ -143,7 +143,7 @@ public sealed class LedgerInvariantTests(WebAppFactory factory) : IClassFixture<
 
         // A balanced pair appended on its own satisfies every other rule in the enforcement migration;
         // only immutability refuses it. This is why the line trigger covers insert, not just update.
-        var message = await StoreErrorAsync(async () =>
+        var message = await LedgerHarness.StoreErrorAsync(async () =>
         {
             using var scope = TenantScope.Open(
                 factory.Services.GetRequiredService<IServiceScopeFactory>(), world.TenantId);
@@ -187,7 +187,7 @@ public sealed class LedgerInvariantTests(WebAppFactory factory) : IClassFixture<
     {
         var world = await PostBalancedAsync();
 
-        var message = await StoreErrorAsync(async () =>
+        var message = await LedgerHarness.StoreErrorAsync(async () =>
         {
             using var scope = TenantScope.Open(
                 factory.Services.GetRequiredService<IServiceScopeFactory>(), world.TenantId);
@@ -210,7 +210,7 @@ public sealed class LedgerInvariantTests(WebAppFactory factory) : IClassFixture<
 
         await ledger.LockPeriodAsync(world);
 
-        var message = await StoreErrorAsync(() => ledger.WriteRawAsync(world, entry =>
+        var message = await LedgerHarness.StoreErrorAsync(() => ledger.WriteRawAsync(world, entry =>
         {
             entry.Lines.Add(LedgerHarness.Line(world.Cash, debit: 500m));
             entry.Lines.Add(LedgerHarness.Line(world.Income, credit: 500m));
@@ -232,34 +232,4 @@ public sealed class LedgerInvariantTests(WebAppFactory factory) : IClassFixture<
         return world;
     }
 
-    /// <summary>
-    /// Runs a write expected to fail and returns the whole exception chain as text.
-    /// </summary>
-    /// <remarks>
-    /// The success branch throws rather than returning, because "the invariant did not fire" is the
-    /// finding here — a test that merely failed an assertion would report a mismatch of two strings and
-    /// hide the fact that an unbalanced posting reached the general ledger.
-    /// </remarks>
-    private static async Task<string> StoreErrorAsync(Func<Task> action)
-    {
-        try
-        {
-            await action();
-        }
-        catch (Exception exception)
-        {
-            return string.Join(" | ", Unwind(exception).Select(each => each.Message));
-        }
-
-        throw new InvalidOperationException(
-            "The write succeeded, so the database did not enforce the invariant under test.");
-    }
-
-    private static IEnumerable<Exception> Unwind(Exception exception)
-    {
-        for (Exception? current = exception; current is not null; current = current.InnerException)
-        {
-            yield return current;
-        }
-    }
 }

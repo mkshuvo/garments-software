@@ -33,8 +33,12 @@ public sealed class CurrentActorService(IHttpContextAccessor accessor) : ICurren
         }
     }
 
-    public string? CorrelationId =>
-        accessor.HttpContext?.TraceIdentifier ?? Guid.NewGuid().ToString("N");
+    /// <remarks>
+    /// Null rather than a fresh guid when there is no request. Generated per read, a fallback id gives
+    /// every row of one operation a different correlation value, which is worse than none: it looks like
+    /// a working trace and joins nothing.
+    /// </remarks>
+    public string? CorrelationId => accessor.HttpContext?.TraceIdentifier;
 
     public string? SourceAddress => accessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
 }

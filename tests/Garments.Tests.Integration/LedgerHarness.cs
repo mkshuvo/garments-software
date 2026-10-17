@@ -1,6 +1,7 @@
 using Garments.Core;
 using Garments.Data;
 using Garments.Ledger;
+using Garments.Platform.Audit;
 using Garments.Platform.Tenancy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,6 +23,12 @@ namespace Garments.Tests.Integration;
 /// </remarks>
 internal sealed class LedgerHarness(WebAppFactory factory)
 {
+    /// <summary>
+    /// The actor every test posting declares. A fixed id rather than a fresh one per call, so an
+    /// assertion can check that what the audit row says matches who the caller claimed to be.
+    /// </summary>
+    internal static readonly Guid Actor = Guid.Parse("aaaaaaaa-0000-0000-0000-00000000000a");
+
     /// <summary>
     /// Creates a company the way the product does: provisioner, base chart, standard journals, twelve
     /// periods.
@@ -131,6 +138,73 @@ internal sealed class LedgerHarness(WebAppFactory factory)
             .ProvisionAsync(fiscalYear);
     }
 
+    internal async Task<IReadOnlyList<AuditRow>> AuditRowsAsync(LedgerWorld world)
+    {
+        using var scope = TenantScope.Open(
+            factory.Services.GetRequiredService<IServiceScopeFactory>(), world.TenantId);
+
+        var context = scope.ServiceProvider.GetRequiredService<GarmentsDbContext>();
+
+        return await context.AuditLogs
+            .OrderBy(entry => entry.Id)
+            .Select(entry => new AuditRow(
+                entry.Id, entry.Action, entry.Resource, entry.ResourceId,
+                entry.Outcome, entry.ActorUserId, entry.ActorName, entry.Detail))
+            .ToListAsync();
+    }
+
+    /// <summary>Attempts the one thing an append-only trail must not allow: rewriting a row.</summary>
+    internal Task<string?> TryMutateAuditRowAsync(LedgerWorld world, bool delete)
+    {
+        return StoreErrorAsync(async () =>
+        {
+            using var scope = TenantScope.Open(
+                factory.Services.GetRequiredService<IServiceScopeFactory>(), world.TenantId);
+
+            var context = scope.ServiceProvider.GetRequiredService<GarmentsDbContext>();
+
+            var id = (await AuditRowsAsync(world))[0].Id;
+
+            // Branching rather than a ternary on the interpolated string: the overload that escapes the
+            // parameter takes a FormattableString, and a conditional of two interpolated strings is a
+            // plain string, which reaches the raw-SQL overload with the value inlined.
+            if (delete)
+            {
+                await context.Database.ExecuteSqlInterpolatedAsync($"DELETE FROM audit_logs WHERE id = {id}");
+            }
+            else
+            {
+                await context.Database.ExecuteSqlInterpolatedAsync(
+                    $"UPDATE audit_logs SET action = 'ledger.posting.forged' WHERE id = {id}");
+            }
+        });
+    }
+
+    /// <summary>
+    /// Runs an action expected to fail, returning its exception chain, or null when it succeeded.
+    /// </summary>
+    internal static async Task<string?> StoreErrorAsync(Func<Task> action)
+    {
+        try
+        {
+            await action();
+        }
+        catch (Exception exception)
+        {
+            return string.Join(" | ", Unwind(exception).Select(each => each.Message));
+        }
+
+        return null;
+    }
+
+    private static IEnumerable<Exception> Unwind(Exception exception)
+    {
+        for (Exception? current = exception; current is not null; current = current.InnerException)
+        {
+            yield return current;
+        }
+    }
+
     internal async Task<Guid> FindAccountByCodeAsync(TenantId tenantId, string code)
     {
         using var scope = TenantScope.Open(
@@ -215,7 +289,7 @@ internal sealed class LedgerHarness(WebAppFactory factory)
 
         var service = scope.ServiceProvider.GetRequiredService<IOpeningBalances>();
 
-        return await service.PostAsync(fiscalYear, balances);
+        return await service.PostAsync(fiscalYear, balances, Actor);
     }
 
     /// <summary>
@@ -305,6 +379,7 @@ internal sealed class LedgerHarness(WebAppFactory factory)
         var request = new PostingRequest
         {
             JournalCode = "GL",
+            ActorUserId = Actor,
             PostingDate = postingDate ?? world.PostingDate,
             SourceType = sourceType ?? "test.manual",
             SourceId = sourceId,
