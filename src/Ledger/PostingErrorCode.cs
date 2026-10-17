@@ -41,6 +41,19 @@ public enum PostingErrorCode
     InvalidExchangeRate,
 
     /// <summary>
+    /// A foreign-currency line whose rate the company's history does not cover for that date. Distinct
+    /// from <see cref="InvalidExchangeRate"/>, which is a bad number: this is a missing one, and the fix
+    /// is to record a rate rather than to correct one.
+    /// </summary>
+    MissingExchangeRate,
+
+    /// <summary>
+    /// A line whose functional amount does not follow from its foreign amount and its rate. The two are
+    /// both stated and they disagree, which no rounding policy can account for.
+    /// </summary>
+    ExchangeRateAmountMismatch,
+
+    /// <summary>
     /// The tenant does not own a journal with that code. Checked before the entry is built because the
     /// database refuses it too, through a foreign key, and a caller that gets a foreign-key violation
     /// here has been handed a schema detail instead of a sentence about their own document.

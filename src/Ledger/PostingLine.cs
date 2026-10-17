@@ -26,7 +26,17 @@ public sealed record PostingLine
 
     public CurrencyCode Currency { get; init; } = CurrencyCode.Bdt;
 
-    public decimal ExchangeRate { get; init; } = 1m;
+    /// <summary>
+    /// Functional currency per one unit of <see cref="Currency"/>. Null means the posting engine should
+    /// resolve it from the company's rate history for the line's date.
+    /// </summary>
+    /// <remarks>
+    /// Null rather than a default of <c>1m</c>. A default is indistinguishable from "this dollar line is
+    /// worth one taka", and it silently prices every foreign-currency line at par unless somebody
+    /// remembers to set it — which is the same failure as a currency field that defaults to USD, arrived
+    /// at from the numeric side.
+    /// </remarks>
+    public decimal? ExchangeRate { get; init; }
 
     public DateOnly ExchangeRateDate { get; init; }
 

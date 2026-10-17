@@ -106,6 +106,63 @@ namespace Garments.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Garments.Ledger.ExchangeRate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)")
+                        .HasColumnName("currency");
+
+                    b.Property<decimal>("Rate")
+                        .HasColumnType("numeric(18,9)")
+                        .HasColumnName("rate");
+
+                    b.Property<DateTimeOffset>("RecordedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("recorded_at");
+
+                    b.Property<Guid?>("RecordedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recorded_by_user_id");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("source");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateOnly>("ValidFrom")
+                        .HasColumnType("date")
+                        .HasColumnName("valid_from");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Currency", "TenantId", "ValidFrom")
+                        .IsDescending(false, false, true)
+                        .HasDatabaseName("IX_exchange_rates_resolution");
+
+                    b.HasIndex("TenantId", "Currency", "ValidFrom")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_exchange_rates_currency_valid_from");
+
+                    b.ToTable("exchange_rates", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_exchange_rates_rate_positive", "\"rate\" > 0");
+
+                            t.HasCheckConstraint("CK_exchange_rates_tenant_scope", "tenant_id IS NOT NULL AND tenant_id = current_setting('app.tenant_id', true)::uuid");
+                        });
+                });
+
             modelBuilder.Entity("Garments.Ledger.FiscalPeriod", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1127,6 +1184,15 @@ namespace Garments.Data.Migrations
                         .HasForeignKey("ParentId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("Garments.Platform.Tenancy.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Garments.Ledger.ExchangeRate", b =>
+                {
                     b.HasOne("Garments.Platform.Tenancy.Tenant", null)
                         .WithMany()
                         .HasForeignKey("TenantId")

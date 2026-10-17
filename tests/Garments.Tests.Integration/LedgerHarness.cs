@@ -17,6 +17,12 @@ namespace Garments.Tests.Integration;
 /// suite ends up proving different things while looking like it proves the same ones: the day a rule
 /// changes in one copy, the other keeps passing against a world that no longer exists.
 ///
+/// <b>Every method that opens a scope must await inside it.</b> Returning the task from a scope-opening
+/// method disposes the context while the query is still running, and the driver reports that as
+/// "BindComplete while expecting ReadyForQueryMessage" — a message naming neither the scope nor the
+/// mistake. This harness produced that bug twice, in two different methods, which is the argument for
+/// writing it down rather than fixing it once.
+///
 /// Each call creates a brand-new tenant rather than sharing one. Postings are journal-numbered, and a
 /// test that asserted "the first number is 000001" against a tenant another test had already written to
 /// would fail for a reason that had nothing to do with what it was checking.
@@ -136,6 +142,65 @@ internal sealed class LedgerHarness(WebAppFactory factory)
 
         await scope.ServiceProvider.GetRequiredService<ILedgerProvisioner>()
             .ProvisionAsync(fiscalYear);
+    }
+
+    internal async Task RecordRateAsync(
+        LedgerWorld world,
+        CurrencyCode currency,
+        DateOnly validFrom,
+        decimal rate)
+    {
+        using var scope = TenantScope.Open(
+            factory.Services.GetRequiredService<IServiceScopeFactory>(), world.TenantId);
+
+        var outcome = await scope.ServiceProvider.GetRequiredService<IExchangeRates>()
+            .RecordAsync(new ExchangeRateQuote(currency, validFrom, rate), "test", Actor);
+
+        Assert.True(
+            outcome.Succeeded,
+            $"Recording a {currency} rate for {validFrom:yyyy-MM-dd} was refused: "
+            + string.Join("; ", outcome.Errors.Select(each => each.Message)));
+    }
+
+    internal async Task<PostingOutcome> TryRecordRateAsync(
+        LedgerWorld world,
+        CurrencyCode currency,
+        DateOnly validFrom,
+        decimal rate)
+    {
+        using var scope = TenantScope.Open(
+            factory.Services.GetRequiredService<IServiceScopeFactory>(), world.TenantId);
+
+        return await scope.ServiceProvider.GetRequiredService<IExchangeRates>()
+            .RecordAsync(new ExchangeRateQuote(currency, validFrom, rate), "test", Actor);
+    }
+
+    internal async Task<RateOnLine> PostedLineAsync(LedgerWorld world, Guid entryId)
+    {
+        using var scope = TenantScope.Open(
+            factory.Services.GetRequiredService<IServiceScopeFactory>(), world.TenantId);
+
+        var context = scope.ServiceProvider.GetRequiredService<GarmentsDbContext>();
+
+        return await context.GlLines
+            .Where(line => line.EntryId == entryId && line.Debit != null)
+            .Select(line => new RateOnLine(line.ExchangeRate, line.AmountInCurrency, line.Debit ?? 0m))
+            .SingleAsync();
+    }
+
+    /// <summary>Refused for the same reason a rate cannot be edited: the trail is history, not a setting.</summary>
+    internal Task<string?> TryMutateRateAsync(LedgerWorld world, CurrencyCode currency, DateOnly validFrom)
+    {
+        return StoreErrorAsync(async () =>
+        {
+            using var scope = TenantScope.Open(
+                factory.Services.GetRequiredService<IServiceScopeFactory>(), world.TenantId);
+
+            var context = scope.ServiceProvider.GetRequiredService<GarmentsDbContext>();
+
+            await context.Database.ExecuteSqlInterpolatedAsync(
+                $"UPDATE exchange_rates SET rate = 1 WHERE currency = {currency.Value} AND valid_from = {validFrom}");
+        });
     }
 
     internal async Task<IReadOnlyList<AuditRow>> AuditRowsAsync(LedgerWorld world)

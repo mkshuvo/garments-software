@@ -38,6 +38,7 @@ public sealed class Poster(
     GarmentsDbContext context,
     ITenantContext tenantContext,
     ICurrentActor actor,
+    IExchangeRates rates,
     IAuditWriter audit) : IPoster
 {
     private const string PostAction = "ledger.posting.post";
@@ -57,6 +58,15 @@ public sealed class Poster(
                 "A posting needs a resolved tenant. Callers reach this through a tenant scope; arriving "
                 + "without one is a wiring mistake, not a user error, and refusing here keeps it that way.");
         }
+
+        var (lines, rateRefusal) = await ResolveRatesAsync(request, cancellationToken).ConfigureAwait(false);
+        if (rateRefusal is not null)
+        {
+            return await RecordAsync(rateRefusal, request, AuditOutcome.Failed, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        request = request with { Lines = lines };
 
         var balance = PostingBalance.Check(request.Lines.ToList());
         if (!balance.Succeeded)
@@ -406,11 +416,114 @@ public sealed class Poster(
         Credit = source.Credit?.Amount,
         Currency = source.Currency,
         AmountInCurrency = source.AmountInCurrency,
-        ExchangeRate = source.ExchangeRate,
+        // Par for a line already stated in functional currency. The resolution step has guaranteed a real
+        // rate for anything foreign before this runs, so a missing value here can only mean domestic, and
+        // the ledger row always stores a definite number the schema can constrain.
+        ExchangeRate = source.ExchangeRate ?? 1m,
         ExchangeRateDate = source.ExchangeRateDate,
         AnalysisId = source.AnalysisId,
         Memo = source.Memo,
     };
+
+    /// <summary>
+    /// Resolves any foreign-currency rate the caller left to the ledger, then checks that the taka figure
+    /// on each foreign line actually follows from its own currency and rate.
+    /// </summary>
+    /// <remarks>
+    /// The caller states both amounts and the ledger decides which rate applies and whether the two agree.
+    /// Deriving the functional amount here instead would quietly discard a number the caller deliberately
+    /// typed, which is the kind of helpfulness that makes a document and its posting disagree with nobody
+    /// able to say who decided it. A UI shows the rate and the user confirms it; this checks that what was
+    /// confirmed is what the ledger's own history implies.
+    /// </remarks>
+    /// <remarks>
+    /// Resolution happens before balancing rather than during it. The balancer's job is to say whether a
+    /// complete posting is valid; a line whose rate has not been looked up yet is not a complete posting,
+    /// and letting the balancer reach out to a table would make a pure check depend on data it is not
+    /// supposed to know about.
+    ///
+    /// The consistency test is the point of the exercise. Storing a rate and never using it to check the
+    /// amount beside it leaves a line that claims 20.00 USD, 112.40, and 2,300.00 taka when 20 x 112.40
+    /// is 2,248.00 — an FX difference that exists in no account, which is precisely what invariant I7
+    /// exists to prevent.
+    /// </remarks>
+    private async Task<(IReadOnlyList<PostingLine> Lines, PostingOutcome? Refusal)> ResolveRatesAsync(
+        PostingRequest request,
+        CancellationToken cancellationToken)
+    {
+        var resolved = new List<PostingLine>(request.Lines.Count);
+        var errors = new List<PostingError>();
+
+        for (var index = 0; index < request.Lines.Count; index++)
+        {
+            var line = request.Lines[index];
+
+            // The Money's own currency is the functional one, so a line is foreign when the currency it
+            // names differs from it. Asking the tenant for its functional currency here would be a
+            // second, possibly disagreeing answer to a question the line already states.
+            var side = line.Debit ?? line.Credit;
+
+            // A line with no amount cannot be priced, and the balancer already reports it. Same for a
+            // line whose own currency is the one its Money is stated in.
+            if (side is null || line.Currency == side.Value.Currency.Code)
+            {
+                resolved.Add(line);
+                continue;
+            }
+
+            var functional = side.Value.Currency;
+            decimal rate;
+
+            if (line.ExchangeRate is null)
+            {
+                var quote = await rates.FindAsync(line.Currency, request.PostingDate, cancellationToken)
+                    .ConfigureAwait(false);
+
+                if (quote is null)
+                {
+                    errors.Add(new PostingError(
+                        PostingErrorCode.MissingExchangeRate,
+                        $"This company has no {line.Currency} rate effective on or before "
+                        + $"{request.PostingDate:yyyy-MM-dd}.",
+                        index));
+                    continue;
+                }
+
+                rate = quote.Rate;
+                resolved.Add(line with { ExchangeRate = rate });
+            }
+            else
+            {
+                rate = line.ExchangeRate.Value;
+                resolved.Add(line);
+            }
+
+            if (rate <= 0m)
+            {
+                continue;
+            }
+
+            var expected = Money.Round(functional, line.AmountInCurrency * rate);
+
+            if (expected.Amount != side.Value.Amount)
+            {
+                errors.Add(new PostingError(
+                    PostingErrorCode.ExchangeRateAmountMismatch,
+                    // Formatted invariantly: this text ends up in an audit row and, in a support ticket,
+                    // copied across machines whose default thousands separator differs.
+                    $"Line {index + 1} states "
+                    + $"{line.AmountInCurrency.ToString("0.####", CultureInfo.InvariantCulture)} {line.Currency} at "
+                    + $"{rate.ToString("0.##########", CultureInfo.InvariantCulture)}, which is "
+                    + $"{expected.Amount.ToString("0.00", CultureInfo.InvariantCulture)}, but the posting carries "
+                    + $"{side.Value.Amount.ToString("0.00", CultureInfo.InvariantCulture)}.",
+                    index));
+            }
+        }
+
+        return errors.Count == 0
+            ? (resolved, null)
+            : (resolved, new PostingOutcome(PostingOutcomeStatus.Rejected, errors));
+    }
 
     /// <summary>
     /// Records a refusal and returns it.

@@ -79,6 +79,8 @@ public class GarmentsDbContext(DbContextOptions<GarmentsDbContext> options, ITen
 
     public DbSet<FiscalPeriod> FiscalPeriods => Set<FiscalPeriod>();
 
+    public DbSet<ExchangeRate> ExchangeRates => Set<ExchangeRate>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -101,6 +103,7 @@ public class GarmentsDbContext(DbContextOptions<GarmentsDbContext> options, ITen
         TenantQueryFilter<FiscalPeriod>(builder);
         TenantQueryFilter<GlEntry>(builder);
         TenantQueryFilter<GlLine>(builder);
+        TenantQueryFilter<ExchangeRate>(builder);
 
         SnakeCaseModelNames.Apply(builder);
     }

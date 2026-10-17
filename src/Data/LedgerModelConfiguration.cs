@@ -32,6 +32,7 @@ public static class LedgerModelConfiguration
         ConfigurePeriods(builder.Entity<FiscalPeriod>());
         ConfigureEntries(builder.Entity<GlEntry>());
         ConfigureLines(builder.Entity<GlLine>());
+        ConfigureExchangeRates(builder.Entity<ExchangeRate>());
     }
 
     private static void ConfigureAccounts(EntityTypeBuilder<ChartOfAccount> account)
@@ -189,5 +190,40 @@ public static class LedgerModelConfiguration
 
         line.HasOne<ChartOfAccount>().WithMany().HasForeignKey(x => x.AccountId)
             .OnDelete(DeleteBehavior.Restrict);
+    }
+
+    /// <summary>
+    /// Maps the effective-dated rate history.
+    /// </summary>
+    /// <remarks>
+    /// The lookup index leads with currency and is ordered by the effective date descending because every
+    /// resolution is "the newest row for this currency on or before that date" — a scan over all of a
+    /// company's rates is what a posting would otherwise cost, and it grows with each month of trading.
+    ///
+    /// <c>rate > 0</c> is enforced here rather than only in the service because a zero rate turns a
+    /// foreign-currency line into a free one, and a negative rate silently flips which side of an FX gain
+    /// or loss the difference lands on.
+    /// </remarks>
+    private static void ConfigureExchangeRates(EntityTypeBuilder<ExchangeRate> rate)
+    {
+        TenantTableConfiguration.ApplyTenantScope(rate, "exchange_rates");
+        rate.HasKey(x => x.Id);
+
+        rate.Property(x => x.Currency).HasConversion(new CurrencyCodeConverter()).HasMaxLength(3).IsRequired();
+        rate.Property(x => x.ValidFrom).HasColumnType("date");
+        rate.Property(x => x.Rate).HasColumnType("numeric(18,9)");
+        rate.Property(x => x.Source).HasMaxLength(64);
+
+        rate.HasIndex(x => new { x.TenantId, x.Currency, x.ValidFrom })
+            .IsUnique()
+            .HasDatabaseName("UQ_exchange_rates_currency_valid_from");
+
+        rate.HasIndex(x => new { x.Currency, x.TenantId, x.ValidFrom })
+            .IsDescending(false, false, true)
+            .HasDatabaseName("IX_exchange_rates_resolution");
+
+        rate.ToTable(t => t.HasCheckConstraint(
+            "CK_exchange_rates_rate_positive",
+            "\"rate\" > 0"));
     }
 }

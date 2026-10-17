@@ -39,6 +39,7 @@ public static class DataServiceCollectionExtensions
         services.AddScoped<IPoster, Poster>();
         services.AddScoped<ILedgerProvisioner, LedgerProvisioner>();
         services.AddScoped<IOpeningBalances, OpeningBalances>();
+        services.AddScoped<IExchangeRates, ExchangeRates>();
         services.AddScoped<Platform.Audit.IAuditWriter, DatabaseAuditWriter>();
         services.AddScoped<MigrationRunner>();
         services.AddSingleton<RlsSafetyProbe>();

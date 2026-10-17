@@ -61,18 +61,36 @@ public static class PostingBalance
                 errors.Add(new PostingError(PostingErrorCode.ZeroAmount, "A line amount must not be zero.", index));
             }
 
-            if (line.ExchangeRate <= 0m)
+            // Set before the rate test below: which currency is functional is decided by the first line
+            // that carries an amount, and a check that runs before it would read every first line as
+            // foreign and demand a rate for a taka posting.
+            if (side is not null)
+            {
+                functional ??= side.Value.Currency.Code;
+            }
+
+            // Two separate rules, and keeping them apart matters. A rate that is present must be positive
+            // whatever the line's currency, because a zero or negative number beside a taka line is a
+            // defect just as much as beside a dollar one. A rate is only <i>required</i> when the line is
+            // foreign — demanding one on a domestic line would mean every local posting carries a number
+            // that is 1 by definition and can only ever be wrong or noise.
+            if (line.ExchangeRate is not null && line.ExchangeRate <= 0m)
             {
                 errors.Add(new PostingError(
                     PostingErrorCode.InvalidExchangeRate,
                     "An exchange rate must be positive so it can be inverted and explained.",
                     index));
             }
+            else if (functional is not null && line.Currency != functional && line.ExchangeRate is null)
+            {
+                errors.Add(new PostingError(
+                    PostingErrorCode.MissingExchangeRate,
+                    $"Line {index + 1} is in {line.Currency} and no rate was resolved for it.",
+                    index));
+            }
 
             if (side is not null)
             {
-                functional ??= side.Value.Currency.Code;
-
                 if (side.Value.Currency.Code != functional)
                 {
                     errors.Add(new PostingError(
