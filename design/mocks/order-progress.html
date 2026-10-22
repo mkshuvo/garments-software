@@ -1,0 +1,395 @@
+<!doctype html>
+<!--
+  DESIGN PROOF, NOT AN IMPLEMENTATION.
+  Inert: no fetch, no framework, no build step, nothing imported from web/.
+
+  Purpose: to prove the four claims design/SCREENS.md section 1 makes about the screen that decides
+  the purchase -- (1) the answer to "am I going to miss a shipment" is a sentence, readable before
+  any row is, (2) the signed Days column (+3 / -6) is legible as slack-versus-late without colour,
+  (3) the stage bar is a real per-stage count and not a decorative meter, and (4) an order with no
+  reported stage data is visible as missing rather than as zero progress.
+
+  The English locale sits here while design/mocks/trial-balance.html carries Bangla, so the two
+  files together show that the grid geometry is identical in both scripts.
+
+  Every colour is in the :root token block and nowhere else (law L15). Families are named, not
+  downloaded; the app gets them from next/font CSS variables.
+
+  ALL DATA IS SYNTHETIC. Buyers, order numbers and quantities are invented for layout purposes and
+  belong to no real business.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Order progress - design proof (synthetic data)</title>
+<style>
+  :root {
+    --surface-base: #ffffff;
+    --surface-muted: #f5f6f7;
+    --surface-raised: #fbfcfd;
+    --surface-band: #eaecee;
+    --surface-selected: #ebf8ff;
+    --text-primary: #111825;
+    --text-secondary: #5b6472;
+    --text-tertiary: #616b7a;
+    --text-inverse: #f7f9fb;
+    --chrome-ink: #545454;
+    --border-subtle: #dfe3e8;
+    --border-strong: #7d8898;
+    --border-focus: #0040b0;
+    --accent-brand: #0057d2;
+    --accent-brand-deep: #0040b0;
+    --action-neutral: #33415c;
+    --action-neutral-hover: #26324b;
+    --action-neutral-press: #1b2537;
+    --state-danger: #a31621;
+    --state-danger-soft: #fdecee;
+    --state-warning: #8a5300;
+    --state-warning-soft: #fdf3e2;
+    --state-success: #14663d;
+    --state-success-soft: #e9f5ee;
+    --state-info: #0b5394;
+    --state-info-soft: #eaf2fb;
+    --series-primary: #1d5fbf;
+    --series-mid: #3d7bd0;
+    --series-soft: #c7dcf3;
+    --series-neutral: #b6bec9;
+
+    --space-xxs: 2px; --space-xs: 4px; --space-sm: 8px; --space-md: 12px;
+    --space-lg: 16px; --space-xl: 24px; --space-xxl: 32px; --space-huge: 48px;
+    --radius-none: 0px; --radius-small: 4px; --radius-medium: 6px; --radius-large: 12px;
+
+    /* Default density: this screen has few rows and each one carries a chip that needs the height */
+    --row-h: 40px; --row-pad-y: 8px; --cell-pad-x: 12px; --head-h: 44px;
+    --rail-w: 240px; --topbar-h: 48px; --days-min: 56px; --chip-min: 104px; --bar-w: 208px;
+
+    --elev-2: 0 1px 2px rgba(17,24,37,0.06), 0 2px 6px rgba(17,24,37,0.06);
+    --font-stack: 'Inter', 'Noto Sans Bengali', system-ui, sans-serif;
+    --leading-cell: 1.35;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--surface-base); color: var(--text-primary);
+         font: 400 14px/var(--leading-cell) var(--font-stack); }
+  .money, .count, .days, .code { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum'; }
+
+  .topbar {
+    height: var(--topbar-h); background: var(--surface-muted);
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex; align-items: center; gap: var(--space-md); padding: 0 var(--space-lg);
+    font-size: 12px; line-height: 16px; color: var(--text-secondary);
+  }
+  .topbar .co { color: var(--text-primary); font-weight: 500; font-size: 13px; }
+  .topbar .sep { width: 1px; height: 20px; background: var(--border-subtle); }
+  .topbar .cur { font-weight: 600; color: var(--text-primary);
+                 border: 1px solid var(--border-strong); border-radius: var(--radius-small);
+                 padding: 1px var(--space-xs); font-size: 11px; }
+
+  .shell { display: flex; min-height: calc(100vh - var(--topbar-h)); }
+  .rail { width: var(--rail-w); flex: 0 0 var(--rail-w); background: var(--surface-muted);
+          border-right: 1px solid var(--border-subtle); padding: var(--space-sm) 0 var(--space-lg); }
+  .rail .group { font-size: 11px; font-weight: 600; color: var(--chrome-ink);
+                 padding: var(--space-lg) var(--space-lg) var(--space-xs); }
+  .rail a { display: flex; align-items: center; height: 32px; padding: 0 var(--space-lg);
+            color: var(--chrome-ink); text-decoration: none; font-size: 14px; line-height: 20px;
+            font-weight: 400; border-left: 3px solid transparent; }
+  .rail a:hover { background: var(--surface-band); }
+  .rail a.active { background: var(--surface-selected); color: var(--text-primary); font-weight: 500;
+                   border-left-color: var(--accent-brand); }
+  .pane { flex: 1 1 auto; min-width: 0; padding: var(--space-xl) var(--space-xl) var(--space-huge); }
+
+  h1 { font-size: 20px; line-height: 28px; font-weight: 600; margin: 0; }
+  .titlerow { display: flex; align-items: center; gap: var(--space-xl); margin-bottom: var(--space-lg); }
+  .titlerow .grow { flex: 1 1 auto; }
+  .btn { font: 500 14px/16px var(--font-stack); border-radius: var(--radius-medium);
+         padding: var(--space-sm) var(--space-md); height: 36px; cursor: pointer; }
+  .btn-primary { background: var(--action-neutral); color: var(--text-inverse);
+                 border: 1px solid var(--action-neutral); }
+  .btn-primary:hover { background: var(--action-neutral-hover); }
+
+  /* The answer, before the table. type.bodyLead: 450 weight, no card, no icon, no eyebrow. */
+  .answer {
+    font-size: 14px; line-height: 22px; font-weight: 450; color: var(--text-primary);
+    margin: 0 0 var(--space-lg); max-width: 78ch;
+  }
+  .answer b { font-weight: 600; }
+  .answer .late { color: var(--state-danger); font-weight: 600; }
+
+  /* Stale data: the owner must distinguish "nothing is at risk" from "I do not know today". */
+  .stale {
+    margin: 0 0 var(--space-lg); padding: var(--space-sm) var(--space-md);
+    font-size: 12px; line-height: 16px; color: var(--state-danger);
+    background: var(--state-danger-soft); border: 1px solid var(--state-danger);
+    border-radius: var(--radius-small); display: flex; gap: var(--space-md); align-items: center;
+  }
+  .stale a { color: var(--state-danger); font-weight: 600; }
+
+  .filters { display: flex; gap: var(--space-sm); flex-wrap: wrap; margin-bottom: var(--space-md); }
+  .fchip {
+    font-size: 12px; line-height: 16px; font-weight: 500; color: var(--text-secondary);
+    background: var(--surface-muted); border: 1px solid var(--border-strong);
+    border-radius: var(--radius-small); padding: var(--space-xs) var(--space-sm);
+  }
+  .fchip.on { background: var(--surface-selected); color: var(--text-primary); border-color: var(--accent-brand); }
+  .fchip .k { color: var(--text-tertiary); font-weight: 400; }
+
+  table { border-collapse: separate; border-spacing: 0; width: 100%; }
+  thead th {
+    position: sticky; top: 0; z-index: 2; height: var(--head-h);
+    background: var(--surface-muted); color: var(--text-secondary);
+    font-size: 12px; line-height: 16px; font-weight: 600; text-align: left;
+    padding: 0 var(--cell-pad-x); border-bottom: 1px solid var(--border-strong); white-space: nowrap;
+  }
+  thead th.num { text-align: right; }
+  tbody td {
+    /* Default density: the row height is a floor, and this screen's two-line cells grow it by one
+       leading step. Compact density (the financial reports) forbids this. DESIGN.md section 4.2. */
+    min-height: var(--row-h); padding: var(--row-pad-y) var(--cell-pad-x);
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 14px; line-height: 20px; color: var(--text-primary); background: var(--surface-base);
+    white-space: nowrap; vertical-align: middle;
+  }
+  tbody tr:hover td { background: var(--surface-selected); }
+  tbody td.num { text-align: right; }
+  .buyer { display: block; font-weight: 500; }
+  .style { display: block; font-size: 12px; line-height: 16px; color: var(--text-secondary); }
+  .ref { font-size: 13px; font-weight: 500; color: var(--accent-brand-deep); }
+  .due { font-weight: 500; }
+  .due .sub { display: block; font-size: 12px; line-height: 16px; color: var(--text-tertiary); }
+
+  /* Days: the sign is the information. + is slack, - is late, and neither relies on colour. */
+  td.days { min-width: var(--days-min); font-weight: 600; }
+  td.days.late { color: var(--state-danger); }
+  td.days.risk { color: var(--state-warning); }
+  td.days.ok  { color: var(--text-secondary); font-weight: 400; }
+
+  /* The stage bar: four real segments over four real stages, with counts printed beside it. */
+  .bar { display: flex; height: 10px; width: var(--bar-w); border: 1px solid var(--border-strong);
+         border-radius: var(--radius-none); overflow: hidden; background: var(--surface-base); }
+  .bar i { display: block; height: 100%; }
+  .bar .done { background: var(--series-primary); }
+  .bar .prog { background: var(--series-mid); }
+  .bar .todo { background: var(--series-soft); }
+  .bar .none { background: var(--series-neutral); }
+  .stagecount { display: block; font-size: 12px; line-height: 16px; color: var(--text-secondary);
+                margin-top: var(--space-xxs); }
+  .stagecount .missing { color: var(--text-tertiary); }
+
+  .chip { display: inline-block; min-width: var(--chip-min); text-align: center;
+          font-size: 12px; line-height: 16px; font-weight: 500; padding: 1px var(--space-xs);
+          border-radius: var(--radius-small); }
+  .ok    { background: var(--state-success-soft); color: var(--state-success); }
+  .risk  { background: var(--state-warning-soft); color: var(--state-warning); }
+  .late  { background: var(--state-danger-soft); color: var(--state-danger); }
+  .gone  { background: var(--surface-band); color: var(--chrome-ink); }
+  .held  { background: var(--surface-base); color: var(--state-danger);
+           border: 1px solid var(--state-danger); }
+
+  a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
+    outline: none; box-shadow: 0 0 0 2px var(--surface-base), 0 0 0 4px var(--border-focus);
+  }
+
+  .legend { margin-top: var(--space-xl); font-size: 12px; line-height: 16px; color: var(--text-tertiary);
+            display: flex; gap: var(--space-lg); flex-wrap: wrap; max-width: 88ch; }
+  .legend b { color: var(--text-secondary); font-weight: 500; }
+
+  .appendix { margin-top: var(--space-huge); border-top: 1px solid var(--border-strong); padding-top: var(--space-lg); }
+  .appendix h2 { font-size: 15px; line-height: 22px; font-weight: 600; margin: 0 0 var(--space-xs); }
+  .appendix p { font-size: 12px; line-height: 16px; color: var(--text-tertiary); margin: 0 0 var(--space-md); max-width: 74ch; }
+  .record {
+    border: 1px solid var(--border-subtle); border-radius: var(--radius-medium);
+    padding: var(--space-md); max-width: 420px; background: var(--surface-base);
+  }
+  .record h3 { margin: 0 0 var(--space-xs); font-size: 14px; line-height: 20px; font-weight: 600; }
+  .record dl { display: grid; grid-template-columns: 1fr auto; gap: var(--space-xxs) var(--space-md); margin: 0; }
+  .record dt { font-size: 12px; line-height: 20px; color: var(--text-secondary); }
+  .record dd { margin: 0; font-size: 14px; line-height: 20px; text-align: right; font-weight: 400; }
+
+  @media print { .rail, .filters, .btn { display: none; } @page { size: A4 portrait; margin: 12mm; } }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="co">North Fashion Ltd</span>
+  <span class="sep"></span>
+  <span>FY 2026-27 · Period 4 (Oct)</span>
+  <span class="sep"></span>
+  <span class="cur">BDT</span>
+  <span class="sep"></span>
+  <span>Position as at 3 Nov 2026, 06:40</span>
+</div>
+
+<div class="shell">
+  <nav class="rail" aria-label="Main navigation">
+    <div class="group">Today</div>
+    <a href="#orders" class="active" aria-current="page">Order progress</a>
+    <div class="group">Money</div>
+    <a href="#cash">Cash book</a>
+    <a href="#tb">Trial balance</a>
+    <a href="#jrnl">Journals</a>
+    <a href="#gl">Ledger detail</a>
+    <div class="group">Costing</div>
+    <a href="#cost">Cost per style</a>
+    <div class="group">Company</div>
+    <a href="#settings">Settings</a>
+  </nav>
+
+  <main class="pane">
+    <div class="titlerow">
+      <div class="grow"><h1>Order progress</h1></div>
+      <button class="btn btn-primary">Update a stage</button>
+    </div>
+
+    <p class="answer">
+      <b>4 orders ship in the next 10 days.</b>
+      <span class="late">1 is past its ship date.</span>
+      2 styles are behind at stitching. 1 order has no stage data reported and is left out of the
+      count above.
+    </p>
+
+    <div class="stale">
+      Could not refresh from the production desk. Showing data from 3 Nov 2026, 06:40 — 2 stage
+      updates may be missing. <a href="#retry">Retry</a>
+    </div>
+
+    <div class="filters" role="group" aria-label="Filters">
+      <span class="fchip on">Due next 10 days</span>
+      <span class="fchip"><span class="k">Buyer:</span> All</span>
+      <span class="fchip"><span class="k">Stage:</span> All</span>
+      <span class="fchip">Clear filters</span>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Buyer / style</th>
+          <th>Order</th>
+          <th class="num">Qty (pcs)</th>
+          <th>Ship date</th>
+          <th class="num">Days</th>
+          <th>Stage progress</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="buyer">Anchor Bay Knitwear</span><span class="style">NF-204-A · jersey tee</span></td>
+          <td><a class="ref code" href="#po1187">PO-1187</a></td>
+          <td class="num count">12,000</td>
+          <td class="due">06 Nov 2026<span class="sub">Booking: MSVB-2214</span></td>
+          <td class="num days risk">+3</td>
+          <td>
+            <span class="bar" role="img" aria-label="Cutting complete, stitching 55 percent done, packing and dispatch not started">
+              <i class="done" style="width:25%"></i><i class="prog" style="width:14%"></i><i class="todo" style="width:61%"></i>
+            </span>
+            <span class="stagecount">Cut 12,000 · Stitch 6,600 · Pack 0</span>
+          </td>
+          <td><span class="chip risk">At risk</span></td>
+        </tr>
+        <tr>
+          <td><span class="buyer">Meridian Apparel</span><span class="style">MA-118-C · polo</span></td>
+          <td><a class="ref code" href="#po1191">PO-1191</a></td>
+          <td class="num count">8,400</td>
+          <td class="due">05 Nov 2026<span class="sub">Booking: MSVB-2217</span></td>
+          <td class="num days ok">+2</td>
+          <td>
+            <span class="bar" role="img" aria-label="Cutting and stitching complete, packing 60 percent done, dispatch not started">
+              <i class="done" style="width:50%"></i><i class="prog" style="width:15%"></i><i class="todo" style="width:35%"></i>
+            </span>
+            <span class="stagecount">Cut 8,400 · Stitch 8,400 · Pack 5,040</span>
+          </td>
+          <td><span class="chip ok">On track</span></td>
+        </tr>
+        <tr>
+          <td><span class="buyer">Blue Harbor Trading</span><span class="style">BH-77-D · hoodie</span></td>
+          <td><a class="ref code" href="#po1203">PO-1203</a></td>
+          <td class="num count">5,600</td>
+          <td class="due">28 Oct 2026<span class="sub">Booking expired</span></td>
+          <td class="num days late">−6</td>
+          <td>
+            <span class="bar" role="img" aria-label="Cutting complete, stitching 20 percent done, packing and dispatch not started">
+              <i class="done" style="width:25%"></i><i class="prog" style="width:5%"></i><i class="todo" style="width:70%"></i>
+            </span>
+            <span class="stagecount">Cut 5,600 · Stitch 1,120 · Pack 0</span>
+          </td>
+          <td><span class="chip late">Late</span></td>
+        </tr>
+        <tr>
+          <td><span class="buyer">Anchor Bay Knitwear</span><span class="style">NF-210-B · cardigan</span></td>
+          <td><a class="ref code" href="#po1210">PO-1210</a></td>
+          <td class="num count">15,200</td>
+          <td class="due">10 Nov 2026<span class="sub">Booking: MSVB-2231</span></td>
+          <td class="num days risk">+7</td>
+          <td>
+            <span class="bar" role="img" aria-label="Cutting 80 percent done, stitching not started, packing and dispatch not started">
+              <i class="prog" style="width:20%"></i><i class="todo" style="width:80%"></i>
+            </span>
+            <span class="stagecount">Cut 12,160 · Stitch 0 · Pack 0</span>
+          </td>
+          <td><span class="chip risk">At risk</span></td>
+        </tr>
+        <tr>
+          <td><span class="buyer">Coastline Garments</span><span class="style">CG-09-A · chinos</span></td>
+          <td><a class="ref code" href="#po1215">PO-1215</a></td>
+          <td class="num count">9,000</td>
+          <td class="due">12 Nov 2026<span class="sub">Booking: MSVB-2240</span></td>
+          <td class="num days ok">+9</td>
+          <td>
+            <span class="bar" role="img" aria-label="No stage data reported for this order">
+              <i class="none" style="width:100%"></i>
+            </span>
+            <span class="stagecount"><span class="missing">No stage data · last report 21 Oct</span></span>
+          </td>
+          <td><span class="chip held">Held</span></td>
+        </tr>
+        <tr>
+          <td><span class="buyer">Meridian Apparel</span><span class="style">MA-104-F · tee</span></td>
+          <td><a class="ref code" href="#po1178">PO-1178</a></td>
+          <td class="num count">6,000</td>
+          <td class="due">30 Oct 2026<span class="sub">Departed Chattogram</span></td>
+          <td class="num days ok">—</td>
+          <td>
+            <span class="bar" role="img" aria-label="All four stages complete">
+              <i class="done" style="width:100%"></i>
+            </span>
+            <span class="stagecount">Cut 6,000 · Stitch 6,000 · Pack 6,000 · Dispatched</span>
+          </td>
+          <td><span class="chip gone">Dispatched</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="legend">
+      <span><b>Days:</b> signed slack to the committed ship date. Negative means the date has passed.</span>
+      <span><b>At risk:</b> 10 days or fewer remaining and behind the plan for the current stage. Set in Settings.</span>
+      <span><b>Stage bar:</b> pieces completed per stage over the order quantity. Every segment has a printed count.</span>
+      <span><b>No stage data</b> is excluded from every count in the sentence above.</span>
+    </div>
+
+    <div class="appendix">
+      <h2>Appendix — the same record below 900px</h2>
+      <p>The stacked record layout from DESIGN.md section 4.4. Field labels on the left, signed
+         figures right-aligned in tabular digits, so the number keeps its alignment after the
+         reflow. This is also the printed "one order per block" variant and the shape of the P8
+         WhatsApp status message.</p>
+      <div class="record">
+        <h3>Anchor Bay Knitwear — NF-204-A</h3>
+        <dl>
+          <dt>Ship date</dt><dd>06 Nov 2026</dd>
+          <dt>Days</dt><dd><span class="days risk">+3</span></dd>
+          <dt>Status</dt><dd><span class="chip risk">At risk</span></dd>
+          <dt>Quantity</dt><dd class="count">12,000</dd>
+          <dt>Cutting</dt><dd class="count">12,000</dd>
+          <dt>Stitching</dt><dd class="count">6,600</dd>
+          <dt>Packing</dt><dd class="count">0</dd>
+          <dt>Order</dt><dd><a class="ref code" href="#po1187">PO-1187</a></dd>
+        </dl>
+      </div>
+    </div>
+  </main>
+</div>
+
+</body>
+</html>

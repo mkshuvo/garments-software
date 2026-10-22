@@ -1,0 +1,465 @@
+<!doctype html>
+<!--
+  DESIGN PROOF, NOT AN IMPLEMENTATION.
+  Inert: no fetch, no framework, no build step, nothing imported from web/.
+
+  Purpose: to prove, in pixels rather than in prose, five claims made by design/DESIGN.md and
+  design/DATA_VIZ.md -- (1) a six-column trial balance fits the banded layout at compact density:
+  at a 1280px viewport the fixed parts cost 240 rail + 48 pane padding + 88 code + 6x112 money =
+  1048px, leaving the account-name column 232px; below about 1100px the grid scrolls inside
+  TableContainer rather than squeezing a money column under its token minimum,
+  (2) debit and credit read as two different things with the
+  colour removed, (3) Bangla labels and Latin money figures coexist in one grid without changing
+  the row height, (4) the control-total band is the first thing read, and (5) the figures in this
+  file actually tie: Opening 17,60,450.00 = 17,60,450.00, Movements 50,36,300.00 = 50,36,300.00,
+  Closing 52,79,850.00 = 52,79,850.00. A design mock whose trial balance does not balance would be
+  the legacy defect with better typography.
+
+  Every colour is in the :root token block and nowhere else, mirroring law L15
+  (web/src/theme/Tokens.ts is the only place colours exist in the app). Families are named, not
+  downloaded: in the app they arrive from next/font CSS variables and the stacks are identical.
+
+  ALL DATA IS SYNTHETIC. Company, buyer and account figures are invented for layout purposes and
+  belong to no real business. The Bangla strings are layout placeholders pending the native
+  bookkeeping-terms review scheduled with P9 (MASTER_PLAN.md section 5, P2).
+-->
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trial balance - design proof (synthetic data)</title>
+<style>
+  :root {
+    /* Surfaces */
+    --surface-base: #ffffff;
+    --surface-muted: #f5f6f7;
+    --surface-raised: #fbfcfd;
+    --surface-band: #eaecee;
+    --surface-selected: #ebf8ff;
+    /* Ink */
+    --text-primary: #111825;
+    --text-secondary: #5b6472;
+    --text-tertiary: #616b7a;
+    --text-inverse: #f7f9fb;
+    --chrome-ink: #545454;
+    /* Boundaries */
+    --border-subtle: #dfe3e8;
+    --border-strong: #7d8898;
+    --border-focus: #0040b0;
+    /* The acting colour */
+    --accent-brand: #0057d2;
+    --accent-brand-deep: #0040b0;
+    --action-neutral: #33415c;
+    --action-neutral-hover: #26324b;
+    --action-neutral-press: #1b2537;
+    /* State */
+    --state-danger: #a31621;
+    --state-danger-soft: #fdecee;
+    --state-warning: #8a5300;
+    --state-warning-soft: #fdf3e2;
+    --state-success: #14663d;
+    --state-success-soft: #e9f5ee;
+    --state-info: #0b5394;
+    --state-info-soft: #eaf2fb;
+    /* Series */
+    --series-primary: #1d5fbf;
+    --series-mid: #3d7bd0;
+    --series-soft: #c7dcf3;
+    --series-neutral: #b6bec9;
+    /* Spacing, explicit units as Tokens.ts does */
+    --space-xxs: 2px; --space-xs: 4px; --space-sm: 8px; --space-md: 12px;
+    --space-lg: 16px; --space-xl: 24px; --space-xxl: 32px; --space-huge: 48px;
+    /* Radius */
+    --radius-none: 0px; --radius-small: 4px; --radius-medium: 6px; --radius-large: 12px;
+    /* Density: compact, the financial-report setting */
+    --row-h: 32px; --row-pad-y: 4px; --cell-pad-x: 8px; --head-h: 36px;
+    /* Layout */
+    --rail-w: 240px; --topbar-h: 48px; --money-min: 112px; --code-min: 88px;
+    /* Elevation */
+    --elev-1: 0 0 0 1px var(--border-subtle);
+    --elev-2: 0 1px 2px rgba(17,24,37,0.06), 0 2px 6px rgba(17,24,37,0.06);
+
+    --font-stack: 'Inter', 'Noto Sans Bengali', system-ui, sans-serif;
+    /* Bangla cell leading 1.45 at 14px = 20.3px, which clears Noto Sans Bengali's measured
+       1.325em natural line box (18.55px) plus the jukta region. Latin-only would be 1.35. */
+    --leading-cell: 1.45;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--surface-base);
+    color: var(--text-primary);
+    font: 400 14px/var(--leading-cell) var(--font-stack);
+  }
+  .money, .code, .count { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum'; }
+
+  /* ---------- identity strip: company, period, currency, as-of ---------- */
+  .topbar {
+    height: var(--topbar-h);
+    background: var(--surface-muted);
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex; align-items: center; gap: var(--space-md);
+    padding: 0 var(--space-lg);
+    font-size: 12px; line-height: 16px; color: var(--text-secondary);
+  }
+  .topbar .co { color: var(--text-primary); font-weight: 500; font-size: 13px; }
+  .topbar .sep { width: 1px; height: 20px; background: var(--border-subtle); }
+  .topbar .cur {
+    font-weight: 600; color: var(--text-primary);
+    border: 1px solid var(--border-strong); border-radius: var(--radius-small);
+    padding: 1px var(--space-xs); font-size: 11px;
+  }
+
+  /* ---------- shell ---------- */
+  .shell { display: flex; min-height: calc(100vh - var(--topbar-h)); }
+  .rail {
+    width: var(--rail-w); flex: 0 0 var(--rail-w);
+    background: var(--surface-muted); border-right: 1px solid var(--border-subtle);
+    padding: var(--space-sm) 0 var(--space-lg);
+  }
+  .rail .group {
+    font-size: 11px; font-weight: 600; color: var(--chrome-ink);
+    padding: var(--space-lg) var(--space-lg) var(--space-xs);
+  }
+  .rail a {
+    display: flex; align-items: center; height: 32px; padding: 0 var(--space-lg);
+    color: var(--chrome-ink); text-decoration: none;
+    font-size: 14px; line-height: 20px; font-weight: 400;
+    border-left: 3px solid transparent;
+  }
+  .rail a:hover { background: var(--surface-band); }
+  .rail a.active {
+    background: var(--surface-selected); color: var(--text-primary); font-weight: 500;
+    border-left-color: var(--accent-brand);
+  }
+  .pane { flex: 1 1 auto; min-width: 0; padding: var(--space-xl) var(--space-xl) var(--space-huge); }
+
+  /* ---------- page head ---------- */
+  h1 { font-size: 20px; line-height: 28px; font-weight: 600; margin: 0; }
+  .titlerow { display: flex; align-items: center; gap: var(--space-xl); margin-bottom: var(--space-sm); }
+  .titlerow .grow { flex: 1 1 auto; }
+  .actions { display: flex; gap: var(--space-sm); }
+  .btn {
+    font: 500 14px/16px var(--font-stack); border-radius: var(--radius-medium);
+    padding: var(--space-sm) var(--space-md); height: 36px; cursor: pointer;
+  }
+  .btn-primary { background: var(--action-neutral); color: var(--text-inverse); border: 1px solid var(--action-neutral); }
+  .btn-primary:hover { background: var(--action-neutral-hover); }
+  .btn-primary:active { background: var(--action-neutral-press); }
+  .btn-outline { background: var(--surface-base); color: var(--accent-brand-deep); border: 1px solid var(--border-strong); }
+
+  /* ---------- the bands, above every figure ---------- */
+  .ct {
+    margin: var(--space-md) 0 var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    font-size: 14px; line-height: 22px; font-weight: 450;
+    border: 1px solid var(--border-subtle); border-radius: var(--radius-small);
+    background: var(--surface-raised); color: var(--text-primary);
+  }
+  .ct b { font-weight: 600; }
+  .ct-drift { background: var(--state-danger-soft); border-color: var(--state-danger); color: var(--state-danger); }
+  .ct-unverified { background: var(--state-info-soft); border-color: var(--state-info); color: var(--state-info); }
+  .ct-unposted { background: var(--state-warning-soft); border-color: var(--state-warning); color: var(--state-warning); }
+
+  .periodnote {
+    font-size: 12px; line-height: 16px; color: var(--text-secondary);
+    margin: 0 0 var(--space-md); display: flex; gap: var(--space-lg); flex-wrap: wrap;
+  }
+  .periodnote .k { color: var(--text-tertiary); }
+
+  /* ---------- the table ---------- */
+  .scroll { overflow: auto; border: 1px solid var(--border-subtle); }
+  table { border-collapse: separate; border-spacing: 0; width: 100%; }
+  caption {
+    text-align: left; caption-side: top; padding: var(--space-sm) var(--space-md);
+    font-size: 12px; line-height: 16px; color: var(--text-secondary);
+    background: var(--surface-muted); border-bottom: 1px solid var(--border-subtle);
+  }
+  thead th {
+    position: sticky; z-index: 2; height: var(--head-h);
+    background: var(--surface-muted); color: var(--text-secondary);
+    font-size: 12px; line-height: 16px; font-weight: 600;
+    text-align: right; padding: 0 var(--cell-pad-x);
+    border-bottom: 1px solid var(--border-strong);
+    white-space: nowrap;
+  }
+  /* A two-tier header needs two offsets. Sticky-ing both rows to top: 0 makes the group row sit on
+     top of the side row as soon as the table scrolls, which is a real defect this mock had until it
+     was checked. Total sticky header height is therefore 2 x 36px = 72px, not the single-tier 36px
+     token -- see DESIGN.md density.stickyHeaderHeightTwoTier. */
+  thead tr:first-child th { top: 0; }
+  thead tr:last-child th { top: var(--head-h); }
+  thead th.grp {
+    text-align: center;
+    border-left: 1px solid var(--border-strong);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  thead th.l { text-align: left; }
+  thead th.rule { border-left: 1px solid var(--border-strong); }
+  th.m { min-width: var(--money-min); }
+
+  tbody td {
+    height: var(--row-h); padding: var(--row-pad-y) var(--cell-pad-x);
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 14px; line-height: 20px; color: var(--text-primary);
+    background: var(--surface-base); white-space: nowrap;
+  }
+  tbody td.m { text-align: right; min-width: var(--money-min); }
+  tbody td.c { text-align: left; min-width: var(--code-min); font-size: 13px; font-weight: 500; color: var(--text-secondary); }
+  tbody td.rule { border-left: 1px solid var(--border-strong); }
+  tbody td.acct { max-width: 320px; overflow: hidden; text-overflow: ellipsis; }
+  tbody tr:hover td { background: var(--surface-selected); }
+
+  /* a non-postable group row: heavier label, band ground, money cells left BLANK (not 0.00) */
+  tr.grp td { background: var(--surface-band); font-weight: 600; }
+  tr.grp:hover td { background: var(--surface-band); }
+
+  .none { color: var(--text-tertiary); }        /* the em dash: this value does not exist (I2) */
+  .side { font-size: 12px; line-height: 16px; color: var(--text-secondary); margin-left: var(--space-xxs); }
+  /* Compact density forbids a second line inside a cell, so anything that needs more words gets a
+     note reference here and a footnote under the table. The reference is text, not an icon. */
+  .ref { font-size: 12px; line-height: 16px; color: var(--text-tertiary); margin-left: var(--space-xs); }
+  .notes { list-style: none; margin: var(--space-sm) 0 0; padding: 0 var(--space-md);
+           font-size: 12px; line-height: 16px; color: var(--text-secondary); }
+  .notes li { margin-bottom: var(--space-xxs); }
+  .notes .n { color: var(--text-tertiary); }
+
+  .chip {
+    display: inline-block; margin-left: var(--space-xs);
+    font-size: 12px; line-height: 16px; font-weight: 500;
+    padding: 1px var(--space-xs); border-radius: var(--radius-small);
+    background: var(--state-warning-soft); color: var(--state-warning);
+  }
+
+  tfoot td {
+    position: sticky; bottom: 0; z-index: 2;
+    height: var(--row-h); background: var(--surface-band);
+    font-weight: 600; font-size: 14px; line-height: 20px; color: var(--text-primary);
+    border-top: 1px solid var(--border-strong);
+    padding: 0 var(--cell-pad-x); text-align: right;
+  }
+  tfoot td.l { text-align: left; }
+  tfoot td.rule { border-left: 1px solid var(--border-strong); }
+
+  /* ---------- focus: the one mechanism ---------- */
+  a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--surface-base), 0 0 0 4px var(--border-focus);
+  }
+
+  .appendix { margin-top: var(--space-huge); border-top: 1px solid var(--border-strong); padding-top: var(--space-lg); }
+  .appendix h2 { font-size: 15px; line-height: 22px; font-weight: 600; margin: 0 0 var(--space-xs); }
+  .appendix p { font-size: 12px; line-height: 16px; color: var(--text-tertiary); margin: 0 0 var(--space-md); max-width: 72ch; }
+  .appendix .ct { margin: 0 0 var(--space-sm); }
+
+  @media print {
+    .rail, .actions, .appendix { display: none; }
+    .topbar { background: var(--surface-base); border-bottom: 1px solid var(--border-strong); }
+    tbody tr:hover td { background: var(--surface-base); }
+    tfoot td, tr.grp td, thead th { background: var(--surface-base); }
+    @page { size: A4 landscape; margin: 12mm; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="co">নর্থ ফ্যাশন লিমিটেড</span>
+  <span class="sep"></span>
+  <span>আর্থিক বছর ২০২৬-২৭ · পিরিয়ড ৪ (অক্টোবর)</span>
+  <span class="sep"></span>
+  <span class="cur">BDT</span>
+  <span class="sep"></span>
+  <span>৩ নভেম্বর ২০২৬, ০৯:১২ পর্যন্ত অবস্থান</span>
+</div>
+
+<div class="shell">
+  <nav class="rail" aria-label="প্রধান মেনু">
+    <div class="group">আজ</div>
+    <a href="#orders">অর্ডারের অগ্রগতি</a>
+    <div class="group">টাকা</div>
+    <a href="#cash">ক্যাশ বই</a>
+    <a href="#tb" class="active" aria-current="page">ট্রায়াল ব্যালেন্স</a>
+    <a href="#jrnl">জাবেদা বই</a>
+    <a href="#gl">খতিয়ান বিবরণ</a>
+    <div class="group">কস্ট</div>
+    <a href="#cost">স্টাইল প্রতি খরচ</a>
+    <div class="group">প্রতিষ্ঠান</div>
+    <a href="#settings">সেটিংস</a>
+  </nav>
+
+  <main class="pane">
+    <div class="titlerow">
+      <div class="grow"><h1>ট্রায়াল ব্যালেন্স</h1></div>
+      <div class="actions">
+        <button class="btn btn-outline">CSV খুলুন</button>
+        <button class="btn btn-primary">প্রিন্ট</button>
+      </div>
+    </div>
+
+    <div class="ct"><b>Σ ডেবিট = Σ ক্রেডিট = 52,79,850.00 BDT</b> · খতিয়ানের সঙ্গে মিলছে · ৩ নভেম্বর ২০২৬, ০৯:১২ পর্যন্ত</div>
+    <div class="ct ct-unposted">১টি বিক্রির ইনভয়েস (2,00,000.00 BDT) এখনও পোস্ট হয়নি। এটি নিচের সব মোট থেকে বাদ দেওয়া হয়েছে। <a href="#cash">দেখুন</a></div>
+
+    <div class="periodnote">
+      <span><span class="k">পিরিয়ড:</span> ০১ অক্টোবর – ৩১ অক্টোবর ২০২৬</span>
+      <span><span class="k">কলামের নিয়ম:</span> কলাম ব্যালেন্সের চিহ্ন বেছে নেয় — ডেবিট হলে ডেবিট কলামে, ক্রেডিট হলে ক্রেডিট কলামে। কোনো সংখ্যার চিহ্ন বাদ যায় না।</span>
+      <span><span class="k">সংখ্যা গ্রুপিং:</span> লক্ষ (দক্ষিণ এশীয়)</span>
+    </div>
+
+    <div class="scroll">
+      <table>
+        <caption>১৫টি পোস্টযোগ্য অ্যাকাউন্ট · ৩টি গ্রুপ অ্যাকাউন্ট (খতিয়ান হয় না) · স্বাভাবিক ব্যালেন্সের উল্টো দিকে ১টি</caption>
+        <thead>
+          <tr>
+            <th class="l c" rowspan="2">কোড</th>
+            <th class="l" rowspan="2">অ্যাকাউন্ট</th>
+            <th class="grp" colspan="2">ওপেনিং</th>
+            <th class="grp" colspan="2">পিরিয়ড গতিবিধি</th>
+            <th class="grp" colspan="2">ক্লোজিং</th>
+          </tr>
+          <tr>
+            <th class="m rule">ডেবিট</th><th class="m">ক্রেডিট</th>
+            <th class="m rule">ডেবিট</th><th class="m">ক্রেডিট</th>
+            <th class="m rule">ডেবিট</th><th class="m">ক্রেডিট</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="grp">
+            <td class="c">1000</td><td class="acct">সম্পদ</td>
+            <td class="m rule"></td><td class="m"></td><td class="m rule"></td><td class="m"></td><td class="m rule"></td><td class="m"></td>
+          </tr>
+          <tr>
+            <td class="c">1111</td><td class="acct">ব্যাংক ও হাতে টাকা</td>
+            <td class="m rule money">18,450.00</td><td class="m money">0.00</td>
+            <td class="m rule money">8,28,399.50</td><td class="m money">45,200.00</td>
+            <td class="m rule money">8,01,649.50</td><td class="m money">0.00</td>
+          </tr>
+          <tr>
+            <td class="c">1122</td><td class="acct">স্টোর ক্যাশ<span class="chip">অস্বাভাবিক ব্যালেন্স</span></td>
+            <td class="m rule money">5,00,000.00</td><td class="m money">0.00</td>
+            <td class="m rule money">0.00</td><td class="m money">5,02,400.00</td>
+            <td class="m rule money">0.00</td><td class="m money">2,400.00<span class="side">ক্র</span></td>
+          </tr>
+          <tr>
+            <td class="c">1210</td><td class="acct">ক্রেতার বকেয়া</td>
+            <td class="m rule money">8,02,000.00</td><td class="m money">0.00</td>
+            <td class="m rule money">3,40,000.00</td><td class="m money">2,99,700.00</td>
+            <td class="m rule money">8,42,300.00</td><td class="m money">0.00</td>
+          </tr>
+          <tr>
+            <td class="c">1310</td><td class="acct">কাঁচামাল ইনভেন্টরি</td>
+            <td class="m rule money">4,40,000.00</td><td class="m money">0.00</td>
+            <td class="m rule money">1,10,000.00</td><td class="m money">2,40,000.00</td>
+            <td class="m rule money">3,10,000.00</td><td class="m money">0.00</td>
+          </tr>
+          <tr>
+            <td class="c">1450</td><td class="acct">চলমান কাজ (WIP)</td>
+            <td class="m rule money">0.00</td><td class="m money">0.00</td>
+            <td class="m rule money">2,05,600.00</td><td class="m money">1,60,000.00</td>
+            <td class="m rule money">45,600.00</td><td class="m money">0.00</td>
+          </tr>
+
+          <tr class="grp">
+            <td class="c">2000</td><td class="acct">দায়</td>
+            <td class="m rule"></td><td class="m"></td><td class="m rule"></td><td class="m"></td><td class="m rule"></td><td class="m"></td>
+          </tr>
+          <tr>
+            <td class="c">2101</td><td class="acct">স্থানীয় সরবরাহকারী — লেইস, বাটন</td>
+            <td class="m rule money">0.00</td><td class="m money">9,80,000.00</td>
+            <td class="m rule money">2,30,000.00</td><td class="m money">1,20,000.00</td>
+            <td class="m rule money">0.00</td><td class="m money">8,70,000.00</td>
+          </tr>
+          <tr>
+            <td class="c">2115</td><td class="acct">বিদেশি সরবরাহকারী — ফ্যাব্রিক<span class="ref">(১)</span></td>
+            <td class="m rule money">0.00</td><td class="m money">2,42,800.00</td>
+            <td class="m rule money">0.00</td><td class="m money">1,21,400.00</td>
+            <td class="m rule money">0.00</td><td class="m money">3,64,200.00</td>
+          </tr>
+          <tr>
+            <td class="c">2210</td><td class="acct">ভ্যাট করদায়</td>
+            <td class="m rule money">0.00</td><td class="m money">1,02,300.00</td>
+            <td class="m rule money">42,000.00</td><td class="m money">58,600.00</td>
+            <td class="m rule money">0.00</td><td class="m money">1,18,900.00</td>
+          </tr>
+          <tr>
+            <td class="c">2500</td><td class="acct">মজুরি ও বেতন বকেয়া</td>
+            <td class="m rule money">0.00</td><td class="m money">0.00</td>
+            <td class="m rule money">0.00</td><td class="m money">88,400.00</td>
+            <td class="m rule money">0.00</td><td class="m money">88,400.00</td>
+          </tr>
+
+          <tr class="grp">
+            <td class="c">3000</td><td class="acct">মালিকের সমতা</td>
+            <td class="m rule"></td><td class="m"></td><td class="m rule"></td><td class="m"></td><td class="m rule"></td><td class="m"></td>
+          </tr>
+          <tr>
+            <td class="c">3100</td><td class="acct">আগের বছরের সমতা</td>
+            <td class="m rule money">0.00</td><td class="m money">4,35,350.00</td>
+            <td class="m rule money">0.00</td><td class="m money">0.00</td>
+            <td class="m rule money">0.00</td><td class="m money">4,35,350.00</td>
+          </tr>
+
+          <tr>
+            <td class="c">4100</td><td class="acct">রপ্তানি বিক্রয় (FOB)</td>
+            <td class="m rule money">0.00</td><td class="m money">0.00</td>
+            <td class="m rule money">0.00</td><td class="m money">34,00,600.00</td>
+            <td class="m rule money">0.00</td><td class="m money">34,00,600.00</td>
+          </tr>
+          <tr>
+            <td class="c">5000</td><td class="acct">পোশাক তৈরির খরচ (COGS)</td>
+            <td class="m rule money">0.00</td><td class="m money">0.00</td>
+            <td class="m rule money">28,80,000.00</td><td class="m money">0.00</td>
+            <td class="m rule money">28,80,000.00</td><td class="m money">0.00</td>
+          </tr>
+          <tr>
+            <td class="c">5120</td><td class="acct">হেডার রাউন্ডিং অ্যাকাউন্ট<span class="ref">(২)</span></td>
+            <td class="m rule money">0.00</td><td class="m money">0.00</td>
+            <td class="m rule money">300.50</td><td class="m money">0.00</td>
+            <td class="m rule money">300.50</td><td class="m money">0.00</td>
+          </tr>
+          <tr>
+            <td class="c">5200</td><td class="acct">মজুরি ব্যয়</td>
+            <td class="m rule money">0.00</td><td class="m money">0.00</td>
+            <td class="m rule money">3,00,000.00</td><td class="m money">0.00</td>
+            <td class="m rule money">3,00,000.00</td><td class="m money">0.00</td>
+          </tr>
+          <tr>
+            <td class="c">5300</td><td class="acct">ফ্যাক্টরি ওভারহেড</td>
+            <td class="m rule money">0.00</td><td class="m money">0.00</td>
+            <td class="m rule money">1,00,000.00</td><td class="m money">0.00</td>
+            <td class="m rule money">1,00,000.00</td><td class="m money">0.00</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td class="l" colspan="2">মোট</td>
+            <td class="rule money">17,60,450.00</td><td class="money">17,60,450.00</td>
+            <td class="rule money">50,36,300.00</td><td class="money">50,36,300.00</td>
+            <td class="rule money">52,79,850.00</td><td class="money">52,79,850.00</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <ul class="notes">
+      <li><span class="n">(১)</span> 2115: বিদেশি মুদ্রার লাইন — 1 USD = 121.40 BDT, কার্যকর ০১ অক্টোবর ২০২৬, লাইনের ওপর সংরক্ষিত হার।</li>
+      <li><span class="n">(২)</span> 5120: রাউন্ডিং অবশিষ্ট নির্ধারিত নীতি অনুযায়ী এখানে পোস্ট হয়েছে, পাশের লাইনে ভেগে যায়নি।</li>
+    </ul>
+
+    <div class="appendix">
+      <h2>State appendix — the band a reader must see before any figure</h2>
+      <p>Not part of the screen above. These are the four conditions specified in DATA_VIZ.md §7,
+         shown together so the difference between them is legible. Each carries its own words:
+         colour alone never states the condition, and none of them is allowed to render as a quiet
+         table of zeroes.</p>
+      <div class="ct"><b>Σ ডেবিট = Σ ক্রেডিট = 52,79,850.00 BDT</b> · খতিয়ানের সঙ্গে মিলছে</div>
+      <div class="ct ct-drift"><b>রিপোর্টের মোট খতিয়ান থেকে 0.02 BDT ভিন্ন। এটি ফাইল করবেন না।</b></div>
+      <div class="ct ct-unverified"><b>যাচাই হয়নি</b> · Verifier এই পিরিয়ডে চলেনি · ৩ নভেম্বর ২০২৬, ০৯:১২</div>
+      <div class="ct ct-unposted">১টি বিক্রির ইনভয়েস (2,00,000.00 BDT) এখনও পোস্ট হয়নি। এটি নিচের মোট থেকে বাদ।</div>
+    </div>
+  </main>
+</div>
+
+</body>
+</html>
