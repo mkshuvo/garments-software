@@ -30,10 +30,17 @@ public static class DefaultRoleMatrix
             "user.read", "user.create", "user.update",
             "role.read", "permission.read", "audit.read",
         ],
+        // The accounts clerk is the person who actually keeps a factory's books, so the ledger keys are
+        // granted here and nowhere else above Owner. Before this the Accounts role could read the company
+        // profile and nothing about its accounts — which is why P3's endpoints had to be reachable by
+        // Owner alone, and an owner who is the only one able to post a journal is not a product, it is a
+        // spreadsheet with a login screen.
         [Accounts] =
         [
             "tenant.read", "company.read", "company.update",
             "department.read", "user.read", "permission.read", "audit.read",
+            "journal.read", "journal.create", "journal.post", "journal.reverse",
+            "journal.open_balance", "rate.read", "rate.record",
         ],
         [Stock] =
         [

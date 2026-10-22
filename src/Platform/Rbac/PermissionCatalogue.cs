@@ -1,9 +1,16 @@
 namespace Garments.Platform.Rbac;
 
 /// <summary>
-/// The single source of truth for what can be authorised. The migration seeds these rows, the
-/// provisioner grants them to roles, and the policy provider mints a policy per key — so a permission
-/// that is not written down here does not exist anywhere.
+/// The single source of truth for what can be authorised. The migration seeds these rows and the
+/// provisioner grants them to roles, so a permission that is not written down here does not exist
+/// anywhere.
+///
+/// <b>How these keys are enforced today.</b> Endpoints declare <c>[Authorize(Roles = ...)]</c> and the
+/// role is read from the token. Nothing yet demands a permission key at the gate, so <c>(resource,
+/// action)</c> is currently the vocabulary for <em>granting</em> a role, not the check itself. An
+/// <c>IPermissionRequirement</c> handler that turns a key into a policy is the missing half; until it
+/// exists, this comment says what is true rather than what the design intends, because a doc comment
+/// describing an unbuilt component is how <c>JournalType.Opening</c> sat referenced by nothing.
 /// </summary>
 /// <remarks>
 /// A <c>(resource, action)</c> pair rather than ad-hoc role names, because the buyer's staff is hired
@@ -35,6 +42,14 @@ public static class PermissionCatalogue
         new("role", "delete", "Remove a custom role."),
         new("permission", "read", "Read the permission catalogue."),
         new("audit", "read", "Read the tenant's audit trail."),
+        new("journal", "read", "List and open the tenant's general-ledger entries."),
+        new("journal", "create", "Write a draft or manual journal entry."),
+        new("journal", "post", "Make an entry permanent — the act that ends its editability."),
+        new("journal", "reverse", "Correct a posted entry by posting its mirror."),
+        new("journal", "open_balance", "Found a company with its opening balances."),
+        new("rate", "read", "Read the tenant's exchange-rate history."),
+        new("rate", "record", "Append an effective-dated exchange rate."),
+        new("ledger", "provision", "Create a company's periods, chart of accounts and journals."),
     ];
 
     public static IReadOnlyList<PermissionDefinition> All => Definitions;

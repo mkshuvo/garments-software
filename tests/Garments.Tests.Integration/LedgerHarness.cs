@@ -1,8 +1,13 @@
 using Garments.Core;
 using Garments.Data;
 using Garments.Ledger;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using Garments.Platform.Audit;
+using Garments.Platform.Identity;
+using Garments.Platform.Rbac;
 using Garments.Platform.Tenancy;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -270,6 +275,148 @@ internal sealed class LedgerHarness(WebAppFactory factory)
         }
     }
 
+    /// <summary>
+    /// A company with a real signed-in user, for the endpoint tests.
+    /// </summary>
+    /// <remarks>
+    /// The user is created through <see cref="UserManager{T}"/> rather than inserted, because the roles
+    /// that decide whether a clerk may post a journal are assigned by the same machinery the product
+    /// uses. A row written straight into the database would grant a role the app never granted and the
+    /// authorisation test would prove nothing.
+    /// </remarks>
+    internal async Task<HarnessCompany> ProvisionedCompanyWithUserAsync(string role)
+    {
+        var world = await ProvisionedCompanyAsync(2026);
+
+        using (var scope = TenantScope.Open(
+                   factory.Services.GetRequiredService<IServiceScopeFactory>(), world.TenantId))
+        {
+            await scope.ServiceProvider.GetRequiredService<PermissionSeeder>()
+                .SeedTenantRolesAsync(world.TenantId);
+        }
+
+        return await SignInNewUserAsync(world, role, "actor");
+    }
+
+    /// <summary>
+    /// Creates a second clerk inside an existing company and signs them in.
+    /// </summary>
+    /// <remarks>
+    /// Separate from the company's first user because several tests need two roles in one company at the
+    /// same time — a clerk who can post and a manager who can only read. Authorisation is the thing under
+    /// test, so a second identity has to be a real second identity rather than the same token re-used.
+    /// </remarks>
+    internal Task<HarnessCompany> AddClerkAsync(LedgerWorld world, string role) =>
+        SignInNewUserAsync(world, role, role.ToLowerInvariant());
+
+    private async Task<HarnessCompany> SignInNewUserAsync(LedgerWorld world, string role, string prefix)
+    {
+        var slug = await SlugAsync(world.TenantId);
+        var email = $"{prefix}@{slug}.test";
+
+        using (var scope = TenantScope.Open(
+                   factory.Services.GetRequiredService<IServiceScopeFactory>(), world.TenantId))
+        {
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+            var result = await users.CreateAsync(
+                new ApplicationUser
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = world.TenantId,
+                    UserName = email,
+                    Email = email,
+                    FullName = role + " clerk",
+                    IsActive = true,
+                    CreatedAt = DateTimeOffset.UtcNow,
+                },
+                Password);
+
+            Assert.True(result.Succeeded, string.Join("; ", result.Errors.Select(each => each.Description)));
+
+            var created = await users.FindByEmailAsync(email);
+            Assert.NotNull(created);
+
+            var added = await users.AddToRoleAsync(created, role);
+            Assert.True(added.Succeeded, string.Join("; ", added.Errors.Select(each => each.Description)));
+        }
+
+        var client = factory.CreateClient();
+
+        var response = await client.PostAsJsonAsync("/api/v1/auth/login", new
+        {
+            TenantSlug = slug,
+            Email = email,
+            Password = Password,
+        });
+
+        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<LoginPayload>();
+        Assert.NotNull(payload);
+
+        return new HarnessCompany(world, payload.Token, client);
+    }
+
+    internal async Task<string> SlugAsync(TenantId tenantId)
+    {
+        using var systemScope = TenantScope.OpenSystem(
+            factory.Services.GetRequiredService<IServiceScopeFactory>());
+
+        var tenant = await systemScope.ServiceProvider.GetRequiredService<ITenantDirectory>()
+            .FindAsync(tenantId);
+
+        Assert.NotNull(tenant);
+        return tenant.Slug;
+    }
+
+    internal static HttpRequestMessage Authenticated(string token, HttpMethod method, string path)
+    {
+        var message = new HttpRequestMessage(method, path);
+        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return message;
+    }
+
+    internal static HttpRequestMessage Authenticated(string token, HttpMethod method, string path, object body)
+    {
+        var message = Authenticated(token, method, path);
+        message.Content = JsonContent.Create(body);
+        return message;
+    }
+
+    /// <summary>
+    /// The next number of one named journal, which proves a refused posting cost nothing.
+    /// </summary>
+    /// <remarks>
+    /// Scoped to a journal code because a provisioned company has six journals and each keeps its own
+    /// sequence — that separation is the point of having six. Reading "the" next number across all of them
+    /// is a <c>SingleAsync</c> that only worked while the fixture had one.
+    /// </remarks>
+    internal async Task<int> JournalNextNumberAsync(LedgerWorld world, string journalCode = "GL")
+    {
+        using var scope = TenantScope.Open(
+            factory.Services.GetRequiredService<IServiceScopeFactory>(), world.TenantId);
+
+        var context = scope.ServiceProvider.GetRequiredService<GarmentsDbContext>();
+
+        return await context.Journals
+            .Where(each => each.Code == journalCode)
+            .Select(each => each.NextNumber)
+            .SingleAsync();
+    }
+
+    internal async Task<IReadOnlyList<string>> EntryNumbersAsync(LedgerWorld world)
+    {
+        using var scope = TenantScope.Open(
+            factory.Services.GetRequiredService<IServiceScopeFactory>(), world.TenantId);
+
+        var context = scope.ServiceProvider.GetRequiredService<GarmentsDbContext>();
+
+        return await context.GlEntries.OrderBy(each => each.Number).Select(each => each.Number).ToListAsync();
+    }
+
+    private const string Password = "Endpoint-suite-strong-password-42";
+
     internal async Task<Guid> FindAccountByCodeAsync(TenantId tenantId, string code)
     {
         using var scope = TenantScope.Open(
@@ -401,7 +548,12 @@ internal sealed class LedgerHarness(WebAppFactory factory)
 
         var context = scope.ServiceProvider.GetRequiredService<GarmentsDbContext>();
 
-        var period = await context.FiscalPeriods.SingleAsync();
+        // The period that actually contains this world's posting date. SingleAsync() was correct while the
+        // hand-built fixture had one period and became wrong the moment provisioning created twelve: a
+        // lock meant to close July would land on whichever period the query happened to return first.
+        var period = await context.FiscalPeriods
+            .Where(each => each.StartDate <= world.PostingDate && each.EndDate >= world.PostingDate)
+            .SingleAsync();
 
         // Locked through its last day, which is the whole period. An open period accepts the identical
         // posting, and that is the positive control beside every refusal.
