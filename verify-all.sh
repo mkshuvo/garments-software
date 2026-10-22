@@ -39,6 +39,29 @@ step "backend: build (warnings are errors)" dotnet build "$SOLUTION" --no-restor
 # Engineering law L1/L1b/L2/L3/L6/L8. These fail the build, not a reviewer.
 step "architecture: engineering laws" dotnet test tests/Garments.Tests.Architecture --no-build -v q --nologo
 step "unit: domain primitives" dotnet test tests/Garments.Tests.Unit --no-build -v q --nologo
+
+# Module suites are DISCOVERED, not listed by name. Naming each project here meant a new test project
+# could exist, build, pass review, and never be run by the gate — which is the exact shape of
+# silence that made the legacy project's checks meaningless: "all accounting services registered"
+# was asserted against a list nobody had populated. An unlisted project is worse than a failing one,
+# because a failing one gets fixed.
+MODULE_SUITES=()
+while IFS= read -r suite_dir; do
+  MODULE_SUITES+=("$suite_dir")
+done < <(find tests -mindepth 2 -maxdepth 2 -name '*.csproj' \
+    ! -name 'Garments.Tests.Architecture.csproj' \
+    ! -name 'Garments.Tests.Unit.csproj' \
+    ! -name 'Garments.Tests.Integration.csproj' \
+    -printf '%h\n' 2>/dev/null | sort -u)
+
+if [ "${#MODULE_SUITES[@]}" -gt 0 ]; then
+  for suite in "${MODULE_SUITES[@]}"; do
+    step "module tests: $(basename "$suite")" dotnet test "$suite" --no-build -v q --nologo
+  done
+else
+  printf '\n\033[1m▶ module tests\033[0m\n'
+  printf '  (none discovered — modules currently ship no test project of their own)\n'
+fi
 # The integration host boots the real Program, which seeds the permission catalogue and therefore
 # needs a live database. It deliberately has no fallback connection string, so the gate provides one.
 step "integration: tenant isolation and ledger invariants on a real database" bash -c '

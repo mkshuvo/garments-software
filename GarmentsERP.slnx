@@ -16,11 +16,17 @@
     <Project Path="src/Ledger/Garments.Ledger.csproj" />
   </Folder>
   <Folder Name="/src/Modules/" />
+  <Folder Name="/src/Modules/DocumentWorkflow/">
+    <Project Path="src/Modules/DocumentWorkflow/Garments.Modules.DocumentWorkflow.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/Inventory/">
     <Project Path="src/Modules/Inventory/Garments.Modules.Inventory.csproj" />
   </Folder>
   <Folder Name="/src/Modules/Payroll/">
     <Project Path="src/Modules/Payroll/Garments.Modules.Payroll.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Partners/">
+    <Project Path="src/Modules/Partners/Garments.Modules.Partners.csproj" />
   </Folder>
   <Folder Name="/src/Modules/Production/">
     <Project Path="src/Modules/Production/Garments.Modules.Production.csproj" />
@@ -37,6 +43,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/Garments.Tests.Architecture/Garments.Tests.Architecture.csproj" />
     <Project Path="tests/Garments.Tests.Integration/Garments.Tests.Integration.csproj" />
+    <Project Path="tests/Garments.Tests.Modules.DocumentWorkflow/Garments.Tests.Modules.DocumentWorkflow.csproj" />
     <Project Path="tests/Garments.Tests.Unit/Garments.Tests.Unit.csproj" />
   </Folder>
 </Solution>
